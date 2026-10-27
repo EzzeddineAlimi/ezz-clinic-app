@@ -1,0 +1,11 @@
+{
+  "name": "ezz-clinic-fictional-prototype",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --experimental-strip-types src/server.mjs",
+    "test": "node --experimental-strip-types --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict src/clinic.ts"
+  }
+}
