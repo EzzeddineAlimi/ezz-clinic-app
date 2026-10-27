@@ -1,0 +1,9 @@
+# Local files and generated output
+node_modules/
+coverage/
+dist/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
