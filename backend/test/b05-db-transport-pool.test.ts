@@ -292,3 +292,18 @@ test('T-TYPES-1 type mapping kept from the previous client: int8 number, ISO tim
     assert.deepEqual(echo, { j: { k: 'v' }, a: [1, 2] }, 'objects and arrays are sent as JSON, not pg array literals');
   } finally { await d.close(); }
 });
+
+test('T-POOL-7 checking a pooled connection out and back in many times does not accumulate event listeners', async () => {
+  const { PgPool } = await import('../src/platform/postgres.ts');
+  const pool = new PgPool(parseDatabaseUrl(db.appUrl), { max: 1 });
+  try {
+    const counts: number[] = [];
+    for (let i = 0; i < 25; i++) {
+      const c = await pool.acquire();
+      await c.query('SELECT 1');
+      counts.push(c.poolClient!.listenerCount('error'));
+      pool.release(c);
+    }
+    assert.equal(new Set(counts).size, 1, `error listeners grew across checkouts: ${counts.join(',')}`);
+  } finally { await pool.end(); }
+});

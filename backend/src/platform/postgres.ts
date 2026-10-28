@@ -176,9 +176,15 @@ export class PgConnection {
       this.client = cfgOrClient;
       this.owned = false;
     }
-    // An idle client whose server goes away emits 'error'; without a listener Node would crash.
-    this.client.on('error', () => { this.dead = true; });
+    // A client whose server goes away emits 'error'; without a listener Node would crash. For a pool client
+    // the listener lives only while it is checked out (detached on release), so reuse never accumulates them.
+    this.client.on('error', this.onError);
   }
+
+  private onError = () => { this.dead = true; };
+
+  /** Remove this wrapper's listener before the pool client goes back to the pool. */
+  detach() { this.client.removeListener('error', this.onError); }
 
   async connect(): Promise<void> {
     if (!this.owned) return;
@@ -237,6 +243,7 @@ export class PgPool {
     const pc = c.poolClient;
     if (!pc || c.released) return; // double release is a no-op
     c.released = true;
+    c.detach();
     pc.release(destroy || c.dead ? true : undefined); // a broken client is discarded, never reused
   }
 
