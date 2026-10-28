@@ -36,6 +36,7 @@ Status: generated from the running v0.2 code by Claude Opus 5.5 on 2026-10-28. R
 | POST | `/api/v1/patients/:id/contact` | `patient.update_contact` (OWNER, DENTIST, RECEPTIONIST) | — | required |
 | POST | `/api/v1/visits` | `visit.schedule` (OWNER, DENTIST, RECEPTIONIST) | — | required |
 | GET | `/api/v1/visits` | `visit.read` (OWNER, DENTIST, RECEPTIONIST, ASSISTANT) | — | — |
+| GET | `/api/v1/day-board` | `visit.read` (OWNER, DENTIST, RECEPTIONIST, ASSISTANT) | — | — |
 | POST | `/api/v1/visits/:id/status` | `visit.desk_status` (OWNER, DENTIST, RECEPTIONIST) | — | required |
 | POST | `/api/v1/visits/:id/care` | `care.confirm` (DENTIST) | — | required |
 | POST | `/api/v1/care-items/:id/corrections` | `care.correct` (DENTIST) | — | required |
@@ -74,7 +75,8 @@ Status: generated from the running v0.2 code by Claude Opus 5.5 on 2026-10-28. R
 | `POST /session/login` | **clinicCode**, **username**, **password** → `{token, staff{id,displayName,roles}, clinicId, expiresInSeconds}` |
 | `POST /patients` | **familyName**, **givenName**, **isSynthetic: true**, nameAr, dateOfBirth (YYYY-MM-DD), sex F/M/X, phone, contactPreference IN_PERSON/BASIC_PHONE_CALL/SMS/NONE, preferredLanguage fr/ar, confirmNotDuplicate |
 | `POST /visits` | **patientId**, **scheduledAt** (ISO), durationMin, dentistId, allowOverlap |
-| `POST /visits/:id/status` | **status** ARRIVED/IN_CHAIR/NO_SHOW/CANCELLED, reason (required for NO_SHOW/CANCELLED) |
+| `POST /visits/:id/status` | **status** ARRIVED/IN_CHAIR/NO_SHOW/CANCELLED, reason (required for NO_SHOW/CANCELLED); NO_SHOW is refused before the appointment time (409) |
+| `GET /visits`, `GET /day-board` (query) | day (clinic-local YYYY-MM-DD, default today in the clinic timezone); day-board also: scope mine/all (mine = own + unassigned, DENTIST only; default for dentists), dentistId |
 | `POST /visits/:id/care` | **procedureCode**, **procedureLabel**, **feeMillimes** (0 allowed with reason), toothFdi (11–48, 51–85), surfaces (MODBLIFP), reason, confirmRepeat |
 | `POST /care-items/:id/corrections` | **deltaMillimes** (±, ≠0), **reason** |
 | `POST /visits/:id/payments` | **amountMillimes**, **tender** CASH/CARD (no default), cardTerminalRef, cardLast4, confirmDuplicate |

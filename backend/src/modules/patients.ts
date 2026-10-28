@@ -5,7 +5,8 @@
  * Fraud-relevant rules: contact changes are audited with old+new values (a receptionist cannot silently
  * change a patient's phone, R24 trust boundary); a visit with confirmed care cannot be cancelled or marked
  * no-show; desk-marked NO_SHOW/CANCELLED visits surface to the owner (hidden-visit risk, CH-018);
- * only a DENTIST can mark a visit COMPLETED.
+ * only a DENTIST can mark a visit COMPLETED; NO_SHOW only once the appointment time has passed (B12).
+ * Days are CLINIC-LOCAL (clinics.settings.timezone, default Africa/Tunis), never UTC (B12).
  */
 import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
@@ -14,6 +15,23 @@ import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from 
 import { appendAudit } from './audit.ts';
 
 const NAME = { min: 1, max: 80 };
+export const DEFAULT_TIMEZONE = 'Africa/Tunis';
+
+/** The clinic's IANA timezone. An invalid setting fails loudly instead of silently using UTC. */
+export async function clinicTimezone(tx: Tx, clinicId: string): Promise<string> {
+  const c = await tx.one<{ tz: string | null }>("SELECT settings->>'timezone' AS tz FROM clinics WHERE id = $1", [clinicId]);
+  const tz = c.tz ?? DEFAULT_TIMEZONE;
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); } catch { fail('CONFLICT', `Clinic timezone setting "${tz}" is not a valid IANA timezone; fix the clinic settings`); }
+  return tz;
+}
+
+/** A clinic-local calendar day from a query parameter (default: today in that timezone). */
+export function clinicDay(query: URLSearchParams, tz: string): string {
+  const day = query.get('day') ?? new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const t = Date.parse(day + 'T00:00:00Z');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== day) fail('VALIDATION_FAILED', 'day must be a real date YYYY-MM-DD', { field: 'day' });
+  return day;
+}
 const PHONE = /^\+?[0-9 ]{6,20}$/;
 
 export async function getPatient(tx: Tx, id: string) {
@@ -67,10 +85,12 @@ export const patientRoutes: Route[] = [
       await tx.query('INSERT INTO patient_file_counters (clinic_id) VALUES ($1) ON CONFLICT DO NOTHING', [actor!.clinicId]);
       const c = await tx.one<{ next_no: number }>('SELECT next_no FROM patient_file_counters WHERE clinic_id = $1 FOR UPDATE', [actor!.clinicId]);
       await tx.query('UPDATE patient_file_counters SET next_no = next_no + 1 WHERE clinic_id = $1', [actor!.clinicId]);
-      // Duplicate warning (C-135 AC-REG-3): same normalised name + same phone -> warn, never merge.
+      // Duplicate warning (C-135 AC-REG-3; B12): same normalised name, unless both phones are known and differ, or both
+      // birth dates are known and differ. A missing phone never clears the warning (elderly / no-phone patients). Warn, never merge.
       const dup = await tx.query<{ id: string; file_no: number }>(
-        `SELECT id, file_no FROM patients WHERE lower(family_name) = lower($1) AND lower(given_name) = lower($2) AND phone IS NOT DISTINCT FROM $3 LIMIT 3`,
-        [familyName, givenName, phone]);
+        `SELECT id, file_no FROM patients WHERE lower(family_name) = lower($1) AND lower(given_name) = lower($2)
+           AND (phone IS NULL OR $3::text IS NULL OR phone = $3) AND (date_of_birth IS NULL OR $4::date IS NULL OR date_of_birth = $4) LIMIT 3`,
+        [familyName, givenName, phone, dob]);
       if (dup.rowCount > 0 && b.confirmNotDuplicate !== true) {
         fail('CONFLICT', 'A patient with the same name and phone exists; confirm it is a different person', { possibleDuplicates: dup.rows.map(r => ({ id: r.id, fileNo: r.file_no })), retryWith: { confirmNotDuplicate: true } });
       }
@@ -135,15 +155,16 @@ export const patientRoutes: Route[] = [
   },
   {
     method: 'GET', path: '/api/v1/visits', permission: 'visit.read',
-    handler: async ({ tx, query }) => {
-      const day = query.get('day') ?? new Date().toISOString().slice(0, 10);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) fail('VALIDATION_FAILED', 'day must be YYYY-MM-DD');
+    handler: async ({ tx, actor, query }) => {
+      const timezone = await clinicTimezone(tx, actor!.clinicId);
+      const day = clinicDay(query, timezone);
       const rows = (await tx.query(`SELECT v.id, v.patient_id AS "patientId", p.file_no AS "fileNo", p.family_name AS "familyName", p.given_name AS "givenName",
           v.dentist_id AS "dentistId", v.scheduled_at AS "scheduledAt", v.duration_min AS "durationMin", v.status,
           (SELECT count(*)::int FROM care_items c WHERE c.visit_id = v.id) AS "careItemCount"
         FROM visits v JOIN patients p ON p.id = v.patient_id
-        WHERE v.scheduled_at >= $1::date AND v.scheduled_at < $1::date + 1 ORDER BY v.scheduled_at`, [day])).rows;
-      return { status: 200, body: { day, visits: rows } };
+        WHERE v.scheduled_at >= $1::date::timestamp AT TIME ZONE $2 AND v.scheduled_at < ($1::date + 1)::timestamp AT TIME ZONE $2
+        ORDER BY v.scheduled_at`, [day, timezone])).rows;
+      return { status: 200, body: { day, timezone, visits: rows } };
     },
   },
   {
@@ -154,6 +175,8 @@ export const patientRoutes: Route[] = [
       const reason = (to === 'NO_SHOW' || to === 'CANCELLED') ? str(b, 'reason', { min: 3, max: 200 }) : optStr(b, 'reason', { max: 200 });
       const v = await getVisitForUpdate(tx, params.id!);
       if (!DESK_TRANSITIONS[v.status]!.includes(to)) fail('CONFLICT', `Cannot change visit from ${v.status} to ${to}`);
+      // A no-show is a fact about a time that has passed; recording it in advance would hide a visit (CH-018).
+      if (to === 'NO_SHOW' && new Date(v.scheduled_at).getTime() > Date.now()) fail('CONFLICT', 'A visit cannot be marked no-show before its appointment time; cancel it with a reason instead');
       if (to === 'NO_SHOW' || to === 'CANCELLED') {
         const care = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM care_items WHERE visit_id = $1', [v.id]);
         if (care.n > 0) fail('CONFLICT', 'Visit has dentist-confirmed care; it cannot be cancelled or marked no-show');
