@@ -16,6 +16,7 @@ import { cashRoutes } from './modules/cash.ts';
 import { cardRoutes } from './modules/card.ts';
 import { paperRoutes } from './modules/paper.ts';
 import { exceptionRoutes } from './modules/exceptions.ts';
+import { dayBoardRoutes } from './modules/dayboard.ts';
 
 export interface AppOptions {
   databaseUrl: string;
@@ -36,6 +37,7 @@ export function buildRoutes(db: Db): Route[] {
     ...identityRoutes,
     ...auditRoutes,
     ...patientRoutes,
+    ...dayBoardRoutes,
     ...careRoutes,
     ...billingRoutes,
     ...integrityRoutes,
