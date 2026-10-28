@@ -181,3 +181,22 @@ test('T-OWN-8 unresolved integrity findings are counted (receipt row deleted aro
   assert.ok(u.checks.includes('PAYMENT_WITHOUT_RECEIPT'), JSON.stringify(u));
   assert.match(u.note, /not conclusions about any person/);
 });
+
+test('T-OWN-9 (integration R72) the window uses clinic-local days: a discount made "today" locally is in today\'s local window even when the UTC date differs', async () => {
+  // Pick a timezone whose local date differs from the UTC date right now, so a UTC-sliced window would miss it.
+  const tz = new Date().getUTCHours() >= 12 ? 'Pacific/Kiritimati' : 'Pacific/Pago_Pago';
+  const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  assert.notEqual(localToday, new Date().toISOString().slice(0, 10));
+  const f = await standardFixture(api, db, `b11-${++n}`);
+  const a = await adminConn(db.name);
+  try { await a.query("UPDATE clinics SET settings = jsonb_set(settings, '{timezone}', to_jsonb($2::text)) WHERE id = $1", [f.clinic.id, tz] as never[]); } finally { a.end(); }
+  await confirmCare(api, f.dentist, f.visitId, 50_000);
+  assert.equal((await api.call('POST', `/api/v1/visits/${f.visitId}/adjustments`, { token: f.dentist, body: { kind: 'DISCOUNT', amountMillimes: 5_000, reasonCode: 'LOYALTY' } })).status, 201);
+  await reauth(api, f.owner);
+  const r = await api.call('GET', `/api/v1/owner/financial-review?from=${localToday}&to=${localToday}`, { token: f.owner });
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  assert.equal(r.body.window.timezone, tz);
+  assert.equal(r.body.reductions.totalMillimes, 5_000);
+  const dflt = await api.call('GET', '/api/v1/owner/financial-review', { token: f.owner });
+  assert.equal(dflt.body.window.to, localToday, 'default window ends on the clinic-local today');
+});

@@ -1,8 +1,7 @@
 # Owner financial review (B11)
 
 `GET /api/v1/owner/financial-review?from=YYYY-MM-DD&to=YYYY-MM-DD` — OWNER only (`finance.review`), read-only.
-The window is inclusive, at most 92 days, and defaults to the last 7 days. Dates are **UTC calendar days**; clinic-local days
-come with the day-board work (B12).
+The window is inclusive, at most 92 days, and defaults to the last 7 days. Dates are **clinic-local calendar days** (`clinics.settings.timezone`, default `Africa/Tunis`; switched from UTC at integration R72, shared helper with B12).
 
 ## What it returns
 

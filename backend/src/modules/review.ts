@@ -11,12 +11,13 @@
  *   CARD_DESK_CLAIM / CARD_OWNER_REVIEWED_STATEMENT - card claims; neither is provider-verified (none exists).
  * Wording is neutral: amounts, reason codes, who authorised and when. Never "suspicious", never a judgement.
  * Free-text notes are NOT returned (only hasNote): whether the owner may read them is a pending founder decision.
- * Dates are UTC calendar days (clinic-local dates are B12).
+ * Dates are clinic-local calendar days (clinics.settings.timezone via patients.clinicTimezone, shared with B12).
  */
 import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { integrityCheck } from './integrity.ts';
+import { clinicTimezone } from './patients.ts';
 
 const MAX_DAYS = 92;
 const total = (rows: Array<{ amountMillimes: number }>) => rows.reduce((s, r) => s + r.amountMillimes, 0);
@@ -26,8 +27,8 @@ function groupTotals<T extends { amountMillimes: number }>(rows: T[], key: (r: T
   return out;
 }
 
-function windowFrom(query: URLSearchParams) {
-  const today = new Date().toISOString().slice(0, 10);
+function windowFrom(query: URLSearchParams, timezone: string) {
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const to = query.get('to') ?? today;
   const from = query.get('from') ?? new Date(Date.parse(to + 'T00:00:00Z') - 6 * 86400_000).toISOString().slice(0, 10);
   for (const [k, v] of [['from', from], ['to', to]] as const) {
@@ -40,9 +41,9 @@ function windowFrom(query: URLSearchParams) {
   return { from, to, days };
 }
 
-export async function financialReview(tx: Tx, clinicId: string, from: string, to: string) {
-  const w = [clinicId, from, to];
-  // Window predicate on every query: col >= $2::date AND col < $3::date + 1 (UTC calendar days, inclusive).
+export async function financialReview(tx: Tx, clinicId: string, from: string, to: string, timezone: string) {
+  const w = [clinicId, from, to, timezone];
+  // Window predicate on every query: clinic-local calendar days [$2, $3] inclusive, in timezone $4.
   type Adj = { id: string; kind: string; visitId: string; fileNo: number; amountMillimes: number; reasonCode: string; hasNote: boolean; paymentId: string | null; tender: string | null; receiptLabel: string | null; authorizedRole: string; authorizedById: string; authorizedByName: string; createdAt: string };
   const adjustments = (await tx.query<Adj>(`SELECT a.id, a.kind, a.visit_id AS "visitId", p.file_no AS "fileNo", a.amount_millimes AS "amountMillimes", a.reason_code AS "reasonCode",
       a.reason_note IS NOT NULL AS "hasNote", a.payment_id AS "paymentId", a.tender, CASE WHEN r.id IS NULL THEN NULL ELSE r.series || '-' || lpad(r.number::text, 6, '0') END AS "receiptLabel", a.authorized_role AS "authorizedRole",
@@ -50,7 +51,7 @@ export async function financialReview(tx: Tx, clinicId: string, from: string, to
     FROM adjustments a JOIN patients p ON p.clinic_id = a.clinic_id AND p.id = a.patient_id
     JOIN staff s ON s.clinic_id = a.clinic_id AND s.id = a.authorized_by
     LEFT JOIN receipts r ON r.clinic_id = a.clinic_id AND r.adjustment_id = a.id
-    WHERE a.clinic_id = $1 AND a.created_at >= $2::date AND a.created_at < $3::date + 1 ORDER BY a.created_at, a.id`, w)).rows;
+    WHERE a.clinic_id = $1 AND a.created_at >= $2::date::timestamp AT TIME ZONE $4 AND a.created_at < ($3::date + 1)::timestamp AT TIME ZONE $4 ORDER BY a.created_at, a.id`, w)).rows;
   const reductions = adjustments.filter(a => a.kind === 'DISCOUNT' || a.kind === 'WRITE_OFF').map(({ paymentId: _p, tender: _t, receiptLabel: _r, ...a }) => a);
   const returns = adjustments.filter(a => a.kind === 'REFUND' || a.kind === 'PAYMENT_VOID');
 
@@ -60,11 +61,11 @@ export async function financialReview(tx: Tx, clinicId: string, from: string, to
       c.confirmed_by AS "dentistId", s.display_name AS "dentistName", c.confirmed_at AS "confirmedAt"
     FROM care_items c JOIN care_items o ON o.clinic_id = c.clinic_id AND o.id = c.corrects_id
     JOIN patients p ON p.clinic_id = c.clinic_id AND p.id = c.patient_id JOIN staff s ON s.clinic_id = c.clinic_id AND s.id = c.confirmed_by
-    WHERE c.clinic_id = $1 AND c.kind = 'CORRECTION' AND c.confirmed_at >= $2::date AND c.confirmed_at < $3::date + 1 ORDER BY c.confirmed_at, c.id`, w)).rows;
+    WHERE c.clinic_id = $1 AND c.kind = 'CORRECTION' AND c.confirmed_at >= $2::date::timestamp AT TIME ZONE $4 AND c.confirmed_at < ($3::date + 1)::timestamp AT TIME ZONE $4 ORDER BY c.confirmed_at, c.id`, w)).rows;
   const freeCare = (await tx.query<{ id: string; visitId: string; fileNo: number; procedureCode: string; dentistName: string; confirmedAt: string }>(`SELECT c.id, c.visit_id AS "visitId", p.file_no AS "fileNo",
       c.procedure_code AS "procedureCode", s.display_name AS "dentistName", c.confirmed_at AS "confirmedAt"
     FROM care_items c JOIN patients p ON p.clinic_id = c.clinic_id AND p.id = c.patient_id JOIN staff s ON s.clinic_id = c.clinic_id AND s.id = c.confirmed_by
-    WHERE c.clinic_id = $1 AND c.kind = 'CARE' AND c.fee_millimes = 0 AND c.confirmed_at >= $2::date AND c.confirmed_at < $3::date + 1 ORDER BY c.confirmed_at, c.id`, w)).rows;
+    WHERE c.clinic_id = $1 AND c.kind = 'CARE' AND c.fee_millimes = 0 AND c.confirmed_at >= $2::date::timestamp AT TIME ZONE $4 AND c.confirmed_at < ($3::date + 1)::timestamp AT TIME ZONE $4 ORDER BY c.confirmed_at, c.id`, w)).rows;
   // CH-028: visits whose fee was brought to zero by corrections or reductions, with no payment at all.
   const zeroedVisits = (await tx.query<{ visitId: string; fileNo: number; originalChargedMillimes: number; reducedMillimes: number; correctionNetMillimes: number }>(`SELECT v.id AS "visitId", p.file_no AS "fileNo",
       (SELECT coalesce(sum(fee_millimes),0) FROM care_items c WHERE c.clinic_id = v.clinic_id AND c.visit_id = v.id AND c.kind = 'CARE')::bigint AS "originalChargedMillimes",
@@ -73,7 +74,7 @@ export async function financialReview(tx: Tx, clinicId: string, from: string, to
     FROM visits v JOIN visit_balances b ON b.visit_id = v.id JOIN patients p ON p.clinic_id = v.clinic_id AND p.id = v.patient_id
     WHERE v.clinic_id = $1 AND b.paid_millimes = 0 AND b.charged_millimes - b.reduced_millimes + b.returned_millimes = 0
       AND (b.reduced_millimes > 0 OR EXISTS (SELECT 1 FROM care_items c WHERE c.clinic_id = v.clinic_id AND c.visit_id = v.id AND c.kind = 'CORRECTION'))
-      AND EXISTS (SELECT 1 FROM care_items c WHERE c.clinic_id = v.clinic_id AND c.visit_id = v.id AND c.confirmed_at >= $2::date AND c.confirmed_at < $3::date + 1)
+      AND EXISTS (SELECT 1 FROM care_items c WHERE c.clinic_id = v.clinic_id AND c.visit_id = v.id AND c.confirmed_at >= $2::date::timestamp AT TIME ZONE $4 AND c.confirmed_at < ($3::date + 1)::timestamp AT TIME ZONE $4)
     ORDER BY v.scheduled_at, v.id`, w)).rows;
 
   // Evidence level of every payment recorded in the window (active amount = minus refunds/voids).
@@ -87,7 +88,7 @@ export async function financialReview(tx: Tx, clinicId: string, from: string, to
     LEFT JOIN card_matches cm ON cm.clinic_id = pay.clinic_id AND cm.payment_id = pay.id
     LEFT JOIN LATERAL (SELECT cp.status FROM cash_periods cp WHERE pay.tender = 'CASH' AND cp.clinic_id = pay.clinic_id AND cp.opened_at < pay.recorded_at
         AND (cp.cutoff_at IS NULL OR pay.recorded_at <= cp.cutoff_at) ORDER BY cp.period_no DESC LIMIT 1) per ON true
-    WHERE pay.clinic_id = $1 AND pay.recorded_at >= $2::date AND pay.recorded_at < $3::date + 1`, w)).rows;
+    WHERE pay.clinic_id = $1 AND pay.recorded_at >= $2::date::timestamp AT TIME ZONE $4 AND pay.recorded_at < ($3::date + 1)::timestamp AT TIME ZONE $4`, w)).rows;
   const evidence: Record<string, { count: number; totalMillimes: number; activeMillimes: number }> = {};
   for (const p of payments) {
     const e = (evidence[p.evidence] ??= { count: 0, totalMillimes: 0, activeMillimes: 0 });
@@ -98,7 +99,7 @@ export async function financialReview(tx: Tx, clinicId: string, from: string, to
       (SELECT count(*) FROM cash_counts x WHERE x.clinic_id = cp.clinic_id AND x.period_id = cp.id)::int AS attempts,
       cc.difference_millimes AS "differenceMillimes", cc.counter_independent AS "counterIndependent", cp.handover_millimes AS "handoverMillimes"
     FROM cash_periods cp JOIN cash_counts cc ON cc.clinic_id = cp.clinic_id AND cc.id = cp.accepted_count_id
-    WHERE cp.clinic_id = $1 AND cp.status = 'CLOSED' AND cp.closed_at >= $2::date AND cp.closed_at < $3::date + 1 ORDER BY cp.period_no`, w)).rows;
+    WHERE cp.clinic_id = $1 AND cp.status = 'CLOSED' AND cp.closed_at >= $2::date::timestamp AT TIME ZONE $4 AND cp.closed_at < ($3::date + 1)::timestamp AT TIME ZONE $4 ORDER BY cp.period_no`, w)).rows;
   const openPeriod = await tx.maybeOne<{ periodNo: number; openedAt: string; attempts: number }>(`SELECT cp.period_no AS "periodNo", cp.opened_at AS "openedAt",
       (SELECT count(*) FROM cash_counts x WHERE x.clinic_id = cp.clinic_id AND x.period_id = cp.id)::int AS attempts
     FROM cash_periods cp WHERE cp.clinic_id = $1 AND cp.status = 'OPEN'`, [clinicId]);
@@ -112,7 +113,7 @@ export async function financialReview(tx: Tx, clinicId: string, from: string, to
 
   const integ = await integrityCheck(tx, clinicId, []);
   return {
-    window: { from, to, timezone: 'UTC' },
+    window: { from, to, timezone },
     reductions: { items: reductions, totalMillimes: total(reductions), byKind: groupTotals(reductions, r => r.kind), byReasonCode: groupTotals(reductions, r => r.reasonCode) },
     returns: { items: returns, totalMillimes: total(returns), byKind: groupTotals(returns, r => r.kind), byTender: groupTotals(returns, r => r.tender ?? 'UNKNOWN') },
     feeCorrections: { items: corrections, netMillimes: total(corrections), count: corrections.length },
@@ -143,8 +144,9 @@ export const reviewRoutes: Route[] = [
   {
     method: 'GET', path: '/api/v1/owner/financial-review', permission: 'finance.review',
     handler: async ({ tx, actor, query }) => {
-      const { from, to } = windowFrom(query);
-      return { status: 200, body: await financialReview(tx, actor!.clinicId, from, to) };
+      const timezone = await clinicTimezone(tx, actor!.clinicId);
+      const { from, to } = windowFrom(query, timezone);
+      return { status: 200, body: await financialReview(tx, actor!.clinicId, from, to, timezone) };
     },
   },
 ];

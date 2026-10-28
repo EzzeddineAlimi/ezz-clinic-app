@@ -1,6 +1,6 @@
 /*
  * PRINT module (B15): printable document CONTRACTS for receipts and paper workflows, in French, Arabic (RTL) or both,
- * normal or large print. Depends on: audit. Owns no tables (writes receipt_prints rows and audit events).
+ * normal or large print. Depends on: audit, patients (clinic timezone, shared with B12). Owns no tables (writes receipt_prints rows and audit events).
  *
  * Rules:
  *  - a receipt's first print is the ORIGINAL; every later print is a COPY with its copy number (never a new receipt
@@ -13,11 +13,11 @@
  *  - all text is HTML-escaped; the HTML is a plain printable sample, not the product's visual design (Astra, B09).
  * Mandatory Tunisian receipt / fee-note fields and Arabic wording are UNVERIFIED: professional and native review needed.
  */
-import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
+import { clinicTimezone } from './patients.ts';
 
 export type Lang = 'fr' | 'ar';
 export type Size = 'normal' | 'large';
@@ -135,12 +135,6 @@ export function printOptions(q: { get(k: string): string | null } | Record<strin
   return { lang, size: size as Size, format };
 }
 
-async function clinicTimeZone(tx: Tx, clinicId: string) {
-  const c = await tx.one<{ tz: string | null }>("SELECT settings->>'timezone' AS tz FROM clinics WHERE id = $1", [clinicId]);
-  const tz = c.tz ?? 'Africa/Tunis';
-  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); } catch { fail('CONFLICT', `Clinic timezone setting "${tz}" is not a valid IANA timezone`); }
-  return tz;
-}
 
 /* ---------- blank paper forms (contracts) ---------- */
 
@@ -209,7 +203,7 @@ export const printRoutes: Route[] = [
       const copyNo = prior.n;
       await tx.query('INSERT INTO receipt_prints (clinic_id, receipt_id, printed_by, is_copy) VALUES ($1,$2,$3,$4)', [actor!.clinicId, r!.id, actor!.staffId, copyNo > 0]);
       await appendAudit(tx, actor!, 'receipt.printed', 'receipt', r!.id, { number: r!.number, copyNo, lang: o.lang, size: o.size });
-      const doc = receiptDocument(r!.snapshot, r!.sha, { lang: o.lang, size: o.size, copyNo, timeZone: await clinicTimeZone(tx, actor!.clinicId) });
+      const doc = receiptDocument(r!.snapshot, r!.sha, { lang: o.lang, size: o.size, copyNo, timeZone: await clinicTimezone(tx, actor!.clinicId) });
       return { status: 200, body: { copy: copyNo > 0, copyNo, document: doc, ...(o.format === 'html' ? { html: renderHtml(doc) } : {}) } };
     },
   },
