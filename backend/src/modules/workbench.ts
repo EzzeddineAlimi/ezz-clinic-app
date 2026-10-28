@@ -79,19 +79,21 @@ CROSS JOIN LATERAL (
 WHERE v.id=$1 AND v.clinic_id=$2
 `,[params.id!,tx.clinicId]);
     if(!row)fail('NOT_FOUND','Visit not found');
-    const balance=row.chargedMillimes-row.paidMillimes-row.reducedMillimes+row.returnedMillimes;
+    // The current error helper does not carry a TypeScript never return annotation.
+    const record = row!;
+    const balance=record.chargedMillimes-record.paidMillimes-record.reducedMillimes+record.returnedMillimes;
     return {status:200,body:{
       visit:{
-        id:row.id,status:row.status,scheduledAt:row.scheduledAt,durationMin:row.durationMin,
-        patient:{id:row.patientId,fileNo:row.fileNo,familyName:row.familyName,
-          givenName:row.givenName,preferredLanguage:row.preferredLanguage,
-          contactPreference:row.contactPreference},
-        dentist:row.dentistId?{id:row.dentistId,name:row.dentistName}:null,
-        care:row.care,payments:row.payments,
-        balance:{chargedMillimes:row.chargedMillimes,paidMillimes:row.paidMillimes,
-          reducedMillimes:row.reducedMillimes,returnedMillimes:row.returnedMillimes,
-          balanceMillimes:balance,careConfirmed:row.careCount>0},
-        nextAction:next(row.status,row.careCount,balance)
+        id:record.id,status:record.status,scheduledAt:record.scheduledAt,durationMin:record.durationMin,
+        patient:{id:record.patientId,fileNo:record.fileNo,familyName:record.familyName,
+          givenName:record.givenName,preferredLanguage:record.preferredLanguage,
+          contactPreference:record.contactPreference},
+        dentist:record.dentistId?{id:record.dentistId,name:record.dentistName}:null,
+        care:record.care,payments:record.payments,
+        balance:{chargedMillimes:record.chargedMillimes,paidMillimes:record.paidMillimes,
+          reducedMillimes:record.reducedMillimes,returnedMillimes:record.returnedMillimes,
+          balanceMillimes:balance,careConfirmed:record.careCount>0},
+        nextAction:next(record.status,record.careCount,balance)
       },
       evidenceNotice:'Cash requires independent counting; cards need separately reviewed external evidence. Recorded amounts are claims.',
       syntheticDataOnly:true
