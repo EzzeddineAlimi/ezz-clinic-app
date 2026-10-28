@@ -59,7 +59,7 @@ export function buildRoutes(db: Db): Route[] {
 }
 
 export function createApp(opts: AppOptions): { server: http.Server; db: Db } {
-  const db = new Db(opts.databaseUrl);
+  const db = new Db(opts.databaseUrl, { log: opts.log });
   const server = createServer(db, buildRoutes(db), securityHooks(), {
     allowedOrigins: opts.allowedOrigins ?? [],
     extraAllowedHosts: opts.extraAllowedHosts ?? [],

@@ -217,7 +217,11 @@ export class PgConnection {
   }
 }
 
-export interface PoolOptions { max?: number; connectionTimeoutMs?: number; idleTimeoutMs?: number }
+export interface PoolOptions {
+  max?: number; connectionTimeoutMs?: number; idleTimeoutMs?: number;
+  /** Receives idle-client errors (code only, never credentials or SQL). */
+  log?: (line: Record<string, unknown>) => void;
+}
 
 /** Connection pool (pg.Pool). acquire() waits at most connectionTimeoutMs, then fails instead of hanging. */
 export class PgPool {
@@ -231,7 +235,9 @@ export class PgPool {
       idleTimeoutMillis: o.idleTimeoutMs ?? 30_000,
     });
     // Errors on idle clients (server restart, admin terminate) remove the client; never crash the process.
-    this.pool.on('error', () => undefined);
+    // R72 / M-266 (5): log them with the SQLSTATE only, never the message (it may echo connection details).
+    const log = o.log;
+    this.pool.on('error', e => { log?.({ level: 'warn', event: 'db_idle_client_error', pgcode: (e as { code?: string }).code ?? null }); });
   }
 
   async acquire(): Promise<PgConnection> {
@@ -244,7 +250,11 @@ export class PgPool {
     if (!pc || c.released) return; // double release is a no-op
     c.released = true;
     c.detach();
-    pc.release(destroy || c.dead ? true : undefined); // a broken client is discarded, never reused
+    // R72 / M-266 (6): a client still inside a transaction (status T) or a failed one (E) is never reused, so a raw
+    // caller that forgot COMMIT/ROLLBACK cannot hand its transaction or SET LOCAL context to the next checkout.
+    const tx = pc.getTransactionStatus();
+    const unsafe = tx === 'T' || tx === 'E';
+    pc.release(destroy || c.dead || unsafe ? true : undefined); // a broken or mid-transaction client is discarded
   }
 
   get stats() { return { total: this.pool.totalCount, idle: this.pool.idleCount, waiting: this.pool.waitingCount }; }
