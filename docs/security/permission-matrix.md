@@ -38,6 +38,7 @@ Enforced server-side on every request; identity comes only from the session. Rou
 | `paper.custody` | yes | yes | — | — |
 | `paper.read` | yes | yes | — | — |
 | `exceptions.read` | yes | — | — | — |
+| `finance.review` | yes | — | — | — |
 | `exceptions.resolve` | yes | — | — | — |
 | `audit.checkpoint` | yes | — | — | — |
 | `audit.verify` | yes | — | — | — |

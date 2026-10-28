@@ -69,6 +69,7 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'paper.custody':           ['OWNER', 'DENTIST'],
   'paper.read':              ['OWNER', 'DENTIST'],
   'exceptions.read':         ['OWNER'],
+  'finance.review':          ['OWNER'],
   'exceptions.resolve':      ['OWNER'],
   'audit.checkpoint':        ['OWNER'],
   'audit.verify':            ['OWNER'],
