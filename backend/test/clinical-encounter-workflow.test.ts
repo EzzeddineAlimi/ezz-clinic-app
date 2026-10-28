@@ -312,11 +312,15 @@ test('T-ENC-4 (CH-018) the desk cannot mark a visit NO_SHOW/CANCELLED once the d
   assert.equal((await post(`/api/v1/visits/${withNote}/clinical-notes`, A.dentist, { objective: 'Fictional exam done' })).status, 201);
   const c1 = await post(`/api/v1/visits/${withNote}/status`, A.desk, { status: 'CANCELLED', reason: 'Fictional: patient left' });
   assert.equal(c1.status, 409, JSON.stringify(c1.body));
-  const withFinding = await visitFor(pid);
+  // Integration (R72): B12 refuses NO_SHOW before the appointment time, so the no-show cases use a PAST slot;
+  // otherwise c2 would be refused by the time guard and this test would no longer prove the documented-visit guard.
+  const pastVisitFor = (patientId: string) => newVisit(api, A.desk, patientId, `2026-10-05T${String(7 + (slot % 12)).padStart(2, '0')}:${String(slot++).padStart(2, '0')}:00Z`);
+  const withFinding = await pastVisitFor(pid);
   assert.equal((await post(`/api/v1/visits/${withFinding}/chart-findings`, A.dentist, { kind: 'FINDING', toothFdi: 11, conditionCode: 'FRACTURE' })).status, 201);
   const c2 = await post(`/api/v1/visits/${withFinding}/status`, A.desk, { status: 'NO_SHOW', reason: 'Fictional: never came' });
   assert.equal(c2.status, 409, JSON.stringify(c2.body));
-  const plain = await visitFor(pid);
+  assert.match(c2.body.error.message, /documented/, 'refused by the documented-visit guard, not by the time guard');
+  const plain = await pastVisitFor(pid);
   assert.equal((await post(`/api/v1/visits/${plain}/status`, A.desk, { status: 'NO_SHOW', reason: 'Fictional: never came' })).status, 200);
 });
 
