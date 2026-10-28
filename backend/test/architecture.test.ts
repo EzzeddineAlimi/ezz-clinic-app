@@ -5,10 +5,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { SOURCE_DIR } from '../src/platform/paths.ts';
 
-const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
+const SRC = SOURCE_DIR; // TypeScript sources, also when this test runs compiled
 const ALLOWED: Record<string, string[]> = {
   audit: [],
   identity: ['audit'],

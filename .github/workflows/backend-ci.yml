@@ -58,3 +58,11 @@ jobs:
         run: node scripts/demo-dentist-encounter.ts > /dev/null
       - name: Compiled build smoke
         run: npm run build
+      - name: Compiled test run (same suite from dist/, R73-B)
+        run: npm run test:dist
+      - name: Migration ledger check on a fresh database (R73-B)
+        run: |
+          node --input-type=module -e "import pg from 'pg'; const c = new pg.Client(process.env.EZZ_TEST_ADMIN_URL); await c.connect(); await c.query('DROP DATABASE IF EXISTS ezz_ci_migcheck'); await c.query('CREATE DATABASE ezz_ci_migcheck'); await c.end();"
+          MIGRATION_DATABASE_URL=postgres://postgres:fictional-ci-only@localhost:5432/ezz_ci_migcheck node scripts/migrate.ts
+          MIGRATION_DATABASE_URL=postgres://postgres:fictional-ci-only@localhost:5432/ezz_ci_migcheck node scripts/migrate.ts --check
+          EZZ_TEST_ADMIN_URL=$EZZ_TEST_ADMIN_URL node scripts/doctor.ts

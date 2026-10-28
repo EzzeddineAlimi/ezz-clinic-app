@@ -6,14 +6,14 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createTestDb, startApi, standardFixture, newVisit, confirmCare, adminConn, reauth, ADMIN_URL, PASSWORD, key, type TestDb, type Api } from './helpers.ts';
 import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
+import { SERVER_ENTRY } from '../src/platform/paths.ts';
 
-const SERVER = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'server.ts');
+const SERVER = SERVER_ENTRY;
 let db: TestDb; let api: Api; let A: Awaited<ReturnType<typeof standardFixture>>;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); A = await standardFixture(api, db); });
 after(async () => { await api.close(); await db.drop(); });

@@ -7,12 +7,12 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { createTestDb, startApi, standardFixture, confirmCare, reauth, adminConn, type Api, type TestDb } from './helpers.ts';
 import { canonicalJson, sha256 } from '../src/platform/canonical.ts';
 import { parseCheckpointLine, checkpointLine } from '../src/modules/checkpoints.ts';
 import { createBackup, restoreAndVerify } from '../src/ops/disaster-recovery.ts';
+import { MIGRATIONS_DIR } from '../src/platform/paths.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
@@ -157,7 +157,7 @@ test('T-CP-7 restore: an OLDER backup restored after a newer checkpoint is caugh
   const adminUrl = process.env.EZZ_TEST_ADMIN_URL!;
   const work = mkdtempSync(join(tmpdir(), 'ezz-r73-cp-'));
   const targets = [`ezz_r73_cp_old_${Date.now()}`, `ezz_r73_cp_new_${Date.now()}`];
-  const base = { passphrase: 'fictional-r73-checkpoint-pass', targetAdminUrl: adminUrl, migrationsDir: join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations'),
+  const base = { passphrase: 'fictional-r73-checkpoint-pass', targetAdminUrl: adminUrl, migrationsDir: MIGRATIONS_DIR,
     rolePasswords: { owner: new URL(db.ownerUrl).password, app: new URL(db.appUrl).password } };
   try {
     const first = await checkpoint(s.owner);

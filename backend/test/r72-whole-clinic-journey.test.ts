@@ -9,10 +9,10 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { createTestDb, startApi, seedClinic, STANDARD_STAFF, reauth, adminConn, urlFor, type Api, type TestDb } from './helpers.ts';
 import { createBackup, restoreAndVerify } from '../src/ops/disaster-recovery.ts';
+import { MIGRATIONS_DIR } from '../src/platform/paths.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
@@ -211,7 +211,7 @@ test('T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dent
   try {
     const backup = await createBackup({ adminUrl, database: db.name, outDir: work, passphrase: 'fictional-r72-journey-passphrase', name: 'r72' });
     const report = await restoreAndVerify({ encryptedPath: backup.encryptedPath, manifestPath: backup.manifestPath, passphrase: 'fictional-r72-journey-passphrase',
-      targetAdminUrl: adminUrl, targetDatabase: target, migrationsDir: join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations'),
+      targetAdminUrl: adminUrl, targetDatabase: target, migrationsDir: MIGRATIONS_DIR,
       // Same instance: the roles already exist, so pass their (fictional) passwords as used by the test helpers.
       rolePasswords: { owner: new URL(db.ownerUrl).password, app: new URL(db.appUrl).password } });
     assert.equal(report.ok, true, JSON.stringify(report.checks.filter(c => !c.ok)));

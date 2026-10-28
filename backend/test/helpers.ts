@@ -6,8 +6,6 @@
  * Roles ezz_owner (schema owner, runs migrations) and ezz_app (API, least privilege) are created if absent.
  */
 import { randomBytes } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
@@ -16,7 +14,8 @@ import { createApp } from '../src/app.ts';
 import { hashPassword } from '../src/modules/identity.ts';
 
 export const ADMIN_URL = process.env.EZZ_TEST_ADMIN_URL ?? 'postgres://postgres@localhost:5432/postgres?host=/tmp';
-export const MIGRATIONS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations');
+export { MIGRATIONS_DIR } from '../src/platform/paths.ts';
+import { MIGRATIONS_DIR, SERVER_ENTRY as ENTRY } from '../src/platform/paths.ts';
 export const PASSWORD = 'fictional-pass-123';
 const OWNER_PW = 'fictional-owner-pw';
 const APP_PW = 'fictional-app-pw';
@@ -162,7 +161,7 @@ export async function reauth(api: Api, token: string) {
   if (r.status !== 200) throw new Error('reauth failed');
 }
 
-export const SERVER_ENTRY = join(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'server.ts');
+export const SERVER_ENTRY = ENTRY;
 
 /** Start the real server as a separate OS process (for crash/restart persistence tests). */
 export async function spawnServer(appUrl: string, port: number): Promise<ChildProcess> {

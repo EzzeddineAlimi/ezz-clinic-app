@@ -8,10 +8,10 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { createTestDb, startApi, standardFixture, adminConn, PASSWORD, type Api, type TestDb } from './helpers.ts';
 import { PgPool, parseDatabaseUrl } from '../src/platform/postgres.ts';
+import { SOURCE_DIR } from '../src/platform/paths.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
@@ -71,7 +71,7 @@ test('T-ERR-2 constraint failures reach the client as neutral errors: no Postgre
 });
 
 test('T-ARCH-6 only the platform layer talks to the pg driver; only Db builds a pool', () => {
-  const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
+  const SRC = SOURCE_DIR;
   const files: string[] = [];
   const walk = (d: string) => { for (const e of readdirSync(d, { withFileTypes: true })) e.isDirectory() ? walk(join(d, e.name)) : e.name.endsWith('.ts') && files.push(join(d, e.name)); };
   walk(SRC);

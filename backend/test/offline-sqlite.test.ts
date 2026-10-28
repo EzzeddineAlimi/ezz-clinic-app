@@ -2,10 +2,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { join,dirname } from 'node:path';
+import { join } from 'node:path';
+import { SCRIPTS_DIR } from '../src/platform/paths.ts';
 test('R46-SQLITE: 20 visits local outbox survives reopen, detects duplicate/conflict/missing',()=>{
- const script=join(dirname(fileURLToPath(import.meta.url)),'../scripts/sqlite-outbox-drill.mjs');
+ const script=join(SCRIPTS_DIR,'sqlite-outbox-drill.mjs');
  const raw=execFileSync(process.execPath,[script],{encoding:'utf8',timeout:30000});
  const d=JSON.parse(raw) as {mode:string;visits:number;windowHours:number;expectedCashMillimes:number;missing:string[];attempts:{outcome:string;count:number}[];actualServerSync:string};
  assert.equal(d.mode,'EXPERIMENTAL_LOCAL_SQLITE_NOT_APPROVED');

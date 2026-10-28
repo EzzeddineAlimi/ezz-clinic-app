@@ -5,9 +5,8 @@
  * checkpoints.txt: one owner checkpoint line per line (EZZ-CP2 ... as printed by POST /api/v1/owner/checkpoints).
  * Exit code 0 only if every check passes; the JSON report lists each check and the measured timings. */
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { restoreAndVerify } from '../src/ops/disaster-recovery.ts';
+import { MIGRATIONS_DIR } from '../src/platform/paths.ts';
 
 const [encryptedPath, manifestPath, targetDatabase, anchorsPath] = process.argv.slice(2);
 const env = process.env;
@@ -18,7 +17,7 @@ if (!encryptedPath || !manifestPath || !targetDatabase || !env.EZZ_ADMIN_URL || 
 const report = await restoreAndVerify({
   encryptedPath, manifestPath, targetDatabase, passphrase: env.EZZ_BACKUP_PASSPHRASE,
   targetAdminUrl: env.EZZ_ADMIN_URL, rolePasswords: { owner: env.EZZ_OWNER_PW, app: env.EZZ_APP_PW },
-  migrationsDir: join(dirname(fileURLToPath(import.meta.url)), '..', 'migrations'),
+  migrationsDir: MIGRATIONS_DIR,
   ...(anchorsPath?.endsWith('.txt')
     ? { checkpointLines: readFileSync(anchorsPath, 'utf8').split('\n').map(l => l.trim()).filter(Boolean) }
     : { anchors: anchorsPath ? JSON.parse(readFileSync(anchorsPath, 'utf8')) : undefined }),

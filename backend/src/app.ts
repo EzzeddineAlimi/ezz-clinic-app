@@ -5,6 +5,7 @@
  */
 import type http from 'node:http';
 import { Db } from './platform/db.ts';
+import { readiness } from './platform/readiness.ts';
 import { createServer, type Route } from './platform/http.ts';
 import { securityHooks, identityRoutes, login } from './modules/identity.ts';
 import { auditRoutes } from './modules/audit.ts';
@@ -37,8 +38,13 @@ export function buildRoutes(db: Db): Route[] {
     await tx.query('SELECT 1');
     return { status: 200, body: { status: 'ok', build: 'v0.2-fictional', fictionalDataOnly: true } };
   } };
+  const ready: Route = { method: 'GET', path: '/api/v1/health/ready', handler: async () => {
+    const r = await readiness(db);
+    return { status: r.ready ? 200 : 503, body: { status: r.ready ? 'ready' : 'not_ready', checks: r.checks } };
+  } };
   return [
     health,
+    ready,
     loginRoute,
     ...identityRoutes,
     ...auditRoutes,

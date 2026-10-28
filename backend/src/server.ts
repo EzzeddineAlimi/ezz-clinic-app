@@ -3,6 +3,7 @@
  * see .env.example. Never commit real credentials. Binds to loopback by default.
  */
 import { createApp } from './app.ts';
+import { readiness } from './platform/readiness.ts';
 
 function required(name: string): string {
   const v = process.env[name];
@@ -15,12 +16,21 @@ const port = Number(process.env.PORT ?? 4180);
 const host = process.env.BIND_HOST ?? '127.0.0.1';
 const quiet = process.env.LOG_LEVEL === 'silent';
 
-const { server } = createApp({
+const { server, db } = createApp({
   databaseUrl,
   allowedOrigins: (process.env.ALLOWED_ORIGINS ?? '').split(',').map(s => s.trim()).filter(Boolean),
   extraAllowedHosts: (process.env.ALLOWED_HOSTS ?? '').split(',').map(s => s.trim()).filter(Boolean),
   log: quiet ? () => {} : line => process.stdout.write(JSON.stringify(line) + '\n'),
 });
+
+// R73-B: fail fast, with a safe message, when the database is unreachable or its schema is not exactly what this
+// code expects. Exit code 3 = not ready. Only states are printed: never the URL, user or password.
+const ready = await readiness(db);
+if (!ready.ready) {
+  process.stderr.write(JSON.stringify({ level: 'fatal', msg: 'EZZ Clinic not started: database not ready', checks: ready.checks, reason: ready.reason }) + '\n');
+  await db.close();
+  process.exit(3);
+}
 
 server.listen(port, host, () => {
   const addr = server.address();
