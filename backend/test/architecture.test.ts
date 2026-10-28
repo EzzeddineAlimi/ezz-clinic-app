@@ -25,6 +25,7 @@ const ALLOWED: Record<string, string[]> = {
   exceptions: ['audit', 'card', 'paper', 'integrity'],
   review: ['integrity'],
   dayboard: ['identity', 'patients'],
+  print: ['audit'],
 };
 const importsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '\.\/([a-z]+)\.ts'/g)].map(m => m[1]!);
 

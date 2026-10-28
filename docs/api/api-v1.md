@@ -46,6 +46,9 @@ Status: generated from the running v0.2 code by Claude Opus 5.5 on 2026-10-28. R
 | GET | `/api/v1/visits/:id/payments` | `payment.read` (OWNER, DENTIST, RECEPTIONIST) | — | — |
 | GET | `/api/v1/receipts/:id` | `payment.read` (OWNER, DENTIST, RECEPTIONIST) | — | — |
 | POST | `/api/v1/receipts/:id/reprint` | `receipt.reprint` (OWNER, RECEPTIONIST) | — | required |
+| POST | `/api/v1/receipts/:id/print` | `receipt.reprint` (OWNER, RECEPTIONIST) | — | required |
+| GET | `/api/v1/print/forms/patient-intake` | `patient.create` (OWNER, DENTIST, RECEPTIONIST) | — | — |
+| POST | `/api/v1/paper-books/:id/print` | `paper.issue_book` (OWNER) | — | required |
 | POST | `/api/v1/visits/:id/adjustments` | `adjustment.discount` (OWNER, DENTIST) | — | required |
 | POST | `/api/v1/payments/:id/refund` | `adjustment.refund` (OWNER) | yes | required |
 | POST | `/api/v1/payments/:id/void` | `adjustment.void_payment` (OWNER) | yes | required |
