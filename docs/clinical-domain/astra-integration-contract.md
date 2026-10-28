@@ -1,6 +1,6 @@
 # EZZ Clinic — Astra clinical integration contract v0.1 (NONVISUAL)
 
-**Status: DRAFT / synthetic data only.** Not a clinical, legal, imaging-device or production approval. For future Astra frontend integration; **do not implement UI visuals here**. Extends existing \`docs/clinical-domain/clinical-requirements.md\` (see it for source citations, evidence tiers and Tunisian unknowns). New TypeScript helpers in \`backend/src/contracts/clinical.ts\` enforce only limited syntactic constraints; no clinical decision support.
+**Status: DRAFT / synthetic data only.** Not a clinical, legal, imaging-device or production approval. For future Astra frontend integration; **do not implement UI visuals here**. Extends existing `docs/clinical-domain/clinical-requirements.md` (see it for source citations, evidence tiers and Tunisian unknowns). New TypeScript helpers in `backend/src/contracts/clinical.ts` enforce only limited syntactic constraints; no clinical decision support.
 
 ## 1. Current implementation vs proposed endpoints
 
@@ -21,13 +21,13 @@
 | POST /api/v1/visits/:id/prescription-drafts | dentist sign; assistant draft only | No automatic medication dose, no auto-sign or automated treatment |
 | GET /api/v1/visits/:id/clinical-timeline | dentist; patient export requires consent+separate policy | Sort by immutable recorded date; distinguish corrected-in-error events |
 
-**Implementation prohibition:** no client-written \`clinicId\`, actor roles or dentist confirmation; these come from server-authenticated session. New endpoints need a separate permission matrix, migration, audit event catalog, synthetic tests and qualified local clinical/legal validation.
+**Implementation prohibition:** no client-written `clinicId`, actor roles or dentist confirmation; these come from server-authenticated session. New endpoints need a separate permission matrix, migration, audit event catalog, synthetic tests and qualified local clinical/legal validation.
 
 ## 2. Canonical nonvisual model
 
 Proposed event envelope (not an existing storage table):
 
-\`\`\`json
+```json
 {
   "clinicId": "SERVER_SESSION_ONLY",
   "patientId": "fictional-patient-uuid",
@@ -41,13 +41,13 @@ Proposed event envelope (not an existing storage table):
   "recordedAt": "2026-11-03T09:00:00Z",
   "authorDentistId": "SERVER_SESSION_ONLY"
 }
-\`\`\`
+```
 
-- Site is **exactly one** of \`NONE\`, \`TOOTH\` (FDI code) or \`AREA\` (area code). Tooth ranges are permanent FDI quadrants 1–4 positions 1–8 and primary quadrants 5–8 positions 1–5.
-- Keep \`EXISTING\`, \`FINDING\`, \`PLANNED\`, \`COMPLETED\` separate. Only completed authenticated care items can create a charge. A past crown or treatment plan must not be billed.
+- Site is **exactly one** of `NONE`, `TOOTH` (FDI code) or `AREA` (area code). Tooth ranges are permanent FDI quadrants 1–4 positions 1–8 and primary quadrants 5–8 positions 1–5.
+- Keep `EXISTING`, `FINDING`, `PLANNED`, `COMPLETED` separate. Only completed authenticated care items can create a charge. A past crown or treatment plan must not be billed.
 - Missing/unverified/supernumerary/retained primary teeth require explicit clinical status, not assumptions based on age. Do not auto-convert a primary extraction to a permanent present tooth.
-- FDI-to-Universal in \`clinical.ts\` is *optional display conversion*, never the stored ID. No support for invented supernumerary notation.
-- \`canonicalDentalSurfaces\` is a **provisional syntactic check**. FDI/surface mappings require a real Tunisian dentist before clinical release. No treatment recommendations.
+- FDI-to-Universal in `clinical.ts` is *optional display conversion*, never the stored ID. No support for invented supernumerary notation.
+- `canonicalDentalSurfaces` is a **provisional syntactic check**. FDI/surface mappings require a real Tunisian dentist before clinical release. No treatment recommendations.
 
 ## 3. Role and security expectations
 
