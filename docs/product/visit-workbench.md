@@ -57,6 +57,15 @@ Astra can use the states for UI flows, but must not treat the GET result as auth
 
 Privacy: free-text care `reason` and adjustment `reasonNote` are returned only to DENTIST or OWNER callers. A receptionist sees reason codes and `hasReason`, never the free text (which may contain clinical detail).
 
-Not covered here (still open, C-166 P10-2): cash-period status is not consulted, so cash payments keep `DESK_CASH__INDEPENDENT_COUNT_REQUIRED` after the drawer period is counted.
+## Cash drawer period evidence (B10, C-166 P10-2)
+
+Each cash payment carries `cashPeriod = {periodNo, status: OPEN | COUNTED_AND_CLOSED}`: the drawer period that covered it **by time** (same window as the count's expected cash). A payment recorded after the accepted count but before the owner closed the period belongs to the next period, even though its stored `cash_period_id` is the old one.
+
+- Owner-accepted count and closed period: `evidenceStatus = DESK_CASH__DRAWER_PERIOD_COUNTED`. This means *the drawer period holding this payment was counted and closed by the owner*; a count is drawer-level evidence and **never** verifies an individual payment.
+- A submitted count that the owner has not accepted changes nothing (`DESK_CASH__INDEPENDENT_COUNT_REQUIRED`, period `OPEN`).
+- `nextAction = CHECKOUT_RECORDED__CASH_PERIOD_COUNTED` only when every remaining (non-voided, non-refunded) payment is desk cash in a counted period. Card payments, paper-outage entries or any uncounted cash keep `CHECKOUT_RECORDED__RECONCILIATION_PENDING` / `OWNER_REVIEW_CARD_CLAIM`.
+- Blind count preserved: counted, expected and difference figures are never in the payload for the desk or the dentist. The **owner** additionally gets `periodDifferenceMillimes` and `countIndependent` (software check) for closed periods.
+
+Not covered: book-level paper-outage reconciliation (CH-029) is a separate package (B13).
 
 The card tier (`DESK_CLAIM` or `OWNER_REVIEWED_STATEMENT`) is read from existing financial evidence, and even an owner-reviewed imported statement is not authenticated provider settlement. The current API is intentionally conservative about payment proof.

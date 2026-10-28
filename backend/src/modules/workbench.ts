@@ -24,6 +24,7 @@ interface CaseRow {
 interface Provenance { correctionCount:number; correctionNetMillimes:number; adjustmentCount:number;
   reducedMillimes:number; returnedMillimes:number; freeCareCount:number }
 const seesFreeText=(actor:Actor)=>actor.roles.some(r=>r==='DENTIST'||r==='OWNER');
+const isOwner=(actor:Actor)=>actor.roles.includes('OWNER');
 function next(status:VisitStatus, careCount:number, balance:number, payments:Array<Record<string,unknown>>, charged:number, prov:Provenance):string {
   // CH-031: no API route can cancel a visit holding care or payments; if one does (privileged edit), say so.
   if(status==='CANCELLED'||status==='NO_SHOW') return careCount>0||payments.length>0?'OWNER_REVIEW_CLOSED_VISIT_WITH_RECORDS':'CLOSED_WITHOUT_CARE';
@@ -40,6 +41,10 @@ function next(status:VisitStatus, careCount:number, balance:number, payments:Arr
     if(charged===0&&prov.correctionCount===0&&prov.adjustmentCount===0)return 'VISIT_COMPLETE_NO_PAYMENT_REQUIRED';
     return 'OWNER_REVIEW_ZEROED_BALANCE';
   }
+  // B10: every remaining payment is desk cash inside a drawer period the owner counted and closed. This says the
+  // PERIOD was counted, not that each payment is verified (a count is drawer-level evidence).
+  const active=payments.filter(p=>p.status!=='VOIDED'&&p.status!=='FULLY_REFUNDED');
+  if(active.length>0&&active.every(p=>p.evidenceStatus==='DESK_CASH__DRAWER_PERIOD_COUNTED'))return 'CHECKOUT_RECORDED__CASH_PERIOD_COUNTED';
   // Recording a payment is not independent proof of physical cash/provider settlement.
   return 'CHECKOUT_RECORDED__RECONCILIATION_PENDING';
 }
@@ -89,7 +94,11 @@ CROSS JOIN LATERAL (
         THEN 'OWNER_REVIEWED_STATEMENT__NOT_PROVIDER_VERIFIED'
       WHEN pay.tender='CARD' THEN 'DESK_CLAIM__OWNER_PROOF_SEPARATE'
       WHEN pay.source='PAPER_OUTAGE' THEN 'PAPER_ENTRY__PHYSICAL_EVIDENCE_REQUIRED'
+      WHEN per.status='CLOSED' THEN 'DESK_CASH__DRAWER_PERIOD_COUNTED'
       ELSE 'DESK_CASH__INDEPENDENT_COUNT_REQUIRED' END,
+    'cashPeriod',CASE WHEN pay.tender<>'CASH' OR per.period_no IS NULL THEN NULL
+      ELSE jsonb_build_object('periodNo',per.period_no,'status',CASE WHEN per.status='CLOSED' THEN 'COUNTED_AND_CLOSED' ELSE 'OPEN' END)
+        ||CASE WHEN $4::boolean AND per.status='CLOSED' THEN jsonb_build_object('periodDifferenceMillimes',per.difference_millimes,'countIndependent',per.counter_independent) ELSE '{}'::jsonb END END,
     'returnedMillimes',coalesce(adj.amount,0),
     'status',CASE WHEN adj.voided THEN 'VOIDED' WHEN adj.amount>=pay.amount_millimes THEN 'FULLY_REFUNDED'
       WHEN adj.amount>0 THEN 'PARTLY_RETURNED' ELSE 'ACTIVE' END
@@ -97,6 +106,15 @@ CROSS JOIN LATERAL (
   FROM payments pay
   LEFT JOIN receipts rc ON rc.clinic_id=pay.clinic_id AND rc.payment_id=pay.id
   LEFT JOIN card_matches cm ON cm.clinic_id=pay.clinic_id AND cm.payment_id=pay.id
+  -- The drawer period that covered this cash payment BY TIME (same window rule as expected cash): a payment
+  -- recorded after the accepted count belongs to the next period even if its cash_period_id is the old one.
+  LEFT JOIN LATERAL (
+    SELECT cp.period_no,cp.status,cc.difference_millimes,cc.counter_independent
+    FROM cash_periods cp LEFT JOIN cash_counts cc ON cc.clinic_id=cp.clinic_id AND cc.id=cp.accepted_count_id
+    WHERE pay.tender='CASH' AND cp.clinic_id=pay.clinic_id AND cp.opened_at<pay.recorded_at
+      AND (cp.cutoff_at IS NULL OR pay.recorded_at<=cp.cutoff_at)
+    ORDER BY cp.period_no DESC LIMIT 1
+  ) per ON true
   LEFT JOIN LATERAL (
     SELECT coalesce(sum(a.amount_millimes),0)::bigint AS amount,bool_or(a.kind='PAYMENT_VOID') AS voided
     FROM adjustments a WHERE a.clinic_id=pay.clinic_id AND a.payment_id=pay.id
@@ -118,7 +136,7 @@ CROSS JOIN LATERAL (
   WHERE a.clinic_id=v.clinic_id AND a.visit_id=v.id
 ) j
 WHERE v.id=$1 AND v.clinic_id=$2
-`,[params.id!,tx.clinicId,seesFreeText(actor!)]);
+`,[params.id!,tx.clinicId,seesFreeText(actor!),isOwner(actor!)]);
     if(!row)fail('NOT_FOUND','Visit not found');
     // The current error helper does not carry a TypeScript never return annotation.
     const record = row!;
