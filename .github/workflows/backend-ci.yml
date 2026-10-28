@@ -1,0 +1,56 @@
+name: Backend v0.2 fictional-data checks
+
+# Synthetic data only. No secrets are configured or needed. No deployment step exists.
+on:
+  pull_request:
+    paths: ['backend/**', '.github/workflows/backend-ci.yml']
+  push:
+    branches: ['opus55/**']
+    paths: ['backend/**', '.github/workflows/backend-ci.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        # TODO(ENG-03): pin by digest once verified from a trusted machine.
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fictional-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      EZZ_TEST_ADMIN_URL: postgres://postgres:fictional-ci-only@localhost:5432/postgres
+      PGPASSWORD: fictional-ci-only
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      # Actions pinned to full commit SHAs (tags resolved via the GitHub API on 2026-10-28; re-verify before trusting).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: backend/.nvmrc
+      - name: Install pinned dev tools (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Privacy guard — no data files outside fixtures
+        run: |
+          if git -C .. ls-files | grep -Ei '\.(sqlite|db|dump|dcm|csv|xlsx|pdf)$' | grep -v '^backend/test/fixtures/synthetic/'; then
+            echo "Data-like file committed outside backend/test/fixtures/synthetic/"; exit 1; fi
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests (real PostgreSQL; fictional data)
+        run: npm test
+      - name: Compiled build smoke
+        run: npm run build
