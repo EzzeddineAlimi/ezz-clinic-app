@@ -44,7 +44,7 @@ interface NoteRow {
   effectiveAt: string; reason: string | null; contentSha256: string; signedBy: string; signedByName: string; signedAt: string;
 }
 
-function noteHash(n: { kind: string; patientId: string; visitId: string; parentNoteId: string | null; effectiveAt: string; reason: string | null } & Record<typeof SECTIONS[number], string | null>) {
+export function noteHash(n: { kind: string; patientId: string; visitId: string; parentNoteId: string | null; effectiveAt: string; reason: string | null } & Record<typeof SECTIONS[number], string | null>) {
   return sha256(canonicalJson({ v: 1, kind: n.kind, patientId: n.patientId, visitId: n.visitId, parentNoteId: n.parentNoteId,
     subjective: n.subjective, objective: n.objective, assessment: n.assessment, plan: n.plan, effectiveAt: new Date(n.effectiveAt).toISOString(), reason: n.reason }));
 }

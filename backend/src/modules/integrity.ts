@@ -12,6 +12,7 @@ import type { Route } from '../platform/http.ts';
 import { asBody } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { verifyChain, type Anchor } from './audit.ts';
+import { noteHash } from './clinical.ts';
 import { expectedCash } from './cash.ts';
 
 export interface IntegrityFinding { check: string; severity: 'HIGH' | 'MEDIUM'; detail: string; refs?: unknown }
@@ -54,6 +55,7 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
   }
 
   findings.push(...await businessValueFindings(tx, clinicId, await tableExists(tx, 'cash_counts')));
+  if (await tableExists(tx, 'clinical_notes')) findings.push(...await clinicalValueFindings(tx, clinicId));
 
   const chain = await verifyChain(tx, clinicId, anchors);
   for (const f of chain.findings) findings.push({ check: 'AUDIT_' + f.kind, severity: 'HIGH', detail: `seq ${f.seq}: ${f.detail}` });
@@ -63,7 +65,7 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
     auditEvents: chain.eventCount,
     auditHead: { seq: chain.lastSeq, hash: chain.lastHash },
     findings,
-    scope: 'Checks recorded entries only. A payment never entered anywhere cannot be detected (CH-002). Value checks compare each business row with the values captured in its audit event; an edit that also rewrites the audit chain is only detectable with an owner checkpoint kept outside the database.',
+    scope: 'Checks recorded entries only. A payment never entered anywhere cannot be detected (CH-002). Value checks compare each business row and each clinical row with the values captured in its audit event; an edit that also rewrites the audit chain is only detectable with an owner checkpoint kept outside the database.',
   };
 }
 
@@ -225,6 +227,114 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     const [entity, id] = k.split(':') as [string, string];
     if (!TABLE[entity] || (!withCash && entity.startsWith('cash_'))) continue;
     if (!present.has(k)) out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records ${entity} ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table: TABLE[entity], id } });
+  }
+  return out;
+}
+
+/*
+ * R72 / M-264 (5): the same comparison for the B07 clinical tables. Only fields captured in the audit payload are
+ * compared (R65), plus a recomputation of each signed note's content hash. Wording stays neutral.
+ */
+export async function clinicalValueFindings(tx: Tx, clinicId: string): Promise<IntegrityFinding[]> {
+  const out: IntegrityFinding[] = [];
+  const evRows = (await tx.query<{ action: string; entity_id: string; payload: Record<string, unknown>; actor_staff_id: string | null }>(
+    `SELECT action, entity_id, payload, actor_staff_id FROM audit_events WHERE clinic_id = $1 AND action IN
+      ('clinical.note_signed','clinical.note_struck','clinical.finding_recorded','clinical.finding_struck','clinical.plan_item_created',
+       'clinical.plan_item_status','medical.alert_recorded','medical.alert_revised','medical.history_reviewed','medical.alerts_acknowledged','care.site_amended')
+     ORDER BY seq`, [clinicId])).rows;
+  // Key every event by the clinical row it created.
+  const byRow = new Map<string, Ev[]>();
+  const key = (table: string, id: unknown) => `${table}:${String(id)}`;
+  const add = (k: string, e: typeof evRows[number]) => (byRow.get(k) ?? byRow.set(k, []).get(k)!).push({ action: e.action, payload: e.payload, actor: e.actor_staff_id });
+  for (const e of evRows) {
+    const p = e.payload;
+    switch (e.action) {
+      case 'clinical.note_signed': case 'clinical.note_struck': add(key('clinical_notes', e.entity_id), e); break;
+      case 'clinical.finding_recorded': add(key('chart_findings', e.entity_id), e); break;
+      case 'clinical.finding_struck': add(key('chart_findings', p.strikeId), e); break;
+      case 'clinical.plan_item_created': add(key('treatment_plan_items', e.entity_id), e); break;
+      case 'clinical.plan_item_status': add(key('plan_item_events', `${e.entity_id}#${String(p.seq)}`), e); break;
+      case 'medical.alert_recorded': case 'medical.alert_revised': add(key('medical_alerts', e.entity_id), e); break;
+      case 'medical.history_reviewed': add(key('medical_history_reviews', e.entity_id), e); break;
+      case 'medical.alerts_acknowledged': add(key('alert_acknowledgements', p.acknowledgementId), e); break;
+      case 'care.site_amended': add(key('care_site_amendments', p.amendmentId), e); break;
+    }
+  }
+  const seen = new Set<string>();
+  const iso = (v: unknown) => v === null || v === undefined ? null : new Date(String(v)).toISOString();
+  const check = (table: string, id: string, rowKey: string, pairs: (ev: Ev) => Array<[string, unknown, unknown]>) => {
+    seen.add(rowKey);
+    const ev = byRow.get(rowKey) ?? [];
+    if (!ev.length) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `${table} ${id} has no audit event (written around the application?)`, refs: { table, id } }); return; }
+    if (ev.length > 1) out.push({ check: 'DUPLICATE_AUDIT_EVENT', severity: 'MEDIUM', detail: `${table} ${id} has ${ev.length} creation events; expected exactly one.`, refs: { table, id, count: ev.length } });
+    for (const [field, recorded, audited] of pairs(ev[0]!)) {
+      if (!same(recorded, audited)) out.push({ check: 'CLINICAL_AUDIT_VALUE_MISMATCH', severity: 'HIGH',
+        detail: `${table} ${id}: ${field} is ${JSON.stringify(recorded)} but the audit event recorded ${JSON.stringify(audited)}. ${NEUTRAL}`, refs: { table, id, field, recorded, audited } });
+    }
+  };
+  const site = (v: unknown) => (v ?? {}) as { toothFdi?: unknown; surfaces?: unknown };
+
+  type Note = { id: string; patient_id: string; visit_id: string; kind: string; parent_note_id: string | null; subjective: string | null; objective: string | null;
+    assessment: string | null; plan: string | null; effective_at: string; reason: string | null; content_sha256: string; signed_by: string };
+  for (const r of (await tx.query<Note>(`SELECT id, patient_id, visit_id, kind, parent_note_id, subjective, objective, assessment, plan, effective_at, reason, content_sha256, signed_by
+      FROM clinical_notes WHERE clinic_id = $1`, [clinicId])).rows) {
+    const recomputed = noteHash({ kind: r.kind, patientId: r.patient_id, visitId: r.visit_id, parentNoteId: r.parent_note_id, effectiveAt: r.effective_at, reason: r.reason,
+      subjective: r.subjective, objective: r.objective, assessment: r.assessment, plan: r.plan });
+    if (recomputed !== r.content_sha256) out.push({ check: 'CLINICAL_NOTE_CONTENT_HASH_MISMATCH', severity: 'HIGH',
+      detail: `clinical_notes ${r.id}: the signed content no longer matches its stored content hash. ${NEUTRAL}`, refs: { table: 'clinical_notes', id: r.id } });
+    check('clinical_notes', r.id, key('clinical_notes', r.id), e => [['contentSha256', r.content_sha256, e.payload.contentSha256], ['kind', r.kind, e.payload.kind],
+      ['visitId', r.visit_id, e.payload.visitId], ['parentNoteId', r.parent_note_id, e.payload.parentNoteId], ['effectiveAt', iso(r.effective_at), iso(e.payload.effectiveAt)], ['signedBy', r.signed_by, e.actor]]);
+  }
+  type Finding = { id: string; visit_id: string; kind: string; entered_in_error_of_id: string | null; tooth_fdi: number | null; area_code: number | null; surfaces: string | null; condition_code: string | null; note: string | null; recorded_by: string };
+  for (const r of (await tx.query<Finding>('SELECT id, visit_id, kind, entered_in_error_of_id, tooth_fdi, area_code, surfaces, condition_code, note, recorded_by FROM chart_findings WHERE clinic_id = $1', [clinicId])).rows) {
+    if (r.kind === 'ENTERED_IN_ERROR') {
+      check('chart_findings', r.id, key('chart_findings', r.id), () => []);
+      continue;
+    }
+    check('chart_findings', r.id, key('chart_findings', r.id), e => [['visitId', r.visit_id, e.payload.visitId], ['kind', r.kind, e.payload.kind], ['toothFdi', r.tooth_fdi, e.payload.toothFdi],
+      ['areaCode', r.area_code, e.payload.areaCode], ['surfaces', r.surfaces, e.payload.surfaces], ['conditionCode', r.condition_code, e.payload.conditionCode],
+      ['hasNote', r.note !== null, e.payload.hasNote], ['recordedBy', r.recorded_by, e.actor]]);
+  }
+  type Plan = { id: string; patient_id: string; created_in_visit_id: string | null; procedure_code: string; tooth_fdi: number | null; surfaces: string | null; phase_no: number; estimated_fee_millimes: number | null; created_by: string };
+  for (const r of (await tx.query<Plan>('SELECT id, patient_id, created_in_visit_id, procedure_code, tooth_fdi, surfaces, phase_no, estimated_fee_millimes, created_by FROM treatment_plan_items WHERE clinic_id = $1', [clinicId])).rows) {
+    check('treatment_plan_items', r.id, key('treatment_plan_items', r.id), e => [['patientId', r.patient_id, e.payload.patientId], ['visitId', r.created_in_visit_id, e.payload.visitId],
+      ['procedureCode', r.procedure_code, e.payload.procedureCode], ['toothFdi', r.tooth_fdi, e.payload.toothFdi], ['surfaces', r.surfaces, e.payload.surfaces], ['phaseNo', r.phase_no, e.payload.phaseNo],
+      ['estimatedFeeMillimes', r.estimated_fee_millimes, e.payload.estimatedFeeMillimes], ['createdBy', r.created_by, e.actor]]);
+  }
+  type PlanEvent = { id: string; plan_item_id: string; seq: number; status: string; care_item_id: string | null; by_staff_id: string };
+  for (const r of (await tx.query<PlanEvent>('SELECT id, plan_item_id, seq, status, care_item_id, by_staff_id FROM plan_item_events WHERE clinic_id = $1', [clinicId])).rows) {
+    check('plan_item_events', r.id, key('plan_item_events', `${r.plan_item_id}#${r.seq}`), e => [['status', r.status, e.payload.to], ['careItemId', r.care_item_id, e.payload.careItemId], ['byStaffId', r.by_staff_id, e.actor]]);
+  }
+  type Alert = { id: string; patient_id: string; chain_id: string; revision: number; code: string; severity: string; source: string; status: string; recorded_by: string };
+  for (const r of (await tx.query<Alert>('SELECT id, patient_id, chain_id, revision, code, severity, source, status, recorded_by FROM medical_alerts WHERE clinic_id = $1', [clinicId])).rows) {
+    check('medical_alerts', r.id, key('medical_alerts', r.id), e => [['patientId', r.patient_id, e.payload.patientId], ['chainId', r.chain_id, e.payload.chainId], ['revision', r.revision, e.payload.revision],
+      ['severity', r.severity, e.payload.severity], ['recordedBy', r.recorded_by, e.actor],
+      ...(e.action === 'medical.alert_recorded' ? [['code', r.code, e.payload.code], ['source', r.source, e.payload.source]] as Array<[string, unknown, unknown]> : [['status', r.status, e.payload.status]] as Array<[string, unknown, unknown]>)]);
+  }
+  type Review = { id: string; patient_id: string; visit_id: string | null; method: string; no_known_allergies: boolean; alert_set_sha256: string; next_review_due: string; note: string | null; reviewed_by: string };
+  for (const r of (await tx.query<Review>('SELECT id, patient_id, visit_id, method, no_known_allergies, alert_set_sha256, next_review_due::text AS next_review_due, note, reviewed_by FROM medical_history_reviews WHERE clinic_id = $1', [clinicId])).rows) {
+    check('medical_history_reviews', r.id, key('medical_history_reviews', r.id), e => [['patientId', r.patient_id, e.payload.patientId], ['visitId', r.visit_id, e.payload.visitId], ['method', r.method, e.payload.method],
+      ['noKnownAllergies', r.no_known_allergies, e.payload.noKnownAllergies], ['alertSetHash', r.alert_set_sha256, e.payload.alertSetHash], ['nextReviewDue', r.next_review_due, e.payload.nextReviewDue],
+      ['hasNote', r.note !== null, e.payload.hasNote], ['reviewedBy', r.reviewed_by, e.actor]]);
+  }
+  type Ack = { id: string; visit_id: string; alert_set_sha256: string; active_alert_count: number; via: string; acknowledged_by: string };
+  const ackEntity = new Map(evRows.filter(e => e.action === 'medical.alerts_acknowledged').map(e => [String(e.payload.acknowledgementId), e.entity_id]));
+  for (const r of (await tx.query<Ack>('SELECT id, visit_id, alert_set_sha256, active_alert_count, via, acknowledged_by FROM alert_acknowledgements WHERE clinic_id = $1', [clinicId])).rows) {
+    check('alert_acknowledgements', r.id, key('alert_acknowledgements', r.id), e => [['visitId', r.visit_id, ackEntity.get(r.id)], ['alertSetHash', r.alert_set_sha256, e.payload.alertSetHash],
+      ['activeAlertCount', r.active_alert_count, e.payload.activeAlertCount], ['via', r.via, e.payload.via], ['acknowledgedBy', r.acknowledged_by, e.actor]]);
+  }
+  type Amend = { id: string; care_item_id: string; supersedes_id: string | null; previous_tooth_fdi: number | null; previous_surfaces: string | null; tooth_fdi: number | null; surfaces: string | null; reason_code: string; reason_note: string | null; amended_by: string };
+  const amendEntity = new Map(evRows.filter(e => e.action === 'care.site_amended').map(e => [String(e.payload.amendmentId), e.entity_id]));
+  for (const r of (await tx.query<Amend>('SELECT id, care_item_id, supersedes_id, previous_tooth_fdi, previous_surfaces, tooth_fdi, surfaces, reason_code, reason_note, amended_by FROM care_site_amendments WHERE clinic_id = $1', [clinicId])).rows) {
+    check('care_site_amendments', r.id, key('care_site_amendments', r.id), e => [['careItemId', r.care_item_id, amendEntity.get(r.id)], ['supersedesId', r.supersedes_id, e.payload.supersedesId],
+      ['previousToothFdi', r.previous_tooth_fdi, site(e.payload.previousSite).toothFdi], ['previousSurfaces', r.previous_surfaces, site(e.payload.previousSite).surfaces],
+      ['toothFdi', r.tooth_fdi, site(e.payload.newSite).toothFdi], ['surfaces', r.surfaces, site(e.payload.newSite).surfaces], ['reasonCode', r.reason_code, e.payload.reasonCode],
+      ['hasNote', r.reason_note !== null, e.payload.hasNote], ['amendedBy', r.amended_by, e.actor]]);
+  }
+  for (const k of byRow.keys()) {
+    if (seen.has(k)) continue;
+    const [table, id] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
+    out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records ${table} ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table, id } });
   }
   return out;
 }

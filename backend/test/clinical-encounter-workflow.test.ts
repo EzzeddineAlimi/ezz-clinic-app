@@ -199,7 +199,9 @@ test('T-NOTE-1 notes are immutable: addendum, single strike with reason, late en
   await assert.rejects(appSql(A.clinic.id, c => c.query("UPDATE clinical_notes SET assessment = 'changed' WHERE id = $1", [id])), /permission denied|append-only/);
   const su = new PgConnection(parseDatabaseUrl(db.ownerUrl.replace(/ezz_owner:[^@]+@/, `${new URL(process.env.EZZ_TEST_ADMIN_URL ?? 'postgres://postgres@localhost').username}:${new URL(process.env.EZZ_TEST_ADMIN_URL ?? 'postgres://postgres@localhost').password}@`)));
   await su.connect();
+  let original: string | null = null;
   try {
+    original = (await su.query<{ assessment: string | null }>('SELECT assessment FROM clinical_notes WHERE id = $1', [id])).rows[0]!.assessment;
     await su.query('BEGIN');
     await su.query('SET LOCAL session_replication_role = replica'); // superuser bypass of the append-only trigger
     await su.query("UPDATE clinical_notes SET assessment = 'Fictional tampered text' WHERE id = $1", [id]);
@@ -207,6 +209,19 @@ test('T-NOTE-1 notes are immutable: addendum, single strike with reason, late en
   } finally { su.end(); }
   const tampered = (await get(`/api/v1/visits/${vid}/encounter`, A.dentist)).body.notes.find((x: { id: string }) => x.id === id);
   assert.equal(tampered.integrity, 'CONTENT_HASH_MISMATCH');
+  // Integration (R72): the owner's integrity check now reports it too (clinical value checks, M-264 (5)).
+  await reauth(api, A.owner);
+  const integ = await api.call('POST', '/api/v1/integrity/check', { token: A.owner, body: {}, idem: false });
+  assert.ok(integ.body.findings.some((f: { check: string; refs?: { id?: string } }) => f.check === 'CLINICAL_NOTE_CONTENT_HASH_MISMATCH' && f.refs?.id === id), JSON.stringify(integ.body.findings));
+  // Restore the original text so later tests in this shared clinic (T-ENC-3) still measure a clean day.
+  const su2 = new PgConnection(parseDatabaseUrl(db.ownerUrl.replace(/ezz_owner:[^@]+@/, `${new URL(process.env.EZZ_TEST_ADMIN_URL ?? 'postgres://postgres@localhost').username}:${new URL(process.env.EZZ_TEST_ADMIN_URL ?? 'postgres://postgres@localhost').password}@`)));
+  await su2.connect();
+  try {
+    await su2.query('BEGIN');
+    await su2.query('SET LOCAL session_replication_role = replica');
+    await su2.query('UPDATE clinical_notes SET assessment = $2 WHERE id = $1', [id, original]);
+    await su2.query('COMMIT');
+  } finally { su2.end(); }
 });
 
 test('T-NOTE-2 duplicate submission: the same Idempotency-Key stores one note; cancelled visit refuses notes', async () => {
