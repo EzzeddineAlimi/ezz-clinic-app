@@ -257,10 +257,20 @@ test('T-PLAN-2 perform rules: other patient visit, fee override vs quote, missin
   const gated = await post(`/api/v1/treatment-plan-items/${item}/perform`, A.dentist, { visitId: v, feeMillimes: 90_000 });
   assert.equal(gated.status, 409); assert.equal(gated.body.error.code, 'MEDICAL_ALERTS_NOT_ACKNOWLEDGED');
   assert.equal((await get(`/api/v1/patients/${pid}/treatment-plan`, A.dentist)).body.items[0].status, 'PROPOSED', 'gate failure leaves the plan open');
+  const orphan = await appSql(A.clinic.id, c => c.query<{ n: number }>('SELECT count(*)::int AS n FROM care_items WHERE visit_id = $1', [v]));
+  assert.equal(orphan.rows[0]!.n, 0, 'gate failure leaves no care item (single transaction, M-262 partial-failure question)');
   const hash = (await get(`/api/v1/visits/${v}/encounter`, A.dentist)).body.medical.alertSetHash;
   const ok = await post(`/api/v1/treatment-plan-items/${item}/perform`, A.dentist, { visitId: v, feeMillimes: 90_000, alertSetHash: hash });
   assert.equal(ok.status, 201, JSON.stringify(ok.body));
   assert.deepEqual(ok.body.quoteVsCharged, { estimatedFeeMillimes: 70_000, chargedFeeMillimes: 90_000, differenceMillimes: 20_000 });
+  // M-262: a second, sequential perform of a COMPLETED item is refused and charges nothing.
+  const v2 = await visitFor(pid);
+  const again = await post(`/api/v1/treatment-plan-items/${item}/perform`, A.dentist, { visitId: v2, alertSetHash: hash });
+  assert.equal(again.status, 409);
+  assert.equal(again.body.error.code, 'PLAN_ITEM_CLOSED');
+  assert.equal(again.body.error.details.careItemId, ok.body.careItem.id);
+  const second = await appSql(A.clinic.id, c => c.query<{ n: number }>('SELECT count(*)::int AS n FROM care_items WHERE visit_id = $1', [v2]));
+  assert.equal(second.rows[0]!.n, 0);
   const noEst = (await post(`/api/v1/patients/${pid}/treatment-plan-items`, A.dentist, { procedureCode: 'EXAM', procedureLabel: 'Fictional exam' })).body.planItem.id;
   assert.equal((await post(`/api/v1/treatment-plan-items/${noEst}/perform`, A.dentist, { visitId: v })).status, 400);
   assert.equal((await post(`/api/v1/treatment-plan-items/${noEst}/perform`, A.desk, { visitId: v, feeMillimes: 1 })).status, 403);
