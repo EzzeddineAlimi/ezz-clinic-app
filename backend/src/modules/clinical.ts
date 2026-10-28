@@ -129,7 +129,7 @@ async function loadPlan(tx: Tx, patientId: string, itemId?: string): Promise<Pla
       coalesce(e.items, '[]'::jsonb) AS events
     FROM treatment_plan_items i JOIN staff s ON s.clinic_id = i.clinic_id AND s.id = i.created_by
     CROSS JOIN LATERAL (SELECT jsonb_agg(jsonb_build_object('seq', x.seq, 'status', x.status, 'careItemId', x.care_item_id, 'reason', x.reason,
-        'byName', b.display_name, 'at', x.at) ORDER BY x.seq) AS items
+        'byName', b.display_name, 'at', to_char(x.at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')) ORDER BY x.seq) AS items
       FROM plan_item_events x JOIN staff b ON b.clinic_id = x.clinic_id AND b.id = x.by_staff_id
       WHERE x.clinic_id = i.clinic_id AND x.plan_item_id = i.id) e
     WHERE i.patient_id = $1 AND ($2::uuid IS NULL OR i.id = $2::uuid) ORDER BY i.phase_no, i.created_at, i.id`, [patientId, itemId ?? null])).rows;

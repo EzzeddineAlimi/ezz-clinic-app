@@ -1,5 +1,7 @@
 # EZZ Clinic — Astra clinical integration contract v0.1 (NONVISUAL)
 
+> **Update (B07, branch `claude/b07-clinical-core`):** several contracts in §1 are now implemented in draft form — medical alerts/history review/acknowledgement, signed clinical notes, chart findings, treatment plan items and the clinical timeline. See [`../api/clinical-v1.md`](../api/clinical-v1.md) and [`b07-clinical-core-status.md`](b07-clinical-core-status.md) for the exact routes and what remains proposed. The rest of this document is unchanged.
+
 **Status: DRAFT / synthetic data only.** Not a clinical, legal, imaging-device or production approval. For future Astra frontend integration; **do not implement UI visuals here**. Extends existing `docs/clinical-domain/clinical-requirements.md` (see it for source citations, evidence tiers and Tunisian unknowns). New TypeScript helpers in `backend/src/contracts/clinical.ts` enforce only limited syntactic constraints; no clinical decision support.
 
 ## 1. Current implementation vs proposed endpoints

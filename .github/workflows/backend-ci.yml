@@ -54,5 +54,7 @@ jobs:
         run: npm test
       - name: Fictional clinic-day journey (throwaway PostgreSQL database)
         run: node scripts/demo-visit-journey.ts
+      - name: Fictional dentist encounter walkthrough (throwaway PostgreSQL database)
+        run: node scripts/demo-dentist-encounter.ts > /dev/null
       - name: Compiled build smoke
         run: npm run build
