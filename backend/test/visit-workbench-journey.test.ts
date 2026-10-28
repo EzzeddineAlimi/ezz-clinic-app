@@ -3,7 +3,7 @@
  */
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
-import {createTestDb,startApi,standardFixture,confirmCare,seedClinic,newVisit,type Api,type TestDb} from './helpers.ts';
+import {createTestDb,startApi,standardFixture,confirmCare,seedClinic,newVisit,reauth,type Api,type TestDb} from './helpers.ts';
 
 let db:TestDb,api:Api,fixture:Awaited<ReturnType<typeof standardFixture>>;
 before(async()=>{db=await createTestDb();api=await startApi(db.appUrl);fixture=await standardFixture(api,db,'workbench');});
@@ -82,4 +82,37 @@ test('WORKFLOW: card desk claims stay unverified in the combined visit view',asy
  assert.equal(claimed.balance.balanceMillimes,0);
  assert.equal(claimed.nextAction,'OWNER_REVIEW_CARD_CLAIM');
  assert.ok(claimed.payments.every((p:{evidenceTier:string})=>p.evidenceTier==='DESK_CLAIM'));
+});
+
+test('WORKFLOW: owner-reviewed imported statement is NOT provider-verified',async()=>{
+ const F=await standardFixture(api,db,'workbench-card-statement');
+ await reauth(api,F.owner);
+ const settings=await api.call('POST','/api/v1/card/settings',{token:F.owner,body:{accountLast4:'4321',settlementLagDays:2}});
+ assert.equal(settings.status,200);
+ const visit=await newVisit(api,F.desk,F.patientId,'2026-11-21T09:00:00Z');
+ await confirmCare(api,F.dentist,visit,20_000,'EXAM');
+ const paid=await api.call('POST','/api/v1/visits/'+visit+'/payments',{
+  token:F.desk,body:{amountMillimes:20_000,tender:'CARD',cardTerminalRef:'T9'}});
+ assert.equal(paid.status,201);
+ const now=new Date().toISOString().slice(0,10);
+ const inThreeDays=new Date(Date.now()+3*86400_000).toISOString().slice(0,10);
+ const csv=['date,amount_tnd,type,terminal_ref,card_last4,description',
+  now+',20.000,CARD,T9,,fictional-reference'].join('\n');
+ const imported=await api.call('POST','/api/v1/card/statement-imports',{token:F.owner,body:{
+  fileName:'fictional-bank.csv',accountLast4:'4321',periodStart:now,periodEnd:inThreeDays,
+  totalSource:'NOT_PROVIDED',csv}});
+ assert.equal(imported.status,201,JSON.stringify(imported.body));
+ const reconciliation=await api.call('GET','/api/v1/card/reconciliation?asOf='+now,{token:F.owner});
+ assert.equal(reconciliation.status,200);
+ const claim=reconciliation.body.claims.find((x:{paymentId:string})=>x.paymentId===paid.body.payment.id);
+ assert.ok(claim);
+ assert.equal(claim.candidates.length,1);
+ const matched=await api.call('POST','/api/v1/card/matches',{token:F.owner,body:{
+  paymentId:paid.body.payment.id,statementLineId:claim.candidates[0].statementLineId}});
+ assert.equal(matched.status,201,JSON.stringify(matched.body));
+ const workbench=(await view(F.owner,visit)).body.visit;
+ assert.equal(workbench.balance.balanceMillimes,0);
+ assert.equal(workbench.payments[0].evidenceTier,'OWNER_REVIEWED_STATEMENT');
+ assert.equal(workbench.payments[0].evidenceStatus,'OWNER_REVIEWED_STATEMENT__NOT_PROVIDER_VERIFIED');
+ assert.equal(workbench.nextAction,'CHECKOUT_RECORDED__RECONCILIATION_PENDING');
 });
