@@ -46,7 +46,17 @@ Astra can use the states for UI flows, but must not treat the GET result as auth
 
 - `OWNER_REVIEW_CARD_CLAIM` when the recorded balance is zero but a card payment remains a desk claim.
 - `CHECKOUT_RECORDED__RECONCILIATION_PENDING` after a fully recorded payment where separate physical/provider verification is still required.
-- `VISIT_COMPLETE_NO_PAYMENT_REQUIRED` is reserved for confirmed, explicitly zero-fee care with no payments.
+- `VISIT_COMPLETE_NO_PAYMENT_REQUIRED` is reserved for confirmed, explicitly zero-fee care (fee 0 + dentist reason) with no payments, no fee corrections and no discount/write-off.
+- `OWNER_REVIEW_ZEROED_BALANCE` (CH-028) when the balance is zero with no payment because a fee correction, discount or write-off reduced it. Neutral review item, not an accusation: legitimate free care or hardship write-offs are allowed, the owner simply sees how the balance reached zero.
+- `OWNER_REVIEW_CLOSED_VISIT_WITH_RECORDS` (CH-031) if a CANCELLED/NO_SHOW visit nevertheless holds care or payments. No API route can produce this (C-170/M-258); it guards against a privileged out-of-band edit.
 - `RECORD_OR_FOLLOW_UP_PAYMENT` when a positive recorded balance remains; `OWNER_REVIEW_CREDIT` for a negative recorded balance.
+
+## Balance provenance (CH-028)
+
+`visit.care[]` items carry `kind`, `correctsId` and `hasReason`; `visit.adjustments[]` lists every discount, write-off, refund and payment void with `kind`, `amountMillimes`, `reasonCode`, `paymentId`, `tender`, `authorizedRole`, `authorizedByName`, `createdAt` and, for refunds/voids, the `receiptLabel` of the REFUND/VOID receipt (P10-3: previously invisible on the visit). `visit.payments[].status` is `ACTIVE`, `PARTLY_RETURNED`, `FULLY_REFUNDED` or `VOIDED`. `visit.provenance` = `{correctionCount, correctionNetMillimes, adjustmentCount, reducedMillimes, returnedMillimes, freeCareCount}`, computed in the same SQL statement as the balance.
+
+Privacy: free-text care `reason` and adjustment `reasonNote` are returned only to DENTIST or OWNER callers. A receptionist sees reason codes and `hasReason`, never the free text (which may contain clinical detail).
+
+Not covered here (still open, C-166 P10-2): cash-period status is not consulted, so cash payments keep `DESK_CASH__INDEPENDENT_COUNT_REQUIRED` after the drawer period is counted.
 
 The card tier (`DESK_CLAIM` or `OWNER_REVIEWED_STATEMENT`) is read from existing financial evidence, and even an owner-reviewed imported statement is not authenticated provider settlement. The current API is intentionally conservative about payment proof.
