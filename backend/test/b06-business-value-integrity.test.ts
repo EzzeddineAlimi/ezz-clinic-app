@@ -249,6 +249,8 @@ test('T-INT-LIMIT-1 honest limit: an edit that also rewrites the audit chain is 
       const canonical = canonicalJson(doc);
       const hash = sha256(prev + '\n' + canonical);
       await a.query('UPDATE audit_events SET payload = $3, canonical = $4, prev_hash = $5, hash = $6 WHERE clinic_id = $1 AND seq = $2', [s.clinic.id, e.seq, doc.payload, canonical, prev, hash]);
+      // R73-A: a capable attacker also rewrites the database's own checkpoint copies (otherwise INTERNAL_CHECKPOINT_MISMATCH fires).
+      await a.query('UPDATE audit_checkpoints SET hash = $3 WHERE clinic_id = $1 AND seq = $2', [s.clinic.id, e.seq, hash]);
       prev = hash;
     }
     await a.query('UPDATE audit_heads SET last_hash = $2 WHERE clinic_id = $1', [s.clinic.id, prev]);

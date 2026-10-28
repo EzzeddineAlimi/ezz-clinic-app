@@ -98,17 +98,29 @@ export async function verifyChain(tx: Tx, clinicId: string, anchors: Anchor[] = 
   return { ok: findings.length === 0, eventCount: rows.length, lastSeq, lastHash: lastSeq ? prev : GENESIS_HASH, findings };
 }
 
+/** Owner checkpoints older than this are reported as due (owner exceptions, checkpoint status). */
+export const CHECKPOINT_DUE_DAYS = 7;
+
+/**
+ * Record an owner checkpoint of the current chain head. The returned (seq, hash) is the independent evidence only once
+ * it is kept OUTSIDE this database; the internal copy written here is a convenience a superuser could alter.
+ */
+export async function createCheckpoint(tx: Tx, actor: Actor, note: string | null) {
+  const head = await tx.maybeOne<{ last_seq: number; last_hash: string }>('SELECT last_seq, last_hash FROM audit_heads WHERE clinic_id = $1', [actor.clinicId]);
+  if (!head || head.last_seq === 0) fail('CONFLICT', 'Nothing to checkpoint yet');
+  const row = await tx.one<{ created_at: string }>('INSERT INTO audit_checkpoints (clinic_id, seq, hash, created_by, note) VALUES ($1,$2,$3,$4,$5) RETURNING created_at',
+    [actor.clinicId, head!.last_seq, head!.last_hash, actor.staffId, note]);
+  const cp = { clinicId: actor.clinicId, seq: head!.last_seq, hash: head!.last_hash, createdAt: new Date(row.created_at).toISOString() };
+  await appendAudit(tx, actor, 'audit.checkpoint_created', 'audit_checkpoint', String(head!.last_seq), { hash: head!.last_hash });
+  return cp;
+}
+
 export const auditRoutes: Route[] = [
   {
     // Owner checkpoint: the response is meant to be printed / copied OUT of the system (independent anchor).
     method: 'POST', path: '/api/v1/audit/checkpoints', permission: 'audit.checkpoint', reauth: true, idempotent: true,
     handler: async ({ tx, actor, body }) => {
-      const note = optStr(asBody(body), 'note', { max: 200 });
-      const head = await tx.maybeOne<{ last_seq: number; last_hash: string }>('SELECT last_seq, last_hash FROM audit_heads WHERE clinic_id = $1', [actor!.clinicId]);
-      if (!head || head.last_seq === 0) fail('CONFLICT', 'Nothing to checkpoint yet');
-      await tx.query('INSERT INTO audit_checkpoints (clinic_id, seq, hash, created_by, note) VALUES ($1,$2,$3,$4,$5)', [actor!.clinicId, head!.last_seq, head!.last_hash, actor!.staffId, note]);
-      const cp = { clinicId: actor!.clinicId, seq: head!.last_seq, hash: head!.last_hash, createdAt: new Date().toISOString() };
-      await appendAudit(tx, actor!, 'audit.checkpoint_created', 'audit_checkpoint', String(head!.last_seq), { hash: head!.last_hash });
+      const cp = await createCheckpoint(tx, actor!, optStr(asBody(body), 'note', { max: 200 }));
       return {
         status: 201,
         body: {

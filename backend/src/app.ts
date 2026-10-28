@@ -22,6 +22,7 @@ import { exceptionRoutes } from './modules/exceptions.ts';
 import { reviewRoutes } from './modules/review.ts';
 import { dayBoardRoutes } from './modules/dayboard.ts';
 import { printRoutes } from './modules/print.ts';
+import { checkpointRoutes } from './modules/checkpoints.ts';
 
 export interface AppOptions {
   databaseUrl: string;
@@ -41,6 +42,7 @@ export function buildRoutes(db: Db): Route[] {
     loginRoute,
     ...identityRoutes,
     ...auditRoutes,
+    ...checkpointRoutes,
     ...patientRoutes,
     ...workbenchRoutes,
     ...dayBoardRoutes,

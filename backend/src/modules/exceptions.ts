@@ -11,7 +11,7 @@ import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr } from '../platform/validate.ts';
-import { appendAudit } from './audit.ts';
+import { appendAudit, CHECKPOINT_DUE_DAYS } from './audit.ts';
 import { reconcile } from './card.ts';
 import { reconcileBook } from './paper.ts';
 import { integrityCheck } from './integrity.ts';
@@ -80,7 +80,7 @@ export async function computeExceptions(tx: Tx, clinicId: string, asOf: string):
   const integ = await integrityCheck(tx, clinicId, []);
   for (const f of integ.findings) out.push({ key: `integrity:${f.check.toLowerCase()}:finding`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: 'HIGH', wording: f.detail, known: 'Detected by recomputation', unknown: 'Who changed the data outside the app', nextStep: 'Stop and compare with the latest owner checkpoint and backup' });
   const cp = await tx.maybeOne<{ at: string }>('SELECT max(created_at) AS at FROM audit_checkpoints');
-  if (!cp?.at || new Date(cp.at).getTime() < new Date(asOf + 'T00:00:00Z').getTime() - 7 * 86400_000) {
+  if (!cp?.at || new Date(cp.at).getTime() < new Date(asOf + 'T00:00:00Z').getTime() - CHECKPOINT_DUE_DAYS * 86400_000) {
     out.push({ key: 'audit:checkpoint:due', kind: 'AUDIT_CHECKPOINT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: 'No owner checkpoint in the last 7 days', known: `Last checkpoint: ${cp?.at ?? 'never'}`,
       unknown: 'Changes since then are tamper-evident only inside the database', nextStep: 'Create a checkpoint and keep the printed line outside the clinic system' });
   }

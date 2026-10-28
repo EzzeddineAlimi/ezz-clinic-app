@@ -59,6 +59,14 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
 
   const chain = await verifyChain(tx, clinicId, anchors);
   for (const f of chain.findings) findings.push({ check: 'AUDIT_' + f.kind, severity: 'HIGH', detail: `seq ${f.seq}: ${f.detail}` });
+  // R73-A tripwire: the database's own copies of owner checkpoints must still match the chain. A rewrite that also
+  // fixes these copies is NOT caught here; only the owner's outside copy catches that (POST /owner/checkpoints/verify).
+  const cps = (await tx.query<{ seq: number; hash: string; chain_hash: string | null }>(
+    'SELECT c.seq, c.hash, e.hash AS chain_hash FROM audit_checkpoints c LEFT JOIN audit_events e ON e.clinic_id = c.clinic_id AND e.seq = c.seq WHERE c.clinic_id = $1 ORDER BY c.seq', [clinicId])).rows;
+  for (const c of cps.filter(c => c.chain_hash !== c.hash)) {
+    findings.push({ check: 'INTERNAL_CHECKPOINT_MISMATCH', severity: 'HIGH', refs: { seq: Number(c.seq), internalCopy: c.chain_hash === null ? 'CHAIN_SHORTER' : 'DIFFERS' },
+      detail: `The database's own copy of the owner checkpoint at seq ${c.seq} no longer matches the audit chain (history rewritten or shortened after it). Compare with the owner's outside copy; this does not by itself show who changed it.` });
+  }
   return {
     ok: findings.length === 0,
     receiptsIssued: nums.length,

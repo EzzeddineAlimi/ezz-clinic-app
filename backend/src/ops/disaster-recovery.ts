@@ -24,6 +24,7 @@ import { migrate } from '../platform/migrate.ts';
 import { Db } from '../platform/db.ts';
 import { verifyChain, type Anchor } from '../modules/audit.ts';
 import { integrityCheck } from '../modules/integrity.ts';
+import { parseCheckpointLine, verifyLines } from '../modules/checkpoints.ts';
 
 const run = promisify(execFile);
 const MAGIC = Buffer.from('EZZBKP1\n');
@@ -179,6 +180,8 @@ export interface RestoreOptions {
   rolePasswords: { owner: string; app: string };
   /** Owner-held checkpoints per clinic id, kept outside the database. */
   anchors?: Record<string, Anchor[]>;
+  /** Owner checkpoint lines kept outside (EZZ-CP2 or legacy EZZ-CHECKPOINT), for any clinic in the backup. */
+  checkpointLines?: string[];
 }
 
 /** Restore into a NEW database and verify it. Throws before restoring if the archive does not authenticate. */
@@ -236,6 +239,11 @@ export async function restoreAndVerify(o: RestoreOptions): Promise<RestoreReport
     add('APPEND_ONLY_TRIGGERS_MATCH', eq(facts.appendOnlyTables, manifest.appendOnlyTables) && facts.appendOnlyTables.length > 0, `${facts.appendOnlyTables.length} append-only tables`);
     add('APP_GRANTS_MATCH', eq(facts.appGrants, manifest.appGrants) && facts.appGrants.length > 0, `${facts.appGrants.length} table privileges for ezz_app`);
 
+    if (o.checkpointLines?.length) {
+      const bad = o.checkpointLines.map((l, i) => ({ i, p: parseCheckpointLine(l) })).filter(x => !x.p.ok);
+      add('CHECKPOINT_LINES_READABLE', bad.length === 0, bad.length === 0 ? `${o.checkpointLines.length} line(s) readable`
+        : `unreadable line(s): ${bad.map(x => `#${x.i + 1} ${(x.p as { reason: string }).reason}`).join(', ')}`);
+    }
     const db = new Db(appUrl, { max: 2 });
     try {
       for (const clinicId of Object.keys(manifest.clinics)) {
@@ -245,6 +253,14 @@ export async function restoreAndVerify(o: RestoreOptions): Promise<RestoreReport
         add(`AUDIT_CHAIN:${code}`, chain.ok, chain.ok ? `${chain.eventCount} events, ${anchors.length} owner checkpoint(s) verified` : JSON.stringify(chain.findings.slice(0, 5)));
         const integ = await db.tx(clinicId, tx => integrityCheck(tx, clinicId, anchors));
         add(`INTEGRITY:${code}`, integ.ok, integ.ok ? `${integ.receiptsIssued} receipts, no findings` : JSON.stringify(integ.findings.slice(0, 5).map(f => f.check)));
+        // R73-A: the owner's printed checkpoint lines for this clinic. An older backup restored after a newer
+        // checkpoint is reported here (CHAIN_SHORTER), which is exactly the rollback an outside copy exists to catch.
+        const mine = (o.checkpointLines ?? []).filter(l => { const p = parseCheckpointLine(l); return p.ok && (p.legacy ? p.clinicId === clinicId : p.fields.clinicCode === code); });
+        if (mine.length) {
+          const v = await db.tx(clinicId, tx => verifyLines(tx, { id: clinicId, code }, mine));
+          add(`CHECKPOINT_LINES:${code}`, v.ok, v.ok ? `${mine.length} owner checkpoint line(s) match the restored history`
+            : JSON.stringify(v.results.filter(r => r.verdict !== 'MATCHES').map(r => ({ seq: 'seq' in r ? r.seq : null, verdict: r.verdict }))));
+        }
         const seen = await db.tx(clinicId, async tx => (await tx.query<{ clinic_id: string }>('SELECT DISTINCT clinic_id FROM payments UNION SELECT DISTINCT clinic_id FROM patients')).rows.map(r => r.clinic_id));
         add(`TENANT_ISOLATION:${code}`, seen.every(c => c === clinicId), `app role with clinic context sees ${seen.length ? 'only its own clinic' : 'no rows'}`);
       }
