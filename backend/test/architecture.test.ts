@@ -18,7 +18,7 @@ const ALLOWED: Record<string, string[]> = {
   medical: ['audit', 'patients'],
   clinical: ['audit', 'patients', 'care', 'medical'],
   billing: ['audit', 'patients'],
-  integrity: ['audit'],
+  integrity: ['audit', 'cash'],
   cash: ['audit', 'billing'],
   card: ['audit'],
   paper: ['audit', 'billing'],
