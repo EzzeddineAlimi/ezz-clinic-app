@@ -47,7 +47,8 @@ test('WORKFLOW: one visit progresses from check-in to dentist care to partial/fu
  assert.equal(last.status,201);
  const completed=(await view(fixture.desk)).body.visit;
  assert.equal(completed.balance.balanceMillimes,0);
- assert.equal(completed.nextAction,'VISIT_COMPLETE');
+ assert.equal(completed.nextAction,'CHECKOUT_RECORDED__RECONCILIATION_PENDING');
+ assert.match((await view(fixture.owner)).body.evidenceNotice,/independent/);
  assert.equal(completed.payments.length,2);
  assert.equal(completed.payments[1].receiptLabel,'R-000002');
 });
@@ -72,6 +73,13 @@ test('WORKFLOW: card desk claims stay unverified in the combined visit view',asy
  assert.equal(paid.status,201);
  const b=(await view(fixture.owner,visit)).body.visit;
  assert.equal(b.payments[0].evidenceStatus,'DESK_CLAIM__OWNER_PROOF_SEPARATE');
+ assert.equal(b.payments[0].evidenceTier,'DESK_CLAIM');
  assert.equal(b.balance.balanceMillimes,60_000);
  assert.match((await view(fixture.owner,visit)).body.evidenceNotice,/external evidence/);
+ const final=await api.call('POST','/api/v1/visits/'+visit+'/payments',{token:fixture.desk,body:{amountMillimes:60_000,tender:'CARD'}});
+ assert.equal(final.status,201);
+ const claimed=(await view(fixture.owner,visit)).body.visit;
+ assert.equal(claimed.balance.balanceMillimes,0);
+ assert.equal(claimed.nextAction,'OWNER_REVIEW_CARD_CLAIM');
+ assert.ok(claimed.payments.every((p:{evidenceTier:string})=>p.evidenceTier==='DESK_CLAIM'));
 });
