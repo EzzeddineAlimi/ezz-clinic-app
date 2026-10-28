@@ -17,6 +17,11 @@ Enforced server-side on every request; identity comes only from the session. Rou
 | `care.confirm` | — | yes | — | — |
 | `care.correct` | — | yes | — | — |
 | `care.read` | yes | yes | yes | — |
+| `care.amend_site` | — | yes | — | — |
+| `clinical.read` | — | yes | — | — |
+| `clinical.write` | — | yes | — | — |
+| `medical.declare` | — | yes | yes | yes |
+| `medical.alert_presence` | — | yes | yes | yes |
 | `payment.record` | yes | yes | yes | — |
 | `payment.read` | yes | yes | yes | — |
 | `receipt.reprint` | yes | — | yes | — |
