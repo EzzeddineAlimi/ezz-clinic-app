@@ -27,6 +27,7 @@ import { fail } from '../platform/errors.ts';
 import { asBody, str, oneOf, isoDate, int, uuid, bool, optStr, parseTndToMillimes } from '../platform/validate.ts';
 import { sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
+import { clinicTimezone, localDate } from './settings.ts';
 
 interface ParsedLine { date: string; amount: number; reversal: boolean; ref: string | null; last4: string | null }
 
@@ -71,11 +72,13 @@ const daysBetween = (a: string, b: string) => (Date.parse(b + 'T00:00:00Z') - Da
 
 export async function reconcile(tx: Tx, asOf: string) {
   const s = await settings(tx);
+  // R73-C: a card claim belongs to the CLINIC day it was recorded on (statements are dated by local business day).
+  const tz = await clinicTimezone(tx, tx.clinicId!);
   const claims = (await tx.query<{ id: string; amount_millimes: number; d: string; card_terminal_ref: string | null; card_last4: string | null; visit_id: string }>(
-    `SELECT p.id, p.amount_millimes, (p.recorded_at AT TIME ZONE 'UTC')::date::text AS d, p.card_terminal_ref, p.card_last4, p.visit_id
-       FROM payments p WHERE p.tender = 'CARD' AND (p.recorded_at AT TIME ZONE 'UTC')::date <= $1::date
+    `SELECT p.id, p.amount_millimes, (p.recorded_at AT TIME ZONE $2)::date::text AS d, p.card_terminal_ref, p.card_last4, p.visit_id
+       FROM payments p WHERE p.tender = 'CARD' AND (p.recorded_at AT TIME ZONE $2)::date <= $1::date
         AND NOT EXISTS (SELECT 1 FROM adjustments a WHERE a.payment_id = p.id AND a.kind = 'PAYMENT_VOID')
-      ORDER BY p.id`, [asOf])).rows;
+      ORDER BY p.id`, [asOf, tz])).rows;
   const matches = (await tx.query<{ payment_id: string; statement_line_id: string; evidence_tier: string }>('SELECT payment_id, statement_line_id, evidence_tier FROM card_matches')).rows;
   const matchedClaim = new Map(matches.map(m => [m.payment_id, m]));
   const matchedLine = new Set(matches.map(m => m.statement_line_id));
@@ -218,7 +221,7 @@ export const cardRoutes: Route[] = [
   {
     method: 'GET', path: '/api/v1/card/reconciliation', permission: 'card.review',
     handler: async ({ tx, query }) => {
-      const asOf = query.get('asOf') ?? new Date().toISOString().slice(0, 10);
+      const asOf = query.get('asOf') ?? localDate(await clinicTimezone(tx, tx.clinicId!));
       if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) fail('VALIDATION_FAILED', 'asOf must be YYYY-MM-DD');
       return { status: 200, body: await reconcile(tx, asOf) };
     },
@@ -233,7 +236,7 @@ export const cardRoutes: Route[] = [
       const paymentId = uuid(b, 'paymentId');
       const lineId = uuid(b, 'statementLineId');
       const note = optStr(b, 'note', { max: 300 });
-      const asOf = new Date().toISOString().slice(0, 10);
+      const asOf = localDate(await clinicTimezone(tx, tx.clinicId!));
       const rec = await reconcile(tx, asOf);
       const claim = rec.claims.find(c => c.paymentId === paymentId);
       if (!claim) fail('NOT_FOUND', 'Card claim not found');

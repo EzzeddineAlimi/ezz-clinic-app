@@ -11,7 +11,8 @@ import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr } from '../platform/validate.ts';
-import { appendAudit, CHECKPOINT_DUE_DAYS } from './audit.ts';
+import { appendAudit } from './audit.ts';
+import { clinicSettings, clinicTimezone, localDate } from './settings.ts';
 import { reconcile } from './card.ts';
 import { reconcileBook } from './paper.ts';
 import { integrityCheck } from './integrity.ts';
@@ -23,23 +24,26 @@ export interface OwnerException {
 
 export async function computeExceptions(tx: Tx, clinicId: string, asOf: string): Promise<OwnerException[]> {
   const out: OwnerException[] = [];
+  // R73-C: the as-of day is a CLINIC day; asOfStart = local midnight of asOf as an instant.
+  const { timezone, checkpointDueDays } = await clinicSettings(tx, clinicId);
+  const asOfStart = Date.parse((await tx.one<{ t: string }>('SELECT ($1::date)::timestamp AT TIME ZONE $2 AS t', [asOf, timezone])).t);
   // CH-018: visit in the past, no dentist record, not cancelled/no-show.
   const unresolved = (await tx.query<{ id: string; scheduled_at: string; file_no: number }>(`SELECT v.id, v.scheduled_at, p.file_no FROM visits v JOIN patients p ON p.id = v.patient_id
-      WHERE v.scheduled_at < $1::date AND v.status NOT IN ('CANCELLED','NO_SHOW') AND NOT EXISTS (SELECT 1 FROM care_items c WHERE c.visit_id = v.id)`, [asOf])).rows;
+      WHERE v.scheduled_at < ($1::date)::timestamp AT TIME ZONE $2 AND v.status NOT IN ('CANCELLED','NO_SHOW') AND NOT EXISTS (SELECT 1 FROM care_items c WHERE c.visit_id = v.id)`, [asOf, timezone])).rows;
   for (const v of unresolved) out.push({ key: `visit:${v.id}:no_dentist_record`, kind: 'VISIT_WITHOUT_DENTIST_RECORD', evidence: 'NO_INDEPENDENT_RECORD', severity: 'MEDIUM',
     wording: 'No dentist record for this past visit (unresolved)', known: `Visit scheduled ${v.scheduled_at} for file no. ${v.file_no}`, unknown: 'Whether care happened or payment was taken',
     nextStep: 'Dentist confirms care, or the visit is cancelled / marked no-show with a reason', refs: { visitId: v.id } });
   // Desk-marked no-show / cancellation (hidden-visit risk) — informational.
   const deskMarked = (await tx.query<{ id: string; status: string; status_reason: string | null }>(`SELECT v.id, v.status, v.status_reason FROM visits v
-      WHERE v.status IN ('NO_SHOW','CANCELLED') AND v.status_changed_at > $1::date - 14
-        AND NOT EXISTS (SELECT 1 FROM staff_roles r WHERE r.staff_id = v.status_changed_by AND r.role IN ('DENTIST','OWNER'))`, [asOf])).rows;
+      WHERE v.status IN ('NO_SHOW','CANCELLED') AND v.status_changed_at > ($1::date - 14)::timestamp AT TIME ZONE $2
+        AND NOT EXISTS (SELECT 1 FROM staff_roles r WHERE r.staff_id = v.status_changed_by AND r.role IN ('DENTIST','OWNER'))`, [asOf, timezone])).rows;
   for (const v of deskMarked) out.push({ key: `visit:${v.id}:desk_marked_${v.status.toLowerCase()}`, kind: 'DESK_MARKED_' + v.status, evidence: 'DESK_RECORD_ONLY', severity: 'INFO',
     wording: `Visit marked ${v.status === 'NO_SHOW' ? 'no-show' : 'cancelled'} at the desk`, known: `Reason given: ${v.status_reason ?? '—'}`, unknown: 'Whether the patient actually came',
     nextStep: 'Spot-check with the dentist\'s own day list if unexpected', refs: { visitId: v.id } });
   // Cash periods.
   if ((await tx.one<{ ok: boolean }>("SELECT to_regclass('cash_counts') IS NOT NULL AS ok")).ok) {
     const open = await tx.maybeOne<{ id: string; opened_at: string; n: number }>("SELECT p.id, p.opened_at, (SELECT count(*)::int FROM cash_counts c WHERE c.period_id = p.id) AS n FROM cash_periods p WHERE p.status = 'OPEN'");
-    if (open && open.n === 0 && new Date(open.opened_at).getTime() < new Date(asOf + 'T00:00:00Z').getTime() - 86400_000) {
+    if (open && open.n === 0 && new Date(open.opened_at).getTime() < asOfStart - 86400_000) {
       out.push({ key: `cash:${open.id}:count_due`, kind: 'CASH_COUNT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: 'Drawer has not been counted for more than a day',
         known: `Period open since ${open.opened_at}`, unknown: 'Drawer content (blind until counted)', nextStep: 'Owner or dentist counts the drawer without looking at records first', refs: { periodId: open.id } });
     }
@@ -80,8 +84,8 @@ export async function computeExceptions(tx: Tx, clinicId: string, asOf: string):
   const integ = await integrityCheck(tx, clinicId, []);
   for (const f of integ.findings) out.push({ key: `integrity:${f.check.toLowerCase()}:finding`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: 'HIGH', wording: f.detail, known: 'Detected by recomputation', unknown: 'Who changed the data outside the app', nextStep: 'Stop and compare with the latest owner checkpoint and backup' });
   const cp = await tx.maybeOne<{ at: string }>('SELECT max(created_at) AS at FROM audit_checkpoints');
-  if (!cp?.at || new Date(cp.at).getTime() < new Date(asOf + 'T00:00:00Z').getTime() - CHECKPOINT_DUE_DAYS * 86400_000) {
-    out.push({ key: 'audit:checkpoint:due', kind: 'AUDIT_CHECKPOINT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: 'No owner checkpoint in the last 7 days', known: `Last checkpoint: ${cp?.at ?? 'never'}`,
+  if (!cp?.at || new Date(cp.at).getTime() < asOfStart - checkpointDueDays * 86400_000) {
+    out.push({ key: 'audit:checkpoint:due', kind: 'AUDIT_CHECKPOINT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: `No owner checkpoint in the last ${checkpointDueDays} days`, known: `Last checkpoint: ${cp?.at ?? 'never'}`,
       unknown: 'Changes since then are tamper-evident only inside the database', nextStep: 'Create a checkpoint and keep the printed line outside the clinic system' });
   }
   return out;
@@ -91,7 +95,7 @@ export const exceptionRoutes: Route[] = [
   {
     method: 'GET', path: '/api/v1/owner/exceptions', permission: 'exceptions.read',
     handler: async ({ tx, actor, query }) => {
-      const asOf = query.get('asOf') ?? new Date().toISOString().slice(0, 10);
+      const asOf = query.get('asOf') ?? localDate(await clinicTimezone(tx, actor!.clinicId));
       if (!/^\d{4}-\d{2}-\d{2}$/.test(asOf)) fail('VALIDATION_FAILED', 'asOf must be YYYY-MM-DD');
       const all = await computeExceptions(tx, actor!.clinicId, asOf);
       const resolved = (await tx.query<{ exception_key: string; reason_code: string }>('SELECT exception_key, reason_code FROM exception_resolutions')).rows;
@@ -113,7 +117,7 @@ export const exceptionRoutes: Route[] = [
       const key = str(b, 'key', { max: 200, pattern: /^[a-z_]+:[0-9a-zA-Z_-]+:[a-z_]+$/ });
       const reasonCode = str(b, 'reasonCode', { min: 3, max: 40, pattern: /^[A-Z_]{3,40}$/ });
       const note = optStr(b, 'note', { max: 300 });
-      const asOf = typeof b.asOf === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.asOf) ? b.asOf : new Date().toISOString().slice(0, 10);
+      const asOf = typeof b.asOf === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(b.asOf) ? b.asOf : localDate(await clinicTimezone(tx, actor!.clinicId));
       const items = await computeExceptions(tx, actor!.clinicId, asOf);
       if (!items.some(e => e.key === key)) fail('NOT_FOUND', 'No such open exception');
       const r = await tx.one<{ id: string }>('INSERT INTO exception_resolutions (clinic_id, exception_key, reason_code, note, resolved_by) VALUES ($1,$2,$3,$4,$5) RETURNING id', [actor!.clinicId, key, reasonCode, note, actor!.staffId]);

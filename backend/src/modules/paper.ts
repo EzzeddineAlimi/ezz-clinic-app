@@ -29,6 +29,7 @@ import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 import { PgError } from '../platform/pgwire.ts';
 import { recordPayment } from './billing.ts';
+import { clinicTimezone } from './settings.ts';
 
 export const slipLabel = (prefix: string, n: number) => `${prefix}-${String(n).padStart(3, '0')}`;
 
@@ -79,12 +80,12 @@ export async function reconcileBook(tx: Tx, bookId: string, window: OutageWindow
   type SlipVisit = { slipNo: number; visitId: string; fileNo: number; slipPatientFileNo: number | null; writtenOn: string | null; visitLocalDate: string;
     paidBySlipMillimes: number; chargedMillimes: number; paidMillimes: number; reducedMillimes: number; returnedMillimes: number };
   const sv = (await tx.query<SlipVisit>(`SELECT e.slip_no AS "slipNo", e.visit_id AS "visitId", p.file_no AS "fileNo", e.patient_file_no AS "slipPatientFileNo",
-      e.written_on::text AS "writtenOn", (v.scheduled_at AT TIME ZONE coalesce(c.settings->>'timezone', 'Africa/Tunis'))::date::text AS "visitLocalDate",
+      e.written_on::text AS "writtenOn", (v.scheduled_at AT TIME ZONE $2)::date::text AS "visitLocalDate",
       e.amount_millimes AS "paidBySlipMillimes", b.charged_millimes AS "chargedMillimes", b.paid_millimes AS "paidMillimes",
       b.reduced_millimes AS "reducedMillimes", b.returned_millimes AS "returnedMillimes"
     FROM paper_slip_entries e JOIN visits v ON v.clinic_id = e.clinic_id AND v.id = e.visit_id JOIN patients p ON p.clinic_id = v.clinic_id AND p.id = v.patient_id
-    JOIN clinics c ON c.id = e.clinic_id JOIN visit_balances b ON b.visit_id = v.id
-    WHERE e.book_id = $1 AND e.classification = 'POSTED' ORDER BY e.slip_no`, [book.id])).rows;
+    JOIN visit_balances b ON b.visit_id = v.id
+    WHERE e.book_id = $1 AND e.classification = 'POSTED' ORDER BY e.slip_no`, [book.id, await clinicTimezone(tx, tx.clinicId!)])).rows;
   const slipsPerVisit = new Map<string, number[]>();
   for (const r of sv) slipsPerVisit.set(r.visitId, [...(slipsPerVisit.get(r.visitId) ?? []), r.slipNo]);
   const slipRows = sv.map(r => {

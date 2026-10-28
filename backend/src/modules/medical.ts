@@ -23,6 +23,7 @@ import { asBody, str, optStr, oneOf, int, uuid, bool, isUuid } from '../platform
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 import { getPatient, getVisit } from './patients.ts';
+import { clinicTimezone, localDate } from './settings.ts';
 
 export const ALERT_CODES = [
   'ALLERGY_PENICILLIN', 'ALLERGY_LATEX', 'ALLERGY_LOCAL_ANAESTHETIC', 'ALLERGY_OTHER',
@@ -86,7 +87,9 @@ export interface MedicalState {
   allergyStatus: 'NOT_RECORDED' | 'NO_KNOWN_ALLERGIES' | 'ALLERGIES_RECORDED';
 }
 
-export async function medicalState(tx: Tx, patientId: string, today = new Date()): Promise<MedicalState> {
+export async function medicalState(tx: Tx, patientId: string, today?: string): Promise<MedicalState> {
+  // R73-C: "today" is the clinic day, not the UTC day.
+  const clinicToday = today ?? localDate(await clinicTimezone(tx, tx.clinicId!));
   const all = await currentAlerts(tx, patientId);
   const active = all.filter(a => a.status === 'ACTIVE');
   const hash = alertSetHash(active);
@@ -95,7 +98,7 @@ export async function medicalState(tx: Tx, patientId: string, today = new Date()
        FROM medical_history_reviews r JOIN staff s ON s.clinic_id = r.clinic_id AND s.id = r.reviewed_by
       WHERE r.patient_id = $1 ORDER BY r.reviewed_at DESC, r.id DESC LIMIT 1`, [patientId]);
   const reviewStatus = !last ? 'NEVER_REVIEWED'
-    : last.next_review_due < today.toISOString().slice(0, 10) ? 'OVERDUE'
+    : last.next_review_due < clinicToday ? 'OVERDUE'
     : last.alert_set_sha256 !== hash ? 'CHANGED_SINCE_REVIEW' : 'CURRENT';
   const allergyStatus = active.some(a => isAllergy(a.code)) ? 'ALLERGIES_RECORDED'
     : last?.no_known_allergies ? 'NO_KNOWN_ALLERGIES' : 'NOT_RECORDED';
@@ -250,8 +253,8 @@ export const medicalRoutes: Route[] = dentistAuthored([
       if (supplied !== m.alertSetHash) throw new AppError('MEDICAL_ALERTS_CHANGED', 'The medical alerts changed since you viewed them; review them again', { alertSetHash: m.alertSetHash });
       if (noKnownAllergies && m.active.some(a => isAllergy(a.code))) fail('CONFLICT', 'An allergy alert is active; resolve it or mark it entered-in-error before asserting no known allergies');
       const r = await tx.one<{ id: string; reviewed_at: string; next_review_due: string }>(`INSERT INTO medical_history_reviews (clinic_id, patient_id, visit_id, method, no_known_allergies, alert_set_sha256, next_review_due, note, reviewed_by, reviewed_role)
-          VALUES ($1,$2,$3,$4,$5,$6, (current_date + make_interval(months => $7))::date, $8, $9, 'DENTIST') RETURNING id, reviewed_at, next_review_due::text AS next_review_due`,
-        [actor!.clinicId, params.id!, visitId, method, noKnownAllergies, m.alertSetHash, months, note, actor!.staffId]);
+          VALUES ($1,$2,$3,$4,$5,$6, ($10::date + make_interval(months => $7))::date, $8, $9, 'DENTIST') RETURNING id, reviewed_at, next_review_due::text AS next_review_due`,
+        [actor!.clinicId, params.id!, visitId, method, noKnownAllergies, m.alertSetHash, months, note, actor!.staffId, localDate(await clinicTimezone(tx, actor!.clinicId))]);
       await appendAudit(tx, actor!, 'medical.history_reviewed', 'medical_history_review', r.id, { patientId: params.id, visitId, method, noKnownAllergies, alertSetHash: m.alertSetHash, nextReviewDue: r.next_review_due, hasNote: note !== null });
       if (visitId && m.active.length) await insertAck(tx, actor!, { id: visitId, patient_id: params.id! }, m, 'EXPLICIT');
       const after = await medicalState(tx, params.id!);

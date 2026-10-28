@@ -15,9 +15,9 @@ import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { isUuid } from '../platform/validate.ts';
 import { can } from './identity.ts';
-import { clinicTimezone, clinicDay } from './patients.ts';
+import { clinicDay } from './patients.ts';
+import { clinicSettings } from './settings.ts';
 
-const NOT_ARRIVED_GRACE_MIN = 15;
 
 type Row = {
   id: string; scheduledAt: string; localTime: string; durationMin: number; status: string; statusChangedAt: string; waitingMinutes: number | null;
@@ -27,7 +27,7 @@ type Row = {
 };
 
 export async function dayBoard(tx: Tx, actor: Actor, query: URLSearchParams) {
-  const timezone = await clinicTimezone(tx, actor.clinicId);
+  const { timezone, notArrivedGraceMinutes } = await clinicSettings(tx, actor.clinicId);
   const day = clinicDay(query, timezone);
   const isDentist = actor.roles.includes('DENTIST');
   const scope = query.get('scope') ?? (isDentist ? 'mine' : 'all');
@@ -59,7 +59,7 @@ export async function dayBoard(tx: Tx, actor: Actor, query: URLSearchParams) {
     WHERE v.clinic_id = $1 AND v.scheduled_at >= $2::date::timestamp AT TIME ZONE $4 AND v.scheduled_at < ($2::date + 1)::timestamp AT TIME ZONE $4
       AND ($3::uuid IS NULL OR v.dentist_id = $3::uuid)
       AND (NOT $5::boolean OR v.dentist_id = $6::uuid OR v.dentist_id IS NULL)
-    ORDER BY v.scheduled_at, v.id`, [actor.clinicId, day, dentistId, timezone, scope === 'mine', actor.staffId, NOT_ARRIVED_GRACE_MIN])).rows;
+    ORDER BY v.scheduled_at, v.id`, [actor.clinicId, day, dentistId, timezone, scope === 'mine', actor.staffId, notArrivedGraceMinutes])).rows;
 
   const seesMoney = can(actor, 'payment.read');
   const seesReasons = can(actor, 'visit.desk_status');

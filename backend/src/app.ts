@@ -24,6 +24,7 @@ import { reviewRoutes } from './modules/review.ts';
 import { dayBoardRoutes } from './modules/dayboard.ts';
 import { printRoutes } from './modules/print.ts';
 import { checkpointRoutes } from './modules/checkpoints.ts';
+import { settingsRoutes } from './modules/settings.ts';
 
 export interface AppOptions {
   databaseUrl: string;
@@ -49,6 +50,7 @@ export function buildRoutes(db: Db): Route[] {
     ...identityRoutes,
     ...auditRoutes,
     ...checkpointRoutes,
+    ...settingsRoutes,
     ...patientRoutes,
     ...workbenchRoutes,
     ...dayBoardRoutes,

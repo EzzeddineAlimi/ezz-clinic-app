@@ -19,7 +19,8 @@ import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, optStr } from '../platform/validate.ts';
 import { sha256 } from '../platform/canonical.ts';
-import { createCheckpoint, verifyChain, CHECKPOINT_DUE_DAYS, type Anchor } from './audit.ts';
+import { createCheckpoint, verifyChain, type Anchor } from './audit.ts';
+import { clinicSettings } from './settings.ts';
 import { printOptions, renderHtml, type Lang, type PrintDocument } from './print.ts';
 
 export const LINE_PREFIX = 'EZZ-CP2';
@@ -161,6 +162,7 @@ export const checkpointRoutes: Route[] = [
     method: 'GET', path: '/api/v1/owner/checkpoints', permission: 'audit.verify',
     handler: async ({ tx, actor }) => {
       const internal = await internalCheckpointStatus(tx, actor!.clinicId);
+      const { checkpointDueDays } = await clinicSettings(tx, actor!.clinicId);
       const last = internal[0] ?? null;
       const ageDays = last ? Math.floor((Date.now() - Date.parse(last.at)) / 86400_000) : null;
       // Events recorded after the last checkpoint, not counting the checkpoint bookkeeping events themselves.
@@ -169,7 +171,7 @@ export const checkpointRoutes: Route[] = [
       return {
         status: 200,
         body: {
-          due: !last || (ageDays as number) >= CHECKPOINT_DUE_DAYS, dueAfterDays: CHECKPOINT_DUE_DAYS,
+          due: !last || (ageDays as number) >= checkpointDueDays, dueAfterDays: checkpointDueDays,
           last: last ? { seq: last.seq, at: last.at, ageDays } : null,
           eventsSinceLast: since.n,
           internalCopies: { count: internal.length, differing: internal.filter(c => c.internalCopy !== 'MATCHES').length, items: internal.slice(0, 50) },

@@ -68,6 +68,8 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'paper.enter_slips':       ['OWNER', 'DENTIST', 'RECEPTIONIST'],
   'paper.custody':           ['OWNER', 'DENTIST'],
   'paper.read':              ['OWNER', 'DENTIST'],
+  'clinic.settings.read':    ['OWNER', 'DENTIST', 'RECEPTIONIST', 'ASSISTANT'],
+  'clinic.settings.manage':  ['OWNER'],
   'exceptions.read':         ['OWNER'],
   'finance.review':          ['OWNER'],
   'exceptions.resolve':      ['OWNER'],

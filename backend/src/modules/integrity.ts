@@ -56,6 +56,7 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
 
   findings.push(...await businessValueFindings(tx, clinicId, await tableExists(tx, 'cash_counts')));
   if (await tableExists(tx, 'clinical_notes')) findings.push(...await clinicalValueFindings(tx, clinicId));
+  if (await tableExists(tx, 'clinic_setting_changes')) findings.push(...await settingValueFindings(tx, clinicId));
 
   const chain = await verifyChain(tx, clinicId, anchors);
   for (const f of chain.findings) findings.push({ check: 'AUDIT_' + f.kind, severity: 'HIGH', detail: `seq ${f.seq}: ${f.detail}` });
@@ -344,5 +345,29 @@ export async function clinicalValueFindings(tx: Tx, clinicId: string): Promise<I
     const [table, id] = [k.slice(0, k.indexOf(':')), k.slice(k.indexOf(':') + 1)];
     out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records ${table} ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table, id } });
   }
+  return out;
+}
+
+/*
+ * R73-C: clinic setting changes vs their audit events. A setting decides how days, reminders and flags are computed
+ * (e.g. the timezone shifts every day boundary), so a silent edit is reported like any other value mismatch.
+ */
+export async function settingValueFindings(tx: Tx, clinicId: string): Promise<IntegrityFinding[]> {
+  const out: IntegrityFinding[] = [];
+  const ev = new Map((await tx.query<{ entity_id: string; payload: Record<string, unknown>; actor_staff_id: string | null }>(
+    "SELECT entity_id, payload, actor_staff_id FROM audit_events WHERE clinic_id = $1 AND action = 'clinic.setting_changed'", [clinicId])).rows.map(e => [e.entity_id, e]));
+  const KEY: Record<string, string> = { timezone: 'timezone', checkpoint_due_days: 'checkpointDueDays', not_arrived_grace_minutes: 'notArrivedGraceMinutes' };
+  const rows = (await tx.query<{ id: string; key: string; value: unknown; previous: unknown; changed_by: string }>(
+    'SELECT id, key, value, previous, changed_by FROM clinic_setting_changes WHERE clinic_id = $1', [clinicId])).rows;
+  for (const r of rows) {
+    const e = ev.get(r.id);
+    if (!e) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `clinic_setting_changes ${r.id} has no audit event (written around the application?)`, refs: { table: 'clinic_setting_changes', id: r.id } }); continue; }
+    ev.delete(r.id);
+    for (const [field, recorded, audited] of [['key', KEY[r.key] ?? r.key, e.payload.key], ['to', r.value, e.payload.to], ['from', r.previous, e.payload.from], ['changedBy', r.changed_by, e.actor_staff_id]] as Array<[string, unknown, unknown]>) {
+      if (canonicalJson(recorded ?? null) !== canonicalJson(audited ?? null)) out.push({ check: 'SETTING_AUDIT_VALUE_MISMATCH', severity: 'HIGH',
+        detail: `clinic_setting_changes ${r.id}: ${field} is ${JSON.stringify(recorded)} but the audit event recorded ${JSON.stringify(audited)}. ${NEUTRAL}`, refs: { table: 'clinic_setting_changes', id: r.id, field, recorded, audited } });
+    }
+  }
+  for (const id of ev.keys()) out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records clinic setting change ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table: 'clinic_setting_changes', id } });
   return out;
 }

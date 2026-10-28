@@ -6,24 +6,18 @@
  * change a patient's phone, R24 trust boundary); a visit with confirmed care cannot be cancelled or marked
  * no-show; desk-marked NO_SHOW/CANCELLED visits surface to the owner (hidden-visit risk, CH-018);
  * only a DENTIST can mark a visit COMPLETED; NO_SHOW only once the appointment time has passed (B12).
- * Days are CLINIC-LOCAL (clinics.settings.timezone, default Africa/Tunis), never UTC (B12).
+ * Days are CLINIC-LOCAL (clinic setting "timezone", settings module), never UTC (B12, R73-C).
  */
 import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
+import { clinicTimezone } from './settings.ts';
 
 const NAME = { min: 1, max: 80 };
-export const DEFAULT_TIMEZONE = 'Africa/Tunis';
-
-/** The clinic's IANA timezone. An invalid setting fails loudly instead of silently using UTC. */
-export async function clinicTimezone(tx: Tx, clinicId: string): Promise<string> {
-  const c = await tx.one<{ tz: string | null }>("SELECT settings->>'timezone' AS tz FROM clinics WHERE id = $1", [clinicId]);
-  const tz = c.tz ?? DEFAULT_TIMEZONE;
-  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); } catch { fail('CONFLICT', `Clinic timezone setting "${tz}" is not a valid IANA timezone; fix the clinic settings`); }
-  return tz;
-}
+// The clinic timezone is a clinic setting (R73-C); re-exported here for the modules that took it from patients.
+export { clinicTimezone } from './settings.ts';
 
 /** A clinic-local calendar day from a query parameter (default: today in that timezone). */
 export function clinicDay(query: URLSearchParams, tz: string): string {
