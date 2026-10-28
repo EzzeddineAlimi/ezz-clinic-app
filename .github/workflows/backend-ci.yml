@@ -52,5 +52,7 @@ jobs:
         run: npm run typecheck
       - name: Tests (real PostgreSQL; fictional data)
         run: npm test
+      - name: Fictional clinic-day journey (throwaway PostgreSQL database)
+        run: node scripts/demo-visit-journey.ts
       - name: Compiled build smoke
         run: npm run build
