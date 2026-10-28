@@ -13,6 +13,7 @@ const ALLOWED: Record<string, string[]> = {
   audit: [],
   identity: ['audit'],
   patients: ['audit'],
+  workbench: [],
   care: ['audit', 'patients'],
   billing: ['audit', 'patients'],
   integrity: ['audit'],
