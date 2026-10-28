@@ -10,7 +10,7 @@ import { createTestDb, startApi, standardFixture, confirmCare, adminConn } from 
 
 const mutations: { label: string; sql: string }[] = [
   { label: 'JSONB payload', sql: "payload = jsonb_set(payload, '{amountMillimes}', '900000'::jsonb)" },
-  { label: 'actor roles', sql: "actor_roles = 'RECEPTIONIST'" },
+  { label: 'actor roles', sql: "actor_roles = 'INJECTED_ROLE'" },
   { label: 'entity type', sql: "entity_type = 'fake_payment'" },
   { label: 'timestamp', sql: "occurred_at = occurred_at + interval '1 day'" },
 ];
