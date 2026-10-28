@@ -47,8 +47,11 @@ export interface Anchor { seq: number; hash: string }
 /** Recompute the whole chain for the current clinic (RLS-scoped). O(n); fine for one small clinic. */
 export async function verifyChain(tx: Tx, clinicId: string, anchors: Anchor[] = []) {
   const findings: ChainFinding[] = [];
-  const rows = (await tx.query<{ seq: number; canonical: string; prev_hash: string; hash: string; action: string; entity_id: string; actor_staff_id: string | null }>(
-    'SELECT seq, canonical, prev_hash, hash, action, entity_id, actor_staff_id FROM audit_events WHERE clinic_id = $1 ORDER BY seq', [clinicId])).rows;
+  const rows = (await tx.query<{
+    clinic_id: string; seq: number; occurred_at: string; actor_roles: string; entity_type: string; payload: Record<string, unknown>;
+    canonical: string; prev_hash: string; hash: string; action: string; entity_id: string; actor_staff_id: string | null
+  }>(
+    'SELECT clinic_id, seq, occurred_at, actor_roles, entity_type, payload, canonical, prev_hash, hash, action, entity_id, actor_staff_id FROM audit_events WHERE clinic_id = $1 ORDER BY seq', [clinicId])).rows;
   let expectedSeq = 1;
   let prev = GENESIS_HASH;
   const bySeq = new Map<number, string>();
@@ -57,9 +60,25 @@ export async function verifyChain(tx: Tx, clinicId: string, anchors: Anchor[] = 
     if (r.prev_hash !== prev) findings.push({ kind: 'PREV_HASH_MISMATCH', seq: r.seq, detail: 'prev_hash does not equal hash of previous event' });
     if (sha256(r.prev_hash + '\n' + r.canonical) !== r.hash) findings.push({ kind: 'HASH_MISMATCH', seq: r.seq, detail: 'stored hash does not match content' });
     try {
-      const d = JSON.parse(r.canonical) as { seq: number; action: string; entityId: string; actorStaffId: string | null; prevHash: string };
-      if (d.seq !== r.seq || d.action !== r.action || d.entityId !== r.entity_id || d.actorStaffId !== r.actor_staff_id || d.prevHash !== r.prev_hash) {
-        findings.push({ kind: 'CANONICAL_MISMATCH', seq: r.seq, detail: 'indexed columns differ from hashed content' });
+      const d = JSON.parse(r.canonical) as {
+        clinicId: string; seq: number; occurredAt: string; actorStaffId: string | null; actorRoles: string;
+        action: string; entityType: string; entityId: string; payload: Record<string, unknown>; prevHash: string
+      };
+      // A hash chain protects the canonical snapshot. Compare EVERY mirrored DB column against
+      // it as well: a privileged actor can bypass triggers and alter an indexed field without
+      // changing canonical/hash or an owner's externally held checkpoint (SEC-01 / CH-026).
+      const occurredAt = new Date(r.occurred_at).toISOString();
+      if (d.clinicId !== r.clinic_id ||
+          d.seq !== r.seq ||
+          d.occurredAt !== occurredAt ||
+          d.actorStaffId !== r.actor_staff_id ||
+          d.actorRoles !== r.actor_roles ||
+          d.action !== r.action ||
+          d.entityType !== r.entity_type ||
+          d.entityId !== r.entity_id ||
+          canonicalJson(d.payload) !== canonicalJson(r.payload) ||
+          d.prevHash !== r.prev_hash) {
+        findings.push({ kind: 'CANONICAL_MISMATCH', seq: r.seq, detail: 'stored audit event fields differ from hashed canonical content' });
       }
     } catch { findings.push({ kind: 'CANONICAL_MISMATCH', seq: r.seq, detail: 'canonical text is not valid JSON' }); }
     bySeq.set(r.seq, r.hash);
