@@ -23,7 +23,7 @@ Per the C-146 / M-245 close bar, a challenge may only be proposed for closure wh
 
 ## Remaining vulnerabilities / gaps (ranked)
 
-1. **HIGH — No TLS in the in-repo DB driver** (ADR-0004). Dev/CI only. Fix: ENG-01.
+1. **HIGH — No TLS in the in-repo DB driver** (ADR-0004). Dev/CI only. Fix: ENG-01. **B05 draft (ADR-0004a)** replaces it with `pg` + enforced verified TLS for remote hosts; pending independent review, not yet in this base.
 2. **HIGH — Demo-grade identity**: password-only, no MFA, no device binding, chairside auth undefined; a receptionist who learns the dentist's password can confirm care as the dentist. Mitigations: per-person accounts, lockout, re-auth, audit. Fix: identity ticket SEC-01.
 3. **HIGH — Owner recovery** requires DB-owner CLI access; no sealed recovery procedure. Fix: SEC-02.
 4. **HIGH — Repository visibility**: GitHub API reported `ezz-clinic-app` as **public** on 2026-10-28 although the Sheet says private. Founder to verify.

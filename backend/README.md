@@ -5,7 +5,7 @@
 ## Requirements
 - Node.js 22.18+ (tested 22.23.4; type-stripping runs `.ts` directly; production should run `npm run build && npm start`)
 - PostgreSQL 16 superuser URL **for tests only** (creates/drops throw-away databases)
-- No runtime npm dependencies (temporary in-repo PostgreSQL client, **no TLS** — see `docs/architecture/decisions.md` ADR-0004)
+- One runtime dependency: `pg` 8.23.1 (node-postgres, exact pin, integrity-hashed lockfile). Remote databases require verified TLS (`sslmode=verify-full`, pin `sslrootcert`); see `docs/architecture/decisions.md` ADR-0004a
 
 ## Run the tests
 ```bash
