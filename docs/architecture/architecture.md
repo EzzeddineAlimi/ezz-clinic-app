@@ -31,7 +31,7 @@ graph TD
   subgraph platform
     HTTP[http: host/origin/JSON guards, auth hook, permission check, re-auth, idempotency, tx]
     DB[db: tx + SET LOCAL app.clinic_id]
-    PG[pgwire: PostgreSQL protocol client]
+    PG[postgres.ts: node-postgres pool, verified TLS for remote hosts]
     VAL[validate: millimes, ids, dates]
   end
   identity --> audit

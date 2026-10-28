@@ -1,6 +1,6 @@
 /*
- * Database access boundary. Module code depends only on `Tx` and `Db`, never on the driver,
- * so the in-repo wire client can be swapped for node-postgres (`pg`) later (ENG-01).
+ * Database access boundary. Module code depends only on `Tx` and `Db`, never on the driver
+ * (node-postgres since issue #4; TLS policy in postgres.ts).
  *
  * Transaction contract:
  *  - every request that touches tenant data runs inside ONE transaction;
@@ -9,7 +9,11 @@
  *    (visit, receipt counter, audit head, cash period) to serialise concurrent requests;
  *  - any thrown error rolls the whole transaction back (payment + receipt + audit + idempotency together).
  */
-import { PgPool, PgConnection, parseDatabaseUrl, type PgValue, type QueryResult, type Row } from './pgwire.ts';
+import { PgPool, PgConnection, parseDatabaseUrl, type PgValue, type QueryResult, type Row, type PoolOptions } from './postgres.ts';
+
+// API defaults (overridable per URL): a request must not hold a transaction or run a statement forever.
+const API_STATEMENT_TIMEOUT_MS = 30_000;
+const API_IDLE_IN_TRANSACTION_TIMEOUT_MS = 60_000;
 
 export interface Tx {
   query<R = Row>(sql: string, params?: PgValue[]): Promise<QueryResult<R>>;
@@ -37,9 +41,14 @@ function wrap(conn: PgConnection, clinicId: string | null): Tx {
 
 export class Db {
   private pool: PgPool;
-  constructor(url: string, max = 8) {
-    this.pool = new PgPool(parseDatabaseUrl(url), max);
+  constructor(url: string, opts: number | PoolOptions = 8) {
+    const cfg = parseDatabaseUrl(url);
+    cfg.statementTimeoutMs ??= API_STATEMENT_TIMEOUT_MS;
+    cfg.idleInTransactionTimeoutMs ??= API_IDLE_IN_TRANSACTION_TIMEOUT_MS;
+    this.pool = new PgPool(cfg, opts);
   }
+
+  get poolStats() { return this.pool.stats; }
 
   /** Run fn in a transaction, scoped to a clinic for RLS (clinicId null = pre-auth / global tables only). */
   async tx<T>(clinicId: string | null, fn: (tx: Tx) => Promise<T>): Promise<T> {

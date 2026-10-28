@@ -14,8 +14,11 @@ Money is `bigint` millimes in DB and safe-integer JSON numbers in the API; float
 ## ADR-0003 Append-only evidence + compensating rows — ACCEPTED-FOR-DEV
 Financial and evidence tables reject UPDATE/DELETE/TRUNCATE by trigger (SQLSTATE EZ001) and by privileges. Corrections are new rows (care CORRECTION, adjustments, paper DUPLICATE/CONFLICT entries). Operational state (visit status, cash period status, session timestamps) is mutable but every change is audited.
 
-## ADR-0004 In-repo PostgreSQL wire client (temporary) — ACCEPTED-FOR-DEV, MUST BE REPLACED
+## ADR-0004 In-repo PostgreSQL wire client (temporary) — SUPERSEDED by ADR-0004a
 **Context**: the sprint sandbox had no npm registry access. **Decision**: a ~400-line zero-dependency v3 protocol client (extended query with parameters, SCRAM/md5/trust, simple query only for migrations) behind `Db`/`Tx`. **Consequences**: no TLS, not battle-tested → dev/CI only. **Follow-up**: ENG-01 swap to `pg` (node-postgres) with TLS; module code unchanged.
+
+## ADR-0004a node-postgres with enforced TLS for remote hosts (B05, issue #4) — PROPOSED (draft PR, not reviewed)
+**Decision**: `src/platform/postgres.ts` implements the same `PgConnection`/`PgPool`/`PgError`/`parseDatabaseUrl` API over `pg` 8.23.1 (exact pin; lockfile regenerated so all 18 packages carry integrity hashes; none has install scripts). `pgwire.ts` is a re-export shim so callers and stacked branches compile unchanged. **TLS policy** (checked before any socket opens): remote hosts must use `sslmode=verify-full` (default) or `verify-ca`; `disable`/`allow`/`prefer`/`require`/`no-verify` are refused; loopback and Unix sockets are the only exemption. `sslrootcert=<path>` pins the CA; without it the process trust store applies (which can include system/OS CAs depending on Node flags), so **production configs should always pin `sslrootcert`**. **Pool**: `pg.Pool` with a 10 s acquire timeout (no unbounded waits), idle-client errors handled, broken clients discarded; API sessions get `statement_timeout=30s` and `idle_in_transaction_session_timeout=60s` unless overridden in the URL. Tenant context stays transaction-local (`set_config(..., true)`). **Not decided here**: hosting, managed-database vendor, certificate issuance/rotation, Tunisian data-location rules (CH-004/006).
 
 ## ADR-0005 Tenant isolation = session clinic + RLS + composite FKs — ACCEPTED-FOR-DEV
 Three independent layers (architecture §4). API role `ezz_app` is NOBYPASSRLS, non-owner; RLS is FORCEd. Superusers still bypass RLS (documented residual).
