@@ -128,8 +128,8 @@ test('T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dent
   // ---------------------------------------------------------------- no-show and cancellation
   await call('POST', `/api/v1/visits/${v4}/status`, desk, { status: 'NO_SHOW', reason: 'Fictional: did not come' }, 200);
   await call('POST', `/api/v1/visits/${v5}/status`, desk, { status: 'CANCELLED', reason: 'Fictional: patient phoned' }, 200);
-  await call('POST', `/api/v1/visits/${v1}/status`, desk, { status: 'CANCELLED', reason: 'Fictional: hide visit' }, 409);
-  step('missed visits', { noShow: 1, cancelled: 1, documentedVisitCancelRefused: true });
+  const hide = await call('POST', `/api/v1/visits/${v1}/status`, desk, { status: 'CANCELLED', reason: 'Fictional: hide visit' }, 409);
+  step('missed visits', { noShow: 1, cancelled: 1, cancelTreatedVisitRefused: hide.body.error.message });
 
   // ---------------------------------------------------------------- paper outage (v6) and replay
   await reauth(api, owner);
