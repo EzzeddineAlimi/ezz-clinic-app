@@ -157,6 +157,10 @@ export const patientRoutes: Route[] = [
       if (to === 'NO_SHOW' || to === 'CANCELLED') {
         const care = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM care_items WHERE visit_id = $1', [v.id]);
         if (care.n > 0) fail('CONFLICT', 'Visit has dentist-confirmed care; it cannot be cancelled or marked no-show');
+        // CH-018: signed clinical documentation means the patient was seen; the desk cannot erase that visit.
+        const doc = await tx.one<{ n: number }>(`SELECT ((SELECT count(*) FROM clinical_notes WHERE visit_id = $1)
+            + (SELECT count(*) FROM chart_findings WHERE visit_id = $1))::int AS n`, [v.id]);
+        if (doc.n > 0) fail('CONFLICT', 'The dentist has documented this visit; it cannot be cancelled or marked no-show');
       }
       await tx.query('UPDATE visits SET status = $2, status_changed_at = now(), status_changed_by = $3, status_reason = $4 WHERE id = $1', [v.id, to, actor!.staffId, reason]);
       await appendAudit(tx, actor!, 'visit.status_changed', 'visit', v.id, { from: v.status, to, reason });

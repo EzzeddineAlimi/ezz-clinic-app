@@ -228,6 +228,7 @@ CREATE TABLE chart_findings (
 );
 CREATE UNIQUE INDEX chart_findings_one_strike ON chart_findings (clinic_id, entered_in_error_of_id) WHERE kind = 'ENTERED_IN_ERROR';
 CREATE INDEX chart_findings_patient ON chart_findings (clinic_id, patient_id, recorded_at);
+CREATE INDEX chart_findings_visit ON chart_findings (clinic_id, visit_id, recorded_at);
 SELECT ezz_make_append_only('chart_findings');
 
 -- Treatment plan items (§3, first slice: unversioned items; versions/quotes/consent come later and can wrap

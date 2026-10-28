@@ -16,6 +16,7 @@ const ALLOWED: Record<string, string[]> = {
   workbench: [],
   care: ['audit', 'patients', 'medical'],
   medical: ['audit', 'patients'],
+  clinical: ['audit', 'patients', 'care', 'medical'],
   billing: ['audit', 'patients'],
   integrity: ['audit'],
   cash: ['audit', 'billing'],
