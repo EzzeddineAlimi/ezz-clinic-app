@@ -16,7 +16,7 @@ interface CaseRow {
   chargedMillimes:number; paidMillimes:number; reducedMillimes:number;
   returnedMillimes:number; careCount:number;
 }
-function next(status:VisitStatus, careCount:number, balance:number):string {
+function next(status:VisitStatus, careCount:number, balance:number, payments:Array<Record<string,unknown>>):string {
   if(status==='CANCELLED'||status==='NO_SHOW') return 'CLOSED_WITHOUT_CARE';
   if(careCount===0) {
     if(status==='SCHEDULED')return 'CHECK_IN';
@@ -25,7 +25,10 @@ function next(status:VisitStatus, careCount:number, balance:number):string {
   }
   if(balance>0)return 'RECORD_OR_FOLLOW_UP_PAYMENT';
   if(balance<0)return 'OWNER_REVIEW_CREDIT';
-  return 'VISIT_COMPLETE';
+  if(payments.some(p=>p.tender==='CARD' && p.evidenceTier==='DESK_CLAIM'))return 'OWNER_REVIEW_CARD_CLAIM';
+  if(payments.length===0)return 'VISIT_COMPLETE_NO_PAYMENT_REQUIRED';
+  // Recording a payment is not independent proof of physical cash/provider settlement.
+  return 'CHECKOUT_RECORDED__RECONCILIATION_PENDING';
 }
 export const workbenchRoutes:Route[]=[{
   method:'GET',path:'/api/v1/visits/:id/workbench',
@@ -62,13 +65,18 @@ CROSS JOIN LATERAL (
     'tender',pay.tender,'source',pay.source,'recordedAt',pay.recorded_at,
     'receiptId',rc.id,'receiptLabel',CASE WHEN rc.id IS NULL THEN NULL
       ELSE rc.series||'-'||lpad(rc.number::text,6,'0') END,
-    'evidenceStatus',CASE WHEN pay.tender='CARD' THEN 'DESK_CLAIM__OWNER_PROOF_SEPARATE'
+    'evidenceTier',CASE WHEN pay.tender='CARD' THEN coalesce(cm.evidence_tier,'DESK_CLAIM') ELSE NULL END,
+    'evidenceStatus',CASE
+      WHEN pay.tender='CARD' AND cm.evidence_tier='OWNER_REVIEWED_STATEMENT'
+        THEN 'OWNER_REVIEWED_STATEMENT__NOT_PROVIDER_VERIFIED'
+      WHEN pay.tender='CARD' THEN 'DESK_CLAIM__OWNER_PROOF_SEPARATE'
       WHEN pay.source='PAPER_OUTAGE' THEN 'PAPER_ENTRY__PHYSICAL_EVIDENCE_REQUIRED'
       ELSE 'DESK_CASH__INDEPENDENT_COUNT_REQUIRED' END,
     'returnedMillimes',coalesce(adj.amount,0)
   ) ORDER BY pay.recorded_at,pay.id) FILTER(WHERE pay.id IS NOT NULL),'[]'::jsonb) AS items
   FROM payments pay
   LEFT JOIN receipts rc ON rc.clinic_id=pay.clinic_id AND rc.payment_id=pay.id
+  LEFT JOIN card_matches cm ON cm.clinic_id=pay.clinic_id AND cm.payment_id=pay.id
   LEFT JOIN LATERAL (
     SELECT coalesce(sum(a.amount_millimes),0)::bigint AS amount
     FROM adjustments a WHERE a.clinic_id=pay.clinic_id AND a.payment_id=pay.id
@@ -93,7 +101,7 @@ WHERE v.id=$1 AND v.clinic_id=$2
         balance:{chargedMillimes:record.chargedMillimes,paidMillimes:record.paidMillimes,
           reducedMillimes:record.reducedMillimes,returnedMillimes:record.returnedMillimes,
           balanceMillimes:balance,careConfirmed:record.careCount>0},
-        nextAction:next(record.status,record.careCount,balance)
+        nextAction:next(record.status,record.careCount,balance,record.payments)
       },
       evidenceNotice:'Cash requires independent counting; cards need separately reviewed external evidence. Recorded amounts are claims.',
       syntheticDataOnly:true
