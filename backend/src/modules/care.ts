@@ -21,7 +21,7 @@ import { asBody, str, optStr, millimes, uuid, bool, oneOf, isUuid } from '../pla
 import { readDentalSite, sameSite, type DentalSite } from '../contracts/clinical.ts';
 import { appendAudit } from './audit.ts';
 import { getVisitForUpdate, getVisit } from './patients.ts';
-import { requireAlertsAcknowledged, readAlertSetHash } from './medical.ts';
+import { requireAlertsAcknowledged, readAlertSetHash, requireDentistAuthor, dentistAuthored } from './medical.ts';
 
 export function validFdi(t: number): boolean {
   const q = Math.floor(t / 10), n = t % 10;
@@ -71,6 +71,7 @@ export interface ConfirmCareInput {
  * route and the treatment-plan "perform" route so both apply the same duplicate guard, alert gate and audit.
  */
 export async function confirmCareItem(tx: Tx, actor: Actor, v: { id: string; patient_id: string; status: string }, input: ConfirmCareInput) {
+  requireDentistAuthor(actor);
   if (v.status === 'CANCELLED' || v.status === 'NO_SHOW') fail('CONFLICT', `Visit is ${v.status}; care cannot be confirmed`);
   if (input.feeMillimes === 0 && (!input.reason || input.reason.length < 3)) fail('VALIDATION_FAILED', 'Free care (fee 0) requires a reason', { field: 'reason' });
   // Duplicate guard on the EFFECTIVE (amended, canonical) site, so 'DOM' cannot slip past 'MOD' (C-173 T-CL-AMEND-6).
@@ -92,7 +93,7 @@ export async function confirmCareItem(tx: Tx, actor: Actor, v: { id: string; pat
   };
 }
 
-export const careRoutes: Route[] = [
+export const careRoutes: Route[] = dentistAuthored([
   {
     method: 'POST', path: '/api/v1/visits/:id/care', permission: 'care.confirm', idempotent: true,
     handler: async ({ tx, actor, params, body }) => {
@@ -175,7 +176,7 @@ export const careRoutes: Route[] = [
       return { status: 200, body: { visitId: v.id, items, visitTotalMillimes: await visitCareTotal(tx, v.id) } };
     },
   },
-];
+]);
 
 /** Free-text reasons/notes may hold clinical detail: receptionists see codes and that a note exists. */
 function stripFreeText(i: Record<string, unknown>) {

@@ -41,6 +41,21 @@ export interface AlertRow {
 const isAllergy = (code: string) => code.startsWith('ALLERGY_');
 const dentistRole = (actor: Actor) => actor.roles.includes('DENTIST');
 
+/*
+ * Clinical author rows store their role as 'DENTIST' (0008 CHECKs). R72 / M-264 / M-265: that snapshot must be true even
+ * if the permission matrix is ever widened, so clinical authoring refuses any actor without the DENTIST role. This keeps
+ * the current policy (only a dentist authors clinical records); it does not relax any CHECK.
+ */
+export function requireDentistAuthor(actor: { roles: readonly string[] }) {
+  if (!actor.roles.includes('DENTIST')) fail('FORBIDDEN_ROLE', 'Clinical records are authored by a dentist; this account does not hold the DENTIST role');
+}
+export const CLINICAL_AUTHOR_PERMISSIONS: ReadonlySet<string> = new Set(['clinical.write', 'care.confirm', 'care.correct', 'care.amend_site']);
+/** Wrap every POST route gated by a clinical-author permission with requireDentistAuthor. */
+export function dentistAuthored(routes: Route[]): Route[] {
+  return routes.map(r => r.method === 'POST' && CLINICAL_AUTHOR_PERMISSIONS.has(r.permission ?? '')
+    ? { ...r, handler: ctx => { requireDentistAuthor(ctx.actor!); return r.handler(ctx); } } : r);
+}
+
 /** Serialise every medical write for one patient (FOR NO KEY UPDATE: does not block FK inserts). */
 async function lockPatient(tx: Tx, patientId: string) {
   if (!isUuid(patientId)) fail('NOT_FOUND', 'Patient not found');
@@ -122,6 +137,7 @@ export async function requireAlertsAcknowledged(tx: Tx, actor: Actor, visit: { i
 }
 
 async function insertAck(tx: Tx, actor: Actor, visit: { id: string; patient_id: string }, m: MedicalState, via: 'EXPLICIT' | 'CARE_CONFIRMATION' | 'PLAN_PERFORM') {
+  requireDentistAuthor(actor);
   const a = await tx.one<{ id: string; acknowledged_at: string }>(`INSERT INTO alert_acknowledgements (clinic_id, visit_id, patient_id, alert_set_sha256, active_alert_count, via, acknowledged_by, acknowledged_role)
       VALUES ($1,$2,$3,$4,$5,$6,$7,'DENTIST') RETURNING id, acknowledged_at`, [actor.clinicId, visit.id, visit.patient_id, m.alertSetHash, m.active.length, via, actor.staffId]);
   await appendAudit(tx, actor, 'medical.alerts_acknowledged', 'visit', visit.id, { acknowledgementId: a.id, alertSetHash: m.alertSetHash, activeAlertCount: m.active.length, via });
@@ -136,7 +152,7 @@ const hashParam = (b: Record<string, unknown>, key = 'alertSetHash'): string | n
 };
 export { hashParam as readAlertSetHash };
 
-export const medicalRoutes: Route[] = [
+export const medicalRoutes: Route[] = dentistAuthored([
   {
     // Desk-safe presence summary (no codes, no detail) for check-in and the receptionist screen.
     method: 'GET', path: '/api/v1/patients/:id/medical-alerts/summary', permission: 'medical.alert_presence',
@@ -257,4 +273,4 @@ export const medicalRoutes: Route[] = [
       return { status: 201, body: { acknowledgement: { id: a.id, visitId: v.id, alertSetHash: m.alertSetHash, activeAlertCount: m.active.length, acknowledgedAt: a.acknowledged_at } } };
     },
   },
-];
+]);

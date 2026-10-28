@@ -24,7 +24,7 @@ import { readDentalSite } from '../contracts/clinical.ts';
 import { appendAudit } from './audit.ts';
 import { getPatient, getVisit, getVisitForUpdate } from './patients.ts';
 import { confirmCareItem, listCare } from './care.ts';
-import { medicalState, readAlertSetHash } from './medical.ts';
+import { medicalState, readAlertSetHash, requireDentistAuthor, dentistAuthored } from './medical.ts';
 
 const SECTIONS = ['subjective', 'objective', 'assessment', 'plan'] as const;
 const AREA_CODES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40];
@@ -143,6 +143,7 @@ async function planItemById(tx: Tx, id: string) {
 }
 
 async function addPlanEvent(tx: Tx, actor: Parameters<typeof appendAudit>[1], item: PlanRow, status: string, careItemId: string | null, reason: string | null) {
+  requireDentistAuthor(actor);
   const e = await tx.one<{ id: string }>(`INSERT INTO plan_item_events (clinic_id, plan_item_id, patient_id, seq, status, care_item_id, reason, by_staff_id, by_role)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'DENTIST') RETURNING id`, [actor.clinicId, item.id, item.patientId, item.lastSeq + 1, status, careItemId, reason, actor.staffId]);
   await appendAudit(tx, actor, 'clinical.plan_item_status', 'treatment_plan_item', item.id, { seq: item.lastSeq + 1, from: item.status, to: status, careItemId, hasReason: reason !== null });
@@ -168,7 +169,7 @@ function medicalBlock(m: Awaited<ReturnType<typeof medicalState>>) {
   return { activeAlerts: m.active, alertSetHash: m.alertSetHash, reviewStatus: m.reviewStatus, allergyStatus: m.allergyStatus, lastReview: m.lastReview };
 }
 
-export const clinicalRoutes: Route[] = [
+export const clinicalRoutes: Route[] = dentistAuthored([
   {
     // The dentist opens a visit: identity, medical alerts (with the hash to echo when confirming care),
     // this visit's care/notes/findings, and the patient's open plan items. One read, no side effects.
@@ -376,4 +377,4 @@ export const clinicalRoutes: Route[] = [
       return { status: 200, body: { patientId: patient.id, items: await loadPlan(tx, patient.id as string) } };
     },
   },
-];
+]);
