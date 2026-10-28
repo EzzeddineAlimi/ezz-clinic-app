@@ -1,0 +1,23 @@
+{
+  "name": "ezz-clinic-backend",
+  "version": "0.2.0-fictional",
+  "private": true,
+  "description": "EZZ Clinic v0.2 financial-integrity backend. FICTIONAL / SYNTHETIC DATA ONLY. Not for clinical use.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0 <23"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "migrate": "node scripts/migrate.ts",
+    "seed:fictional": "node scripts/seed-fictional.ts",
+    "start": "node dist/src/server.js",
+    "test": "node --test --test-concurrency=1 --test-timeout=60000 test/*.test.ts",
+    "test:dist": "npm run build && node --test --test-concurrency=1 --test-timeout=60000 dist/test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.3",
+    "typescript": "6.0.3"
+  }
+}

@@ -7,3 +7,18 @@ dist/
 .env.*
 !.env.example
 .DS_Store
+
+# Patient-data and evidence file patterns (never commit; synthetic fixtures live only in backend/test/fixtures/synthetic/)
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+*.dcm
+*.csv
+*.xlsx
+*.pdf
+backups/
+exports/
+scans/
+!backend/test/fixtures/synthetic/**
