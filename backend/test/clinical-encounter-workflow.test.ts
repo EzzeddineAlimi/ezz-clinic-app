@@ -319,3 +319,25 @@ test('T-ENC-4 (CH-018) the desk cannot mark a visit NO_SHOW/CANCELLED once the d
   const plain = await visitFor(pid);
   assert.equal((await post(`/api/v1/visits/${plain}/status`, A.desk, { status: 'NO_SHOW', reason: 'Fictional: never came' })).status, 200);
 });
+
+test('T-ENC-5 (M-263) a cancelled visit accepts no finding, no planned treatment and no payment; nothing is written', async () => {
+  const pid = await patient('Cancelled');
+  const item = (await post(`/api/v1/patients/${pid}/treatment-plan-items`, A.dentist, { procedureCode: 'SCALE', procedureLabel: 'Fictional scaling', estimatedFeeMillimes: 30_000 })).body.planItem.id;
+  const vid = await visitFor(pid);
+  assert.equal((await post(`/api/v1/visits/${vid}/status`, A.desk, { status: 'CANCELLED', reason: 'Fictional: patient called' })).status, 200);
+  const f = await post(`/api/v1/visits/${vid}/chart-findings`, A.dentist, { kind: 'FINDING', toothFdi: 21, conditionCode: 'FRACTURE' });
+  assert.equal(f.status, 409, JSON.stringify(f.body));
+  const perf = await post(`/api/v1/treatment-plan-items/${item}/perform`, A.dentist, { visitId: vid });
+  assert.equal(perf.status, 409, JSON.stringify(perf.body));
+  // A payment needs dentist-confirmed care, so a visit holding a payment but no care cannot exist via the API.
+  const pay = await post(`/api/v1/visits/${vid}/payments`, A.desk, { amountMillimes: 10_000, tender: 'CASH' });
+  assert.equal(pay.status, 409);
+  assert.equal(pay.body.error.code, 'CARE_NOT_CONFIRMED');
+  const rows = await appSql(A.clinic.id, async c => ({
+    care: (await c.query<{ n: number }>('SELECT count(*)::int AS n FROM care_items WHERE visit_id = $1', [vid])).rows[0]!.n,
+    findings: (await c.query<{ n: number }>('SELECT count(*)::int AS n FROM chart_findings WHERE visit_id = $1', [vid])).rows[0]!.n,
+    payments: (await c.query<{ n: number }>('SELECT count(*)::int AS n FROM payments WHERE visit_id = $1', [vid])).rows[0]!.n,
+  }));
+  assert.deepEqual(rows, { care: 0, findings: 0, payments: 0 });
+  assert.equal((await get(`/api/v1/patients/${pid}/treatment-plan`, A.dentist)).body.items[0].status, 'PROPOSED', 'the plan item stays open');
+});
