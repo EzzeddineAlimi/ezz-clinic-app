@@ -46,6 +46,13 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'care.confirm':            ['DENTIST'],
   'care.correct':            ['DENTIST'],
   'care.read':               ['OWNER', 'DENTIST', 'RECEPTIONIST'],
+  'care.amend_site':         ['DENTIST'],
+  // Clinical record (clinical-requirements §12). Detail is dentist-only in this slice; a non-clinician OWNER
+  // has no clinical access (holding OWNER+DENTIST gives the union). ASSISTANT access is a pending policy decision.
+  'clinical.read':           ['DENTIST'],
+  'clinical.write':          ['DENTIST'],
+  'medical.declare':         ['DENTIST', 'RECEPTIONIST', 'ASSISTANT'],
+  'medical.alert_presence':  ['DENTIST', 'RECEPTIONIST', 'ASSISTANT'],
   'payment.record':          ['OWNER', 'DENTIST', 'RECEPTIONIST'],
   'payment.read':            ['OWNER', 'DENTIST', 'RECEPTIONIST'],
   'receipt.reprint':         ['OWNER', 'RECEPTIONIST'],

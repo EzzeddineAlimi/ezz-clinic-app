@@ -39,7 +39,7 @@ test('T-WB-ADJ-1 care 100,000 written off to zero, no payment -> OWNER_REVIEW_ZE
     { kind: w.adjustments[0].kind, amountMillimes: w.adjustments[0].amountMillimes, reasonCode: w.adjustments[0].reasonCode, authorizedRole: w.adjustments[0].authorizedRole, reasonNote: w.adjustments[0].reasonNote },
     { kind: 'WRITE_OFF', amountMillimes: 100_000, reasonCode: 'HARDSHIP', authorizedRole: 'DENTIST', reasonNote: 'Fictional hardship note' });
   assert.equal(w.adjustments[0].authorizedByName, 'Fictional dentist');
-  assert.deepEqual(w.provenance, { correctionCount: 0, correctionNetMillimes: 0, adjustmentCount: 1, reducedMillimes: 100_000, returnedMillimes: 0, freeCareCount: 0 });
+  assert.deepEqual(w.provenance, { correctionCount: 0, correctionNetMillimes: 0, adjustmentCount: 1, reducedMillimes: 100_000, returnedMillimes: 0, freeCareCount: 0, siteAmendmentCount: 0 });
 });
 
 test('T-WB-ADJ-2 care 100,000 corrected by -100,000 -> OWNER_REVIEW_ZEROED_BALANCE; correction row links to the original', async () => {

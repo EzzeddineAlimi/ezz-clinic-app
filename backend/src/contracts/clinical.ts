@@ -1,6 +1,7 @@
 /* EZZ Clinic — proposed nonvisual clinical domain helpers for Astra.
  * Not a diagnosis engine; do not infer medical validity or treatment from tooth codes.
  * Clinical and Tunisian legal review required before release. */
+import {fail} from '../platform/errors.ts';
 export type Dentition = 'PRIMARY'|'MIXED'|'PERMANENT';
 export type RecordKind = 'EXISTING'|'FINDING'|'PLANNED'|'COMPLETED';
 export type ClinicalSite = {siteKind:'NONE'}|{siteKind:'TOOTH';toothFdi:number}|{siteKind:'AREA';areaCode:number};
@@ -50,3 +51,24 @@ export function canonicalDentalSurfaces(tooth:number,input:string):string{
  if(raw.includes('P')&&!maxillary)throw new RangeError('Lingual L is used for mandibular teeth');
  return [...ORDER].filter(c=>raw.includes(c)).join('');
 }
+/* ---- API-level site parsing (CH-032): the ONE validator used by every route that stores a dental site
+ * (care confirmation, site amendments, chart findings, plan items, notes). Untyped JSON in, canonical
+ * {toothFdi, surfaces} out, VALIDATION_FAILED with the offending field otherwise. Surfaces require a
+ * tooth; letters are canonicalised (order MOIDBFLP, upper case) so 'dom' and 'MOD' are the same site.
+ * Anatomical letter rules are PROVISIONAL (clinical-requirements §1.3) pending a Tunisian dentist. */
+export type DentalSite={toothFdi:number|null;surfaces:string|null};
+export function readDentalSite(body:Record<string,unknown>,toothKey='toothFdi',surfacesKey='surfaces'):DentalSite{
+ const t=body[toothKey],s=body[surfacesKey];
+ const bad=(field:string,message:string):never=>fail('VALIDATION_FAILED',message,{field});
+ let toothFdi:number|null=null;
+ if(t!==undefined&&t!==null){
+  if(typeof t!=='number'||!isValidFdiTooth(t))bad(toothKey,`${toothKey} is not a valid FDI tooth number`);
+  toothFdi=t as number;
+ }
+ if(s===undefined||s===null||s==='')return {toothFdi,surfaces:null};
+ if(typeof s!=='string')return bad(surfacesKey,`${surfacesKey} must be a string`);
+ if(toothFdi===null)return bad(surfacesKey,`${surfacesKey} require a tooth (toothFdi)`);
+ try{return {toothFdi,surfaces:canonicalDentalSurfaces(toothFdi,s)};}
+ catch(e){return bad(surfacesKey,`${surfacesKey}: ${(e as Error).message}`);}
+}
+export const sameSite=(a:DentalSite,b:DentalSite)=>a.toothFdi===b.toothFdi&&a.surfaces===b.surfaces;

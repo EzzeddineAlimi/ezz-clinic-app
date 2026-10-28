@@ -11,6 +11,7 @@ import { auditRoutes } from './modules/audit.ts';
 import { patientRoutes } from './modules/patients.ts';
 import { workbenchRoutes } from './modules/workbench.ts';
 import { careRoutes } from './modules/care.ts';
+import { medicalRoutes } from './modules/medical.ts';
 import { billingRoutes } from './modules/billing.ts';
 import { integrityRoutes } from './modules/integrity.ts';
 import { cashRoutes } from './modules/cash.ts';
@@ -39,6 +40,7 @@ export function buildRoutes(db: Db): Route[] {
     ...patientRoutes,
     ...workbenchRoutes,
     ...careRoutes,
+    ...medicalRoutes,
     ...billingRoutes,
     ...integrityRoutes,
     ...cashRoutes,

@@ -19,10 +19,10 @@ interface CaseRow {
   adjustments:Array<Record<string,unknown>>;
   chargedMillimes:number; paidMillimes:number; reducedMillimes:number;
   returnedMillimes:number; careCount:number;
-  correctionCount:number; correctionNetMillimes:number; freeCareCount:number;
+  correctionCount:number; correctionNetMillimes:number; freeCareCount:number; siteAmendmentCount:number;
 }
 interface Provenance { correctionCount:number; correctionNetMillimes:number; adjustmentCount:number;
-  reducedMillimes:number; returnedMillimes:number; freeCareCount:number }
+  reducedMillimes:number; returnedMillimes:number; freeCareCount:number; siteAmendmentCount:number }
 const seesFreeText=(actor:Actor)=>actor.roles.some(r=>r==='DENTIST'||r==='OWNER');
 function next(status:VisitStatus, careCount:number, balance:number, payments:Array<Record<string,unknown>>, charged:number, prov:Provenance):string {
   // CH-031: no API route can cancel a visit holding care or payments; if one does (privileged edit), say so.
@@ -57,6 +57,7 @@ SELECT v.id,v.status,v.scheduled_at AS "scheduledAt",v.duration_min AS "duration
   v.dentist_id AS "dentistId",d.display_name AS "dentistName",
   c.items AS care,c.item_count AS "careCount",q.items AS payments,j.items AS adjustments,
   c.correction_count AS "correctionCount",c.correction_net AS "correctionNetMillimes",c.free_care_count AS "freeCareCount",
+  c.site_amendment_count AS "siteAmendmentCount",
   b.charged_millimes AS "chargedMillimes",b.paid_millimes AS "paidMillimes",
   b.reduced_millimes AS "reducedMillimes",b.returned_millimes AS "returnedMillimes"
 FROM visits v
@@ -68,13 +69,17 @@ CROSS JOIN LATERAL (
     count(*) FILTER(WHERE i.kind='CORRECTION')::int AS correction_count,
     coalesce(sum(i.fee_millimes) FILTER(WHERE i.kind='CORRECTION'),0)::bigint AS correction_net,
     count(*) FILTER(WHERE i.kind='CARE' AND i.fee_millimes=0)::int AS free_care_count,
+    coalesce(sum(e.amendment_count),0)::int AS site_amendment_count,
     coalesce(jsonb_agg(jsonb_build_object(
       'id',i.id,'kind',i.kind,'correctsId',i.corrects_id,'procedureCode',i.procedure_code,'procedureLabel',i.procedure_label,
       'toothFdi',i.tooth_fdi,'surfaces',i.surfaces,'feeMillimes',i.fee_millimes,
       'hasReason',i.reason IS NOT NULL,'confirmedAt',i.confirmed_at,'confirmedByName',s.display_name
-    )||CASE WHEN $3::boolean THEN jsonb_build_object('reason',i.reason) ELSE '{}'::jsonb END
+    )||CASE WHEN i.kind='CARE' THEN jsonb_build_object('effectiveToothFdi',e.tooth_fdi,'effectiveSurfaces',e.surfaces,
+      'siteAmended',e.amendment_count>0,'amendmentCount',e.amendment_count) ELSE '{}'::jsonb END
+    ||CASE WHEN $3::boolean THEN jsonb_build_object('reason',i.reason) ELSE '{}'::jsonb END
     ORDER BY i.confirmed_at,i.id) FILTER(WHERE i.id IS NOT NULL),'[]'::jsonb) AS items
   FROM care_items i LEFT JOIN staff s ON s.clinic_id=i.clinic_id AND s.id=i.confirmed_by
+  LEFT JOIN care_effective_sites e ON e.clinic_id=i.clinic_id AND e.care_item_id=i.id
   WHERE i.clinic_id=v.clinic_id AND i.visit_id=v.id
 ) c
 CROSS JOIN LATERAL (
@@ -125,7 +130,8 @@ WHERE v.id=$1 AND v.clinic_id=$2
     const balance=record.chargedMillimes-record.paidMillimes-record.reducedMillimes+record.returnedMillimes;
     const provenance:Provenance={correctionCount:record.correctionCount,correctionNetMillimes:record.correctionNetMillimes,
       adjustmentCount:record.adjustments.filter(a=>a.kind==='DISCOUNT'||a.kind==='WRITE_OFF').length,
-      reducedMillimes:record.reducedMillimes,returnedMillimes:record.returnedMillimes,freeCareCount:record.freeCareCount};
+      reducedMillimes:record.reducedMillimes,returnedMillimes:record.returnedMillimes,freeCareCount:record.freeCareCount,
+      siteAmendmentCount:record.siteAmendmentCount};
     return {status:200,body:{
       visit:{
         id:record.id,status:record.status,scheduledAt:record.scheduledAt,durationMin:record.durationMin,
