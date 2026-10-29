@@ -88,7 +88,13 @@ export function evidenceFor(tender: 'CASH' | 'CARD', source: 'DESK' | 'PAPER_OUT
  */
 export type CashPeriodResolver = (tx: Tx, actor: Actor) => Promise<string>;
 let cashPeriodResolver: CashPeriodResolver | null = null;
-export function setCashPeriodResolver(r: CashPeriodResolver) { cashPeriodResolver = r; }
+/** Wires the resolver once per process. Re-wiring the same function is harmless; a different one is refused (R75-D). */
+export function setCashPeriodResolver(r: CashPeriodResolver) {
+  if (cashPeriodResolver && cashPeriodResolver !== r) throw new Error('cash-period resolver is already wired to a different function');
+  cashPeriodResolver = r;
+}
+/** Back to unwired, i.e. CASH fails closed again. Safe direction only; used by tests so they do not depend on import order. */
+export function resetCashPeriodResolver() { cashPeriodResolver = null; }
 export async function cashPeriodFor(tx: Tx, actor: Actor, tender: string): Promise<string | null> {
   if (tender !== 'CASH') return null;
   if (!cashPeriodResolver) throw new Error('cash-period resolver is not wired: build the app with buildRoutes()');
