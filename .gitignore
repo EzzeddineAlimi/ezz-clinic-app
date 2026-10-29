@@ -22,3 +22,7 @@ backups/
 exports/
 scans/
 !backend/test/fixtures/synthetic/**
+
+# Browser execution artifacts (review screenshots/evidence live under docs/)
+frontend/test-results/
+frontend/playwright-report/

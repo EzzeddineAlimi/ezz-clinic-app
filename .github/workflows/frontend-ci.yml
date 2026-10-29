@@ -1,0 +1,35 @@
+name: Frontend real-API fictional clinic checks
+on:
+  pull_request:
+    paths: ['frontend/**', 'backend/**', '.github/workflows/frontend-ci.yml']
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fictional-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      EZZ_TEST_ADMIN_URL: postgres://postgres:fictional-ci-only@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: backend/.nvmrc
+      - run: npm --prefix backend ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
+      - run: npm --prefix backend run typecheck
+      - run: npm --prefix frontend test
+      - run: npm --prefix frontend run build
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm --prefix frontend run test:e2e
