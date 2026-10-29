@@ -20,6 +20,11 @@ const day = (n: number) => localDate(CLINIC_ZONE, new Date(Date.now() + n * 8640
 const HEADER = 'date,amount_tnd,type,terminal_ref,card_last4,description';
 const csv = (...rows: string[]) => [HEADER, ...rows].join('\n');
 
+test('Card evidence calendar day follows Tunis clinic timezone across UTC midnight', () => {
+  assert.equal(localDate('Africa/Tunis', new Date('2026-10-29T23:30:00Z')), '2026-10-30');
+  assert.equal(localDate('Africa/Tunis', new Date('2026-10-29T22:30:00Z')), '2026-10-29');
+});
+
 let n = 0;
 async function clinic() {
   const F = await standardFixture(api, db, `card-${++n}`);
