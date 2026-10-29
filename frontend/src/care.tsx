@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Visit } from "./api.ts";
 import type { Words } from "./i18n.ts";
-import { ErrorBox, Modal } from "./ui.tsx";
+import { ErrorBox, Loading, Modal, useResource } from "./ui.tsx";
 import { nameOf } from "./forms.tsx";
 
-/** Convert exact TND decimal text to integer millimes; never round floating-point money. */
+/** Exact three-decimal Tunisian dinars; this path also supports zero-fee care with a reason. */
 export function tndMillimes(text: string): number {
   const match = /^(0|[1-9][0-9]{0,5})(?:[.,]([0-9]{1,3}))?$/.exec(text.trim());
   if (!match) throw new ApiError("VALIDATION_FAILED");
@@ -16,7 +16,10 @@ export function tndMillimes(text: string): number {
   return value;
 }
 
-/** One dentist-authored care confirmation. No reception/owner impersonation or extra approval screen. */
+/** A dentist must SEE the current full medical-alert set before accepting its hash.
+ * Server independently binds the hash to the active immutable alert revisions and refuses stale values.
+ * One explicit checkbox is integrated in the existing care modal: no separate confirmation screen.
+ */
 export function CareConfirmation({
   api, visit, w, close, saved, uncertainClose,
 }: {
@@ -27,9 +30,20 @@ export function CareConfirmation({
   saved: () => void;
   uncertainClose: () => void;
 }) {
-  const [intent] = useState(() => new WriteIntent());
+  const alerts = useResource(
+    useCallback((signal: AbortSignal) => api.medicalAlerts(visit.patient.id, signal),
+      [api, visit.patient.id]),
+  );
+  const [intent, setIntent] = useState(() => new WriteIntent());
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<unknown>();
+  const [reviewedHash, setReviewedHash] = useState<string | null>(null);
+  const [repeatRequired, setRepeatRequired] = useState(false);
+  const [repeatConfirmed, setRepeatConfirmed] = useState(false);
+  useEffect(() => setReviewedHash(null), [alerts.data?.alertSetHash]);
+  const activeAlerts = alerts.data?.alerts.filter(a => a.status === "ACTIVE") ?? [];
+  const alertReviewed = !!alerts.data &&
+    (activeAlerts.length === 0 || reviewedHash === alerts.data.alertSetHash);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,6 +52,8 @@ export function CareConfirmation({
       if (intent.uncertain) {
         body = intent.payload({});
       } else {
+        if (!alerts.data || !alertReviewed) throw new ApiError("MEDICAL_ALERTS_NOT_ACKNOWLEDGED");
+        if (repeatRequired && !repeatConfirmed) throw new ApiError("CARE_ALREADY_CONFIRMED");
         const fields = new FormData(e.currentTarget);
         const procedureCode = String(fields.get("procedureCode") ?? "").trim().toUpperCase();
         const procedureLabel = String(fields.get("procedureLabel") ?? "").trim();
@@ -52,6 +68,8 @@ export function CareConfirmation({
           ...(tooth ? { toothFdi: Number(tooth) } : {}),
           ...(surfaces ? { surfaces } : {}),
           ...(reason ? { reason } : {}),
+          ...(activeAlerts.length ? { alertSetHash: alerts.data.alertSetHash } : {}),
+          ...(repeatRequired && repeatConfirmed ? { confirmRepeat: true } : {}),
         };
       }
     } catch (cause) {
@@ -65,6 +83,18 @@ export function CareConfirmation({
       saved();
     } catch (cause) {
       intent.failed(cause);
+      if (cause instanceof ApiError && cause.status >= 400 && cause.status < 500) {
+        // A completed server denial rolls the attempted write back. New body => new key.
+        setIntent(new WriteIntent());
+      }
+      if (cause instanceof ApiError && cause.code === "CARE_ALREADY_CONFIRMED") {
+        setRepeatRequired(true);
+        setRepeatConfirmed(false);
+      }
+      if (cause instanceof ApiError && cause.code === "MEDICAL_ALERTS_CHANGED") {
+        setReviewedHash(null);
+        alerts.refresh();
+      }
       setError(cause);
     } finally {
       setPending(false);
@@ -87,7 +117,41 @@ export function CareConfirmation({
         <p className="muted">{w.careHint}</p>
         {error !== undefined && <ErrorBox error={error} w={w} />}
         {intent.uncertain && <p className="uncertain" role="alert">{w.uncertain}</p>}
-        <fieldset disabled={pending || intent.uncertain} className="form-grid">
+        <section className="care-alert-review" aria-label={w.careAlertTitle}>
+          <strong>{w.careAlertTitle}</strong>
+          {alerts.loading && <Loading label={w.loading} />}
+          {alerts.error !== undefined && <ErrorBox error={alerts.error} w={w} />}
+          {alerts.data && (
+            <>
+              {activeAlerts.length === 0
+                ? <p>{w.careNoAlerts}</p>
+                : <>
+                    <p role="alert">{w.careAlertCount}: {activeAlerts.length}. {w.careAlertExplanation}</p>
+                    <ul>
+                      {activeAlerts.map(a => (
+                        <li key={a.id}>
+                          <strong><bdi>{a.code}</bdi></strong> · {a.severity === "CRITICAL" ? w.careAlertCritical : w.careAlertCaution}
+                          {" "}· {a.source === "PATIENT_DECLARED" ? w.carePatientDeclared : w.careDentistVerified}
+                          {a.detail && <p><bdi>{a.detail}</bdi></p>}
+                        </li>
+                      ))}
+                    </ul>
+                    <label>
+                      <input type="checkbox" checked={reviewedHash === alerts.data.alertSetHash}
+                        disabled={pending || intent.uncertain}
+                        onChange={e => setReviewedHash(e.target.checked ? alerts.data!.alertSetHash : null)} />
+                      {w.careAcknowledgeAlerts}
+                    </label>
+                  </>
+              }
+              <button type="button" className="secondary compact" disabled={pending || intent.uncertain}
+                onClick={() => { setReviewedHash(null); alerts.refresh(); }}>
+                {w.refresh}
+              </button>
+            </>
+          )}
+        </section>
+        <fieldset disabled={pending || intent.uncertain || !alertReviewed} className="form-grid">
           <label>
             {w.careCode} *
             <input name="procedureCode" required minLength={2} maxLength={32}
@@ -116,9 +180,20 @@ export function CareConfirmation({
             <input name="reason" maxLength={300} autoComplete="off" />
           </label>
         </fieldset>
+        {repeatRequired && <div className="uncertain" role="group" aria-label={w.careRepeatTitle}>
+          <strong>{w.careRepeatTitle}</strong>
+          <label>
+            <input type="checkbox" checked={repeatConfirmed}
+              disabled={pending || intent.uncertain}
+              onChange={e => { setRepeatConfirmed(e.target.checked); setError(undefined); }} />
+            {w.careRepeatConfirm}
+          </label>
+        </div>}
         <footer className="form-footer">
           <button type="button" className="secondary" disabled={pending} onClick={exit}>{w.cancel}</button>
-          <button className="primary" disabled={pending}>{pending ? w.saving : intent.uncertain ? w.retry : w.confirmCare}</button>
+          <button className="primary" disabled={pending || (!intent.uncertain && (!alertReviewed || (repeatRequired && !repeatConfirmed)))}>
+            {pending ? w.saving : intent.uncertain ? w.retry : w.confirmCare}
+          </button>
         </footer>
       </form>
     </Modal>
