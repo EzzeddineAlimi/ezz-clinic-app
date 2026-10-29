@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ownerCashPeriodSchema, openCashPeriodSchema, submittedCashCountSchema, cashReviewSchema, closedCashPeriodSchema } from "./cash-contracts.ts";
 import {
   balanceSchema,
   historySchema,
@@ -168,6 +169,33 @@ export class Api {
   }
   cashPeriod(signal?: AbortSignal) {
     return this.call("/cash/periods/current", periodSchema, { signal });
+  }
+  /** Owner financial controls. Server permissions remain authoritative. */
+  ownerCashPeriod(signal?: AbortSignal) {
+    return this.call("/cash/periods/current", ownerCashPeriodSchema, { signal });
+  }
+  ownerCashReview(periodId: string, signal?: AbortSignal) {
+    return this.call(`/cash/periods/${periodId}/review`, cashReviewSchema, { signal });
+  }
+  reauthenticate(password: string) {
+    return this.call("/session/reauth", z.object({
+      reauthenticated: z.literal(true), validForSeconds: z.number(),
+    }), { body: { password } });
+  }
+  openCashPeriod(openingFloatMillimes: number, key: string) {
+    return this.call("/cash/periods", openCashPeriodSchema, {
+      body: { openingFloatMillimes }, key,
+    });
+  }
+  submitCashCount(periodId: string, countedMillimes: number, recountReason: string | undefined, key: string) {
+    return this.call(`/cash/periods/${periodId}/counts`, submittedCashCountSchema, {
+      body: { countedMillimes, ...(recountReason ? { recountReason } : {}) }, key,
+    });
+  }
+  closeCashPeriod(periodId: string, acceptedCountId: string, handoverMillimes: number, note: string | undefined, key: string) {
+    return this.call(`/cash/periods/${periodId}/close`, closedCashPeriodSchema, {
+      body: { acceptedCountId, handoverMillimes, ...(note ? { note } : {}) }, key,
+    });
   }
   payment(id: string, body: unknown, key: string) {
     return this.call(`/visits/${id}/payments`, paymentSchema, { body, key });
