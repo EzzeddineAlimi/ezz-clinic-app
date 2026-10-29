@@ -44,7 +44,8 @@ export const recordedIntentSchema = paymentSchema.extend({
 });
 export const cancelledIntentSchema = z.object({
   status: z.literal("CANCELLED"),
-  paymentRecorded: z.literal(false),
+  paymentRecorded: z.literal(false).optional(),
+  recovered: z.boolean().optional(),
 });
 
 /** The server's ordered ledger IDs must match the history the staff is acknowledging. */
@@ -52,6 +53,12 @@ export function historyMatchesRecovery(
   recovery: PaymentRecovery,
   payments: ReadonlyArray<{ id: string }>,
 ): boolean {
-  return recovery.paymentIds.length === payments.length &&
-    recovery.paymentIds.every((id, index) => id === payments[index].id);
+  // Recovery sorts by payment UUID; history sorts by recorded time.
+  // Compare unique IDs as sets, but send the server-owned order on writes.
+  const expected = new Set(recovery.paymentIds);
+  const actual = new Set(payments.map(p => p.id));
+  return expected.size === recovery.paymentIds.length &&
+    actual.size === payments.length &&
+    expected.size === actual.size &&
+    [...expected].every(id => actual.has(id));
 }
