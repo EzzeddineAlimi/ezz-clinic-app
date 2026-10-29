@@ -180,6 +180,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
               {data.findings.map(f => <article className="clinical-entry" key={f.id}>
                 <strong>{f.kind} · {f.conditionCode}</strong>
                 <p>{t.tooth}: {f.toothFdi ?? f.areaCode ?? "—"}</p>
+                {f.enteredInError && <p role="alert" className="warning" data-testid="struck-finding">
+                  {lang === "fr" ? "Constatation signalée comme erronée : " : "تم تصنيف الملاحظة كإدخال خاطئ: "}
+                  <bdi>{f.enteredInError.reason}</bdi>
+                </p>}
                 {f.note && <p><bdi>{f.note}</bdi></p>}
               </article>)}
               <FindingForm lang={lang} disabled={!editable || intent.uncertain}
