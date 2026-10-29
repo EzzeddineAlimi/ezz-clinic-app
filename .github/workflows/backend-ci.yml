@@ -66,3 +66,39 @@ jobs:
           MIGRATION_DATABASE_URL=postgres://postgres:fictional-ci-only@localhost:5432/ezz_ci_migcheck node scripts/migrate.ts
           MIGRATION_DATABASE_URL=postgres://postgres:fictional-ci-only@localhost:5432/ezz_ci_migcheck node scripts/migrate.ts --check
           EZZ_TEST_ADMIN_URL=$EZZ_TEST_ADMIN_URL node scripts/doctor.ts
+
+  # R73-I: forward-compatibility evidence for the next Node LTS lines (Node 22 reaches end of life in April 2027;
+  # Gemini GEM-REV-006 / GPT asked for this). The supported runtime stays .nvmrc (22.x) until a recorded decision.
+  forward-node:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['24', '26']
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fictional-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      EZZ_TEST_ADMIN_URL: postgres://postgres:fictional-ci-only@localhost:5432/postgres
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install pinned dev tools (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests on Node ${{ matrix.node }} (TAP output, same suite)
+        run: node --test --test-reporter=tap --test-concurrency=1 --test-timeout=60000 test/*.test.ts

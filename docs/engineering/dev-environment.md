@@ -33,3 +33,11 @@ scripts/dev-pg16.sh stop                   # stops the cluster and deletes its d
 - A docker-compose setup. No compose file is shipped, because the docker daemon was not available to test one.
 - Behaviour on Windows or macOS.
 - Production TLS certificate issuance and rotation: these are deployment decisions (CH-004/CH-006, ADR-0004a).
+
+## Forward compatibility with newer Node LTS lines (R73-I)
+
+The supported runtime stays Node 22 (`backend/.nvmrc`); Node 22 reaches end of life in April 2027. Measured on 2026-10-29 with the official, SHA-256-verified Linux x64 binaries:
+- Node **24.22.2**: full suite 312 tests, 311 pass, 0 fail, 1 skipped.
+- Node **26.13.0**: the same.
+
+No code change was needed. From Node 23 on, the default test reporter is `spec`; use `--test-reporter=tap` to get the `# tests` / `# pass` lines. The CI job `forward-node` runs the suite on Node 24 and 26 for every backend change. Switching the supported runtime is a recorded decision, not a CI side effect.
