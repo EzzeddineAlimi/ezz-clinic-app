@@ -1,8 +1,10 @@
 import { Checkout } from "./checkout.tsx";
+import { ClinicalWorkspace } from "./clinical-workspace.tsx";
+import { clinicalText } from "./clinical-text.ts";
 import { useState, useCallback } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
-import type { Words } from "./i18n.ts";
+import type { Words, Lang } from "./i18n.ts";
 import { nameOf } from "./forms.tsx";
 import { Empty, ErrorBox, Icon, Loading, useResource } from "./ui.tsx";
 export function DayBoard({
