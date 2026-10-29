@@ -1,0 +1,269 @@
+{
+  "env": {
+    "date": "2026-10-29T01:55:45.701Z",
+    "host": {
+      "cpus": 4,
+      "cpuModel": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "memoryGiB": 16,
+      "platform": "Linux 6.18.44-fc-v185"
+    },
+    "node": "v22.22.0",
+    "params": {
+      "clinics": 5,
+      "patientsPerClinic": 120,
+      "visitsPerPatient": 2,
+      "clientConcurrency": 16,
+      "serverPoolMax": 8,
+      "killBurst": 300
+    },
+    "postgres": {
+      "version": "PostgreSQL 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
+      "sharedBuffers": "128MB",
+      "maxConnections": "100",
+      "sameHost": true
+    }
+  },
+  "phases": [
+    {
+      "name": "patients.create",
+      "requests": 600,
+      "unexpected": 0,
+      "wallMs": 2296,
+      "throughputPerSec": 261.3,
+      "p50": 57.7,
+      "p95": 95.9,
+      "p99": 138.8,
+      "max": 180.6
+    },
+    {
+      "name": "visits.schedule",
+      "requests": 1200,
+      "unexpected": 0,
+      "wallMs": 2647,
+      "throughputPerSec": 453.4,
+      "p50": 33.8,
+      "p95": 48.7,
+      "p99": 63,
+      "max": 73.8
+    },
+    {
+      "name": "care.confirm",
+      "requests": 1200,
+      "unexpected": 0,
+      "wallMs": 4327,
+      "throughputPerSec": 277.3,
+      "p50": 52.2,
+      "p95": 95.1,
+      "p99": 120.6,
+      "max": 134.7
+    },
+    {
+      "name": "payments.record (with receipt)",
+      "requests": 2400,
+      "unexpected": 0,
+      "wallMs": 8519,
+      "throughputPerSec": 281.7,
+      "p50": 55.7,
+      "p95": 76.3,
+      "p99": 90.3,
+      "max": 117.4
+    },
+    {
+      "name": "payments.same-visit contention (20 x 10 TND on 50 TND)",
+      "requests": 20,
+      "unexpected": 0,
+      "wallMs": 55,
+      "throughputPerSec": 364.1,
+      "p50": 45,
+      "p95": 54.5,
+      "p99": 54.5,
+      "max": 54.5
+    },
+    {
+      "name": "payments.idempotent retry storm (10 x same key)",
+      "requests": 10,
+      "unexpected": 0,
+      "wallMs": 16,
+      "throughputPerSec": 640.7,
+      "p50": 14.8,
+      "p95": 15.4,
+      "p99": 15.4,
+      "max": 15.4
+    },
+    {
+      "name": "isolation probes (cross-clinic reads, desk->owner)",
+      "requests": 1200,
+      "unexpected": 0,
+      "wallMs": 803,
+      "throughputPerSec": 1494.3,
+      "p50": 10.1,
+      "p95": 16.9,
+      "p99": 23.9,
+      "max": 27.9
+    },
+    {
+      "name": "payments racing a blind cash count",
+      "requests": 120,
+      "unexpected": 0,
+      "wallMs": 414,
+      "throughputPerSec": 289.9,
+      "p50": 12.6,
+      "p95": 19.4,
+      "p99": 21.3,
+      "max": 23.5
+    },
+    {
+      "name": "day-board [sequential]",
+      "requests": 5,
+      "unexpected": 0,
+      "wallMs": 28,
+      "throughputPerSec": 181.6,
+      "p50": 4.9,
+      "p95": 8,
+      "p99": 8,
+      "max": 8
+    },
+    {
+      "name": "day-board [4 concurrent]",
+      "requests": 10,
+      "unexpected": 0,
+      "wallMs": 22,
+      "throughputPerSec": 446.3,
+      "p50": 7,
+      "p95": 9.6,
+      "p99": 9.6,
+      "max": 9.6
+    },
+    {
+      "name": "patients.search [sequential]",
+      "requests": 5,
+      "unexpected": 0,
+      "wallMs": 14,
+      "throughputPerSec": 349.3,
+      "p50": 2.7,
+      "p95": 3.3,
+      "p99": 3.3,
+      "max": 3.3
+    },
+    {
+      "name": "patients.search [4 concurrent]",
+      "requests": 10,
+      "unexpected": 0,
+      "wallMs": 11,
+      "throughputPerSec": 870.2,
+      "p50": 4.4,
+      "p95": 6.2,
+      "p99": 6.2,
+      "max": 6.2
+    },
+    {
+      "name": "owner.exceptions [sequential]",
+      "requests": 5,
+      "unexpected": 0,
+      "wallMs": 598,
+      "throughputPerSec": 8.4,
+      "p50": 109.1,
+      "p95": 160.8,
+      "p99": 160.8,
+      "max": 160.8
+    },
+    {
+      "name": "owner.exceptions [4 concurrent]",
+      "requests": 10,
+      "unexpected": 0,
+      "wallMs": 611,
+      "throughputPerSec": 16.4,
+      "p50": 239.8,
+      "p95": 243.3,
+      "p99": 243.3,
+      "max": 243.3
+    },
+    {
+      "name": "integrity.check (full recomputation) [sequential]",
+      "requests": 5,
+      "unexpected": 0,
+      "wallMs": 501,
+      "throughputPerSec": 10,
+      "p50": 91.6,
+      "p95": 132,
+      "p99": 132,
+      "max": 132
+    },
+    {
+      "name": "integrity.check (full recomputation) [4 concurrent]",
+      "requests": 10,
+      "unexpected": 0,
+      "wallMs": 508,
+      "throughputPerSec": 19.7,
+      "p50": 176.5,
+      "p95": 228,
+      "p99": 228,
+      "max": 228
+    }
+  ],
+  "checks": {
+    "afterPayments": {
+      "receiptSeries": 5,
+      "unreceipted": 0
+    },
+    "contention": {
+      "accepted": 5,
+      "retryStormPayments": 1
+    },
+    "isolationLeaks": 0,
+    "cashRace": {
+      "racePayments": 120,
+      "completedWhenCounted": 42,
+      "completedWhenCountReturned": 120,
+      "countLatencyMs": 253,
+      "raceWallMs": 433,
+      "countStatus": 201,
+      "countedMillimes": 6228042,
+      "storedExpectedAtCut": 7398120,
+      "reviewRecomputedExpected": 7398120,
+      "recordedAfterCutMillimes": 0,
+      "finalDrawerMillimes": 7398120,
+      "simulationSkewMillimes": -1170078
+    },
+    "integrityFindings": [],
+    "kill": {
+      "burst": 300,
+      "completedBeforeKill": 150,
+      "acknowledged201": 150,
+      "connectionErrors": 150,
+      "acknowledgedButMissing": 0,
+      "paymentsCommittedByBurst": 151,
+      "retriedAfterRestart": 150,
+      "retryStatuses": [
+        201
+      ],
+      "paymentsAfterRetry": 300,
+      "distinctKeysCommitted": 300
+    },
+    "afterKill": {
+      "receiptSeries": 5,
+      "unreceipted": 0
+    },
+    "backup": {
+      "backupMs": 600,
+      "encryptedBytes": 2975145,
+      "restoreAndVerifyMs": 2315,
+      "ok": true,
+      "failed": []
+    },
+    "datasetRows": {
+      "clinics": 5,
+      "patients": 602,
+      "visits": 1277,
+      "care_items": 1397,
+      "payments": 2826,
+      "receipts": 2826,
+      "audit_events": 6123
+    },
+    "receiptsByKind": {
+      "PAYMENT": 2826
+    },
+    "databaseBytes": 34085911
+  },
+  "violations": []
+}
