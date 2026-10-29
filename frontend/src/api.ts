@@ -221,6 +221,16 @@ export class Api {
       { body, key },
     );
   }
+  confirmCare(id: string, body: Record<string, unknown>, key: string) {
+    return this.call(
+      `/visits/${id}/care`,
+      z.object({
+        careItem: z.object({ id: z.string(), visitId: z.string(), feeMillimes: z.number().int() }),
+        visitTotalMillimes: z.number().int(),
+      }),
+      { body, key },
+    );
+  }
   arrive(id: string, key: string) {
     return this.call(
       `/visits/${id}/status`,
