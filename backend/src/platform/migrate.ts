@@ -46,6 +46,10 @@ export async function migrate(ownerUrl: string, dir: string, log: (s: string) =>
   const conn = new PgConnection(parseDatabaseUrl(ownerUrl));
   await conn.connect();
   try {
+    // One migrator per database, including ledger creation and the applied-set read.
+    // Session lock spans the per-file transactions; this dedicated connection is always
+    // closed in finally, releasing the lock on success or failure.
+    await conn.query("SELECT pg_advisory_lock(hashtext('ezz:schema-migrations'))");
     await conn.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
       version text PRIMARY KEY, sha256 text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())`);
     const files = await migrationFiles(dir);

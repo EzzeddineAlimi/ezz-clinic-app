@@ -19,6 +19,10 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        timezone: ['UTC', 'Africa/Tunis', 'America/Toronto']
     services:
       postgres:
         # TODO(ENG-03): pin by digest once verified from a trusted machine.
@@ -29,6 +33,7 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      TZ: ${{ matrix.timezone }}
       EZZ_TEST_ADMIN_URL: postgres://postgres:fictional-ci-only@localhost:5432/postgres
       PGPASSWORD: fictional-ci-only
     defaults:
