@@ -18,6 +18,7 @@ const data = {
   paymentIds: [a, b],
   intentions: [],
   automaticRetry: false,
+  pendingAnomaly: false,
 };
 test("history acknowledgement compares unique server payment IDs, not display order", () => {
   const recovery = recoverySchema.parse(data);
@@ -31,4 +32,17 @@ test("never accept automatic payment retry or malformed recovery versions", () =
 });
 test("idempotent cancellation may omit paymentRecorded when already resolved", () => {
   assert.equal(cancelledIntentSchema.safeParse({ status: "CANCELLED", recovered: true }).success, true);
+});
+
+test("multiple pending intentions are represented explicitly, never accepted as an automatic retry", () => {
+  const p = { id: a, status: "PENDING", createdBy: a, createdAt: new Date(0).toISOString(),
+    payload: {amountMillimes: 1000, tender: "CARD"}, paymentId: null, result: null,
+    reason: null, resolvedBy: null };
+  const anomalous = recoverySchema.parse({
+    ...data, pendingAnomaly: true,
+    intentions: [p, {...p, id: b}],
+  });
+  assert.equal(anomalous.pendingAnomaly, true);
+  assert.equal(anomalous.intentions.filter(i => i.status === "PENDING").length, 2);
+  assert.equal(anomalous.automaticRetry, false);
 });
