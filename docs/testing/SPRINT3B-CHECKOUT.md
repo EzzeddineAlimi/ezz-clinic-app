@@ -26,8 +26,12 @@ care.ts (dentist-authenticated authorship), frontend existing API/error/modal ru
   guard. No automatic retry. Unknown transport, malformed success or server5xx
   locks the fields and close control. Reconciliation refresh reads server history;
   manual retry preserves key/body even if the refreshed balance has decreased.
-- Known rejections allow an explicitly new intention; no duplicate override is
-  silently sent. Similar-payment errors explain history review. No overpayment,
+- Confirmed rejections allow an explicitly new intention. For a second
+  genuine identical payment within 120 seconds, the receptionist must inspect
+  server history, start a NEW intent with a NEW idempotency key, and explicitly
+  confirm it really is another payment. This sends confirmDuplicate=true only
+  on that new frozen request. Unknown outcomes NEVER trigger this override.
+  No overpayment,
   refund, discount, void, clinical authorship or cash-period administration UI.
 - Receipt read from server using the returned ID, with immutable partial-payment
   balance-after and original server label. Read failure never resubmits a payment.
@@ -127,11 +131,39 @@ Real Chromium capture of disposable fictional data:
   reload needs an approved API projection or separate lookup, not guessed IDs.
 - History shows recorded payment amounts, not owner adjustment review. Server
   balance includes reductions/returns; refund/void/owner review remain other slices.
-- Similar second cash payments remain blocked without an explicit future override
-  workflow; this UI never automatically confirms duplicates.
+- A second legitimate identical cash or card payment can be confirmed only
+  after a server duplicate rejection, explicit new intent, visible payment
+  history review and staff acknowledgement. This DOES NOT independently verify
+  that physical money or card settlement occurred; overpayment and role checks
+  remain server enforced. The acknowledgement is never automatic.
 - Browser print cancellation/repeated native print commands cannot establish paper
   delivery. Backend snapshot/print audit remains authoritative for preparation.
 - No full backend local matrix/TLS execution claimed here. Exact-head CI outcomes
   must be read from this PR, separately from local evidence. Existing nonTLS CI
   optional TLS skip and all production auth/privacy/fiscal/legal gates remain.
 - No merge, deployment, real patients/payments, PSP, tariff/CNAM changes.
+
+## Muse M-276 F1/F2/F3 correction candidate (draft, not production evidence)
+
+Following independent Muse review at PR49 `999ea54a`, this **separate**
+candidate addresses three blocked but fail-closed UI workflows. The assertions
+below are implementation intent, not passing CI claims until that candidate
+head is explicitly verified:
+
+- F1: dentist reads the full role-restricted current active medical-alert
+  revisions and visible details, acknowledges them in the existing care modal,
+  and sends exactly the server-provided alertSetHash. Backend rechecks the hash
+  in the locked transaction; changed data is not accepted silently.
+- F2: the server's CARE_ALREADY_CONFIRMED denial exposes an explicit
+  second-performed-act checkbox, and any changed payload uses a NEW idempotency
+  key. Corrections are NOT represented as another performed act.
+- F3: the server's POSSIBLE_DUPLICATE_PAYMENT denial exposes a checked-history
+  second-payment override; it is NEVER used for uncertain network/5xx writes.
+  Changed intent body must have a different key. The server retains final
+  financial, receipt and role authority.
+- Browser tests `frontend/e2e/muse-fixes.spec.ts` target F1/F2/F3 against
+  disposable PostgreSQL 16 and fictional data. No clinical, fiscal or legal
+  certification is inferred.
+
+A failed or skipped test stays a failure/skip, not an acceptance. Muse must
+independently review the *new* exact head and all inherited safety boundaries.
