@@ -326,6 +326,17 @@ export async function runMoreWorkflows(api: Api, db: TestDb): Promise<Array<Omit
   // ---- last: logging out ends the session
   await call('owner-admin', 'Log out (the token stops working)', 'assistant', 'POST', '/api/v1/session/logout', '/api/v1/session/logout', {}, { idem: false });
   void db;
+  // Sprint4 recovery examples are captured from real authorized API operations, not handwritten schemas.
+  const rp=await api.call('POST','/api/v1/patients',{token:tokens.desk,body:{familyName:'Recovery',givenName:'Fictional',isSynthetic:true}});
+  const rv=await api.call('POST','/api/v1/visits',{token:tokens.desk,body:{patientId:rp.body.patient.id,scheduledAt:'2026-10-28T18:00:00Z'}});
+  const recoveryVisit=rv.body.visit.id as string;
+  await api.call('POST',`/api/v1/visits/${recoveryVisit}/care`,{token:tokens.dentist,body:{procedureCode:'TEST',procedureLabel:'Fictional care',feeMillimes:100000}});
+  const rs=await call('money-and-cash','Recover durable payment state after reload','desk','GET','/api/v1/visits/:id/payment-recovery',`/api/v1/visits/${recoveryVisit}/payment-recovery`);
+  const ri=await call('money-and-cash','Prepare durable intention without recording money','desk','POST','/api/v1/visits/:id/payment-intents',`/api/v1/visits/${recoveryVisit}/payment-intents`,{amountMillimes:30000,tender:'CARD',recoveryVersion:rs.body.recoveryVersion,acknowledgedPaymentIds:rs.body.paymentIds});
+  await call('money-and-cash','Explicitly record immutable intention','desk','POST','/api/v1/payment-intents/:id/record',`/api/v1/payment-intents/${ri.body.intent.id}/record`,{});
+  const ns=await api.call('GET',`/api/v1/visits/${recoveryVisit}/payment-recovery`,{token:tokens.desk});
+  const ni=await api.call('POST',`/api/v1/visits/${recoveryVisit}/payment-intents`,{token:tokens.desk,body:{amountMillimes:70000,tender:'CARD',recoveryVersion:ns.body.recoveryVersion,acknowledgedPaymentIds:ns.body.paymentIds}});
+  await call('money-and-cash','Cancel unrecorded intention after explicit reconciliation (not a refund)','desk','POST','/api/v1/payment-intents/:id/cancel',`/api/v1/payment-intents/${ni.body.intent.id}/cancel`,{reason:'Fictional money not received'});
   return steps;
 }
 

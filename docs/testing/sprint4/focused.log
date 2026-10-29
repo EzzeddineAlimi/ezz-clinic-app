@@ -1,0 +1,238 @@
+TAP version 13
+# Subtest: ARCH-1 module dependency graph matches the declared map (no hidden coupling, no cycles)
+ok 1 - ARCH-1 module dependency graph matches the declared map (no hidden coupling, no cycles)
+  ---
+  duration_ms: 3.362217
+  type: 'test'
+  ...
+# Subtest: ARCH-2 platform layer never imports a business module
+ok 2 - ARCH-2 platform layer never imports a business module
+  ---
+  duration_ms: 0.572987
+  type: 'test'
+  ...
+# Subtest: ARCH-3 money safety: no parseFloat / Math.round / toFixed on amounts in server code
+ok 3 - ARCH-3 money safety: no parseFloat / Math.round / toFixed on amounts in server code
+  ---
+  duration_ms: 3.072298
+  type: 'test'
+  ...
+# Subtest: ARCH-4 SQL values are parameterised: no ${...} interpolation inside SQL strings except whitelisted identifiers
+ok 4 - ARCH-4 SQL values are parameterised: no ${...} interpolation inside SQL strings except whitelisted identifiers
+  ---
+  duration_ms: 1.309632
+  type: 'test'
+  ...
+# Subtest: ARCH-5 docs/security/permission-matrix.md is in sync with the code matrix
+ok 5 - ARCH-5 docs/security/permission-matrix.md is in sync with the code matrix
+  ---
+  duration_ms: 37.333768
+  type: 'test'
+  ...
+# Subtest: ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays, table existence
+ok 6 - ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays, table existence
+  ---
+  duration_ms: 2.48526
+  type: 'test'
+  ...
+# Subtest: ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open draft branches)
+ok 7 - ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open draft branches)
+  ---
+  duration_ms: 3.6948
+  type: 'test'
+  ...
+# Subtest: ARCH-8 business modules reach PostgreSQL only through platform/db.ts (no driver imports)
+ok 8 - ARCH-8 business modules reach PostgreSQL only through platform/db.ts (no driver imports)
+  ---
+  duration_ms: 1.011901
+  type: 'test'
+  ...
+# Subtest: ARCH-9 modules do not swallow errors with a catch-all; expected absences use maybeOne (one documented fallback)
+ok 9 - ARCH-9 modules do not swallow errors with a catch-all; expected absences use maybeOne (one documented fallback)
+  ---
+  duration_ms: 1.331835
+  type: 'test'
+  ...
+# Subtest: T-PRT-1 first print is the ORIGINAL, later prints are COPY 1, COPY 2; no receipt number is consumed; every print is logged
+ok 10 - T-PRT-1 first print is the ORIGINAL, later prints are COPY 1, COPY 2; no receipt number is consumed; every print is logged
+  ---
+  duration_ms: 492.028529
+  type: 'test'
+  ...
+# Subtest: T-PRT-2 privacy: the receipt prints patient name and file number only, no internal ids, no staff-only evidence label, no care detail, no reason code
+ok 11 - T-PRT-2 privacy: the receipt prints patient name and file number only, no internal ids, no staff-only evidence label, no care detail, no reason code
+  ---
+  duration_ms: 306.428119
+  type: 'test'
+  ...
+# Subtest: T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-isolated numbers in the HTML
+ok 12 - T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-isolated numbers in the HTML
+  ---
+  duration_ms: 242.781237
+  type: 'test'
+  ...
+# Subtest: T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML
+ok 13 - T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML
+  ---
+  duration_ms: 220.310729
+  type: 'test'
+  ...
+# Subtest: T-PRT-5 void documents name the receipt they cancel; refund and void each keep their own number
+ok 14 - T-PRT-5 void documents name the receipt they cancel; refund and void each keep their own number
+  ---
+  duration_ms: 268.362633
+  type: 'test'
+  ...
+# Subtest: T-PRT-6 text is HTML-escaped (a name containing markup prints as text)
+ok 15 - T-PRT-6 text is HTML-escaped (a name containing markup prints as text)
+  ---
+  duration_ms: 212.982402
+  type: 'test'
+  ...
+# Subtest: T-PRT-7 every section keeps the fictional / not-a-fiscal-document notice in its language, and a fingerprint matching the stored snapshot hash
+ok 16 - T-PRT-7 every section keeps the fictional / not-a-fiscal-document notice in its language, and a fingerprint matching the stored snapshot hash
+  ---
+  duration_ms: 207.451432
+  type: 'test'
+  ...
+# Subtest: T-PRT-8 permissions and tenancy: dentist cannot print receipts; another clinic's receipt is 404
+ok 17 - T-PRT-8 permissions and tenancy: dentist cannot print receipts; another clinic's receipt is 404
+  ---
+  duration_ms: 402.973815
+  type: 'test'
+  ...
+# Subtest: T-PRT-9 no-phone intake form: FR/AR contract, no medical questions, and a filled fictional form posts to /patients unchanged
+ok 18 - T-PRT-9 no-phone intake form: FR/AR contract, no medical questions, and a filled fictional form posts to /patients unchanged
+  ---
+  duration_ms: 210.792106
+  type: 'test'
+  ...
+# Subtest: T-PRT-10 numbered outage slips: owner prints the exact book range, a reprint is marked, desk cannot print, and the slip fields feed the re-entry API
+ok 19 - T-PRT-10 numbered outage slips: owner prints the exact book range, a reprint is marked, desk cannot print, and the slip fields feed the re-entry API
+  ---
+  duration_ms: 278.139144
+  type: 'test'
+  ...
+# Subtest: T-PRT-11 integer-only money and clinic-local time formatting
+ok 20 - T-PRT-11 integer-only money and clinic-local time formatting
+  ---
+  duration_ms: 0.455759
+  type: 'test'
+  ...
+# Subtest: T-PRT-12 six concurrent first prints produce exactly one ORIGINAL and copies 1..5
+ok 21 - T-PRT-12 six concurrent first prints produce exactly one ORIGINAL and copies 1..5
+  ---
+  duration_ms: 236.726915
+  type: 'test'
+  ...
+# Subtest: T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+ok 22 - T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+  ---
+  duration_ms: 855.449558
+  type: 'test'
+  ...
+# Subtest: T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+ok 23 - T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+  ---
+  duration_ms: 894.403927
+  type: 'test'
+  ...
+# Subtest: T-API-7 every route in the table has at least one recorded example
+ok 24 - T-API-7 every route in the table has at least one recorded example
+  ---
+  duration_ms: 22.448635
+  type: 'test'
+  ...
+# Subtest: T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+ok 25 - T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+  ---
+  duration_ms: 11.106135
+  type: 'test'
+  ...
+# Subtest: T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+ok 26 - T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+  ---
+  duration_ms: 70.664547
+  type: 'test'
+  ...
+# Subtest: T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+ok 27 - T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+  ---
+  duration_ms: 1232.058043
+  type: 'test'
+  ...
+# Subtest: T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+ok 28 - T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+  ---
+  duration_ms: 21.174477
+  type: 'test'
+  ...
+# Subtest: S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+ok 29 - S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+  ---
+  duration_ms: 780.394989
+  type: 'test'
+  ...
+# Subtest: S3B no open or closed-only cash period fails closed without financial rows
+ok 30 - S3B no open or closed-only cash period fails closed without financial rows
+  ---
+  duration_ms: 223.811823
+  type: 'test'
+  ...
+# Subtest: S4 durable intent survives lost key, process restart, new login and concurrent new-key retries
+ok 31 - S4 durable intent survives lost key, process restart, new login and concurrent new-key retries
+  ---
+  duration_ms: 579.984352
+  type: 'test'
+  ...
+# Subtest: S4 concurrent prepares reserve one active intention; legacy new-key payments cannot bypass it
+ok 32 - S4 concurrent prepares reserve one active intention; legacy new-key payments cannot bypass it
+  ---
+  duration_ms: 232.133755
+  type: 'test'
+  ...
+# Subtest: S4 stale recovery, changed body, cancellation and ledger changes fail closed
+ok 33 - S4 stale recovery, changed body, cancellation and ledger changes fail closed
+  ---
+  duration_ms: 259.088668
+  type: 'test'
+  ...
+# Subtest: S4 commit failure rolls payment, receipt number, audit and idempotency back; same intention recovers
+ok 34 - S4 commit failure rolls payment, receipt number, audit and idempotency back; same intention recovers
+  ---
+  duration_ms: 228.584975
+  type: 'test'
+  ...
+# Subtest: S4 a new partial payment must explicitly acknowledge the previous payment, not blindly repeat
+ok 35 - S4 a new partial payment must explicitly acknowledge the previous payment, not blindly repeat
+  ---
+  duration_ms: 258.593009
+  type: 'test'
+  ...
+# Subtest: S4 current roles and tenant boundaries protect every recovery/write/cancel route
+ok 36 - S4 current roles and tenant boundaries protect every recovery/write/cancel route
+  ---
+  duration_ms: 492.783158
+  type: 'test'
+  ...
+# Subtest: S4 mixed /print and /reprint share unique copy sequence; preparations never attest delivery
+ok 37 - S4 mixed /print and /reprint share unique copy sequence; preparations never attest delivery
+  ---
+  duration_ms: 223.530752
+  type: 'test'
+  ...
+# Subtest: S4 reprint before any original makes subsequent print a distinct copy
+ok 38 - S4 reprint before any original makes subsequent print a distinct copy
+  ---
+  duration_ms: 209.818837
+  type: 'test'
+  ...
+1..38
+# tests 38
+# suites 0
+# pass 38
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10524.573552

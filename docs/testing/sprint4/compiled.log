@@ -1,0 +1,2137 @@
+
+> ezz-clinic-backend@0.2.0-fictional test:dist
+> npm run build && node --test --test-concurrency=1 --test-timeout=60000 dist/test/*.test.js
+
+
+> ezz-clinic-backend@0.2.0-fictional build
+> tsc -p tsconfig.json
+
+TAP version 13
+# Subtest: ARCH-1 module dependency graph matches the declared map (no hidden coupling, no cycles)
+ok 1 - ARCH-1 module dependency graph matches the declared map (no hidden coupling, no cycles)
+  ---
+  duration_ms: 4.115041
+  type: 'test'
+  ...
+# Subtest: ARCH-2 platform layer never imports a business module
+ok 2 - ARCH-2 platform layer never imports a business module
+  ---
+  duration_ms: 1.132182
+  type: 'test'
+  ...
+# Subtest: ARCH-3 money safety: no parseFloat / Math.round / toFixed on amounts in server code
+ok 3 - ARCH-3 money safety: no parseFloat / Math.round / toFixed on amounts in server code
+  ---
+  duration_ms: 2.054175
+  type: 'test'
+  ...
+# Subtest: ARCH-4 SQL values are parameterised: no ${...} interpolation inside SQL strings except whitelisted identifiers
+ok 4 - ARCH-4 SQL values are parameterised: no ${...} interpolation inside SQL strings except whitelisted identifiers
+  ---
+  duration_ms: 1.164711
+  type: 'test'
+  ...
+# Subtest: ARCH-5 docs/security/permission-matrix.md is in sync with the code matrix
+ok 5 - ARCH-5 docs/security/permission-matrix.md is in sync with the code matrix
+  ---
+  duration_ms: 19.937127
+  type: 'test'
+  ...
+# Subtest: ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays, table existence
+ok 6 - ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays, table existence
+  ---
+  duration_ms: 2.384434
+  type: 'test'
+  ...
+# Subtest: ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open draft branches)
+ok 7 - ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open draft branches)
+  ---
+  duration_ms: 3.734746
+  type: 'test'
+  ...
+# Subtest: ARCH-8 business modules reach PostgreSQL only through platform/db.ts (no driver imports)
+ok 8 - ARCH-8 business modules reach PostgreSQL only through platform/db.ts (no driver imports)
+  ---
+  duration_ms: 1.05856
+  type: 'test'
+  ...
+# Subtest: ARCH-9 modules do not swallow errors with a catch-all; expected absences use maybeOne (one documented fallback)
+ok 9 - ARCH-9 modules do not swallow errors with a catch-all; expected absences use maybeOne (one documented fallback)
+  ---
+  duration_ms: 1.355599
+  type: 'test'
+  ...
+# Subtest: CH-026: altered stored JSONB payload is detected even with canonical hash and outside anchor unchanged
+ok 10 - CH-026: altered stored JSONB payload is detected even with canonical hash and outside anchor unchanged
+  ---
+  duration_ms: 492.356915
+  type: 'test'
+  ...
+# Subtest: CH-026: altered stored actor roles is detected even with canonical hash and outside anchor unchanged
+ok 11 - CH-026: altered stored actor roles is detected even with canonical hash and outside anchor unchanged
+  ---
+  duration_ms: 396.856069
+  type: 'test'
+  ...
+# Subtest: CH-026: altered stored entity type is detected even with canonical hash and outside anchor unchanged
+ok 12 - CH-026: altered stored entity type is detected even with canonical hash and outside anchor unchanged
+  ---
+  duration_ms: 384.862706
+  type: 'test'
+  ...
+# Subtest: CH-026: altered stored timestamp is detected even with canonical hash and outside anchor unchanged
+ok 13 - CH-026: altered stored timestamp is detected even with canonical hash and outside anchor unchanged
+  ---
+  duration_ms: 373.948467
+  type: 'test'
+  ...
+# Subtest: T-TLS-POLICY-1 remote hosts default to verify-full; plaintext/unverified modes are refused before connecting
+ok 14 - T-TLS-POLICY-1 remote hosts default to verify-full; plaintext/unverified modes are refused before connecting
+  ---
+  duration_ms: 243.034633
+  type: 'test'
+  ...
+# Subtest: T-TLS-POLICY-2 loopback and Unix sockets are the only exemption (local dev / CI), and may opt in to TLS
+ok 15 - T-TLS-POLICY-2 loopback and Unix sockets are the only exemption (local dev / CI), and may opt in to TLS
+  ---
+  duration_ms: 0.35646
+  type: 'test'
+  ...
+# Subtest: T-TLS-1 untrusted (self-signed) server certificate is rejected; the startup message (user name) is never sent
+ok 16 - T-TLS-1 untrusted (self-signed) server certificate is rejected; the startup message (user name) is never sent
+  ---
+  duration_ms: 16.939633
+  type: 'test'
+  ...
+# Subtest: T-TLS-2 certificate signed by the pinned CA with the right name: TLS completes, then the server answers
+ok 17 - T-TLS-2 certificate signed by the pinned CA with the right name: TLS completes, then the server answers
+  ---
+  duration_ms: 7.034671
+  type: 'test'
+  ...
+# Subtest: T-TLS-3 trusted CA but wrong host name: verify-full rejects; verify-ca (explicit) accepts
+ok 18 - T-TLS-3 trusted CA but wrong host name: verify-full rejects; verify-ca (explicit) accepts
+  ---
+  duration_ms: 7.33146
+  type: 'test'
+  ...
+# Subtest: T-TLS-4 server that refuses TLS: no plaintext fallback under verify-full
+ok 19 - T-TLS-4 server that refuses TLS: no plaintext fallback under verify-full
+  ---
+  duration_ms: 1.492137
+  type: 'test'
+  ...
+# Subtest: T-TLS-5 (local evidence, optional) real PostgreSQL over verified TLS: pg_stat_ssl reports an encrypted session
+ok 20 - T-TLS-5 (local evidence, optional) real PostgreSQL over verified TLS: pg_stat_ssl reports an encrypted session # SKIP EZZ_TEST_TLS_ROOTCERT not set (CI service container runs without TLS)
+  ---
+  duration_ms: 0.245522
+  type: 'test'
+  ...
+# Subtest: T-POOL-1 40 concurrent requests for two clinics over 3 connections: every request sees only its own clinic
+ok 21 - T-POOL-1 40 concurrent requests for two clinics over 3 connections: every request sees only its own clinic
+  ---
+  duration_ms: 37.908362
+  type: 'test'
+  ...
+# Subtest: T-POOL-2 the clinic context never survives on a reused connection
+ok 22 - T-POOL-2 the clinic context never survives on a reused connection
+  ---
+  duration_ms: 6.565121
+  type: 'test'
+  ...
+# Subtest: T-POOL-3 a failing request rolls back fully and the connection returns healthy
+ok 23 - T-POOL-3 a failing request rolls back fully and the connection returns healthy
+  ---
+  duration_ms: 10.59712
+  type: 'test'
+  ...
+# Subtest: T-POOL-4 server-side kill of a connection mid-transaction: request fails, broken connection is discarded, pool recovers
+ok 24 - T-POOL-4 server-side kill of a connection mid-transaction: request fails, broken connection is discarded, pool recovers
+  ---
+  duration_ms: 13.795708
+  type: 'test'
+  ...
+# Subtest: T-POOL-5 pool exhaustion fails fast with an error instead of hanging forever
+ok 25 - T-POOL-5 pool exhaustion fails fast with an error instead of hanging forever
+  ---
+  duration_ms: 352.912456
+  type: 'test'
+  ...
+# Subtest: T-POOL-6 server-side limits: a stalled transaction is ended by idle_in_transaction_session_timeout; a runaway statement by statement_timeout
+ok 26 - T-POOL-6 server-side limits: a stalled transaction is ended by idle_in_transaction_session_timeout; a runaway statement by statement_timeout
+  ---
+  duration_ms: 924.288279
+  type: 'test'
+  ...
+# Subtest: T-SECRET-1 a wrong database password produces an auth error that does not echo the password
+ok 27 - T-SECRET-1 a wrong database password produces an auth error that does not echo the password
+  ---
+  duration_ms: 3.399652
+  type: 'test'
+  ...
+# Subtest: T-TYPES-1 type mapping kept from the previous client: int8 number, ISO timestamps, json parsed, other types text
+ok 28 - T-TYPES-1 type mapping kept from the previous client: int8 number, ISO timestamps, json parsed, other types text
+  ---
+  duration_ms: 7.657443
+  type: 'test'
+  ...
+# Subtest: T-POOL-7 checking a pooled connection out and back in many times does not accumulate event listeners
+ok 29 - T-POOL-7 checking a pooled connection out and back in many times does not accumulate event listeners
+  ---
+  duration_ms: 6.417127
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-0 a full fictional day with every financial action produces no false alarm
+ok 30 - T-INT-VAL-0 a full fictional day with every financial action produces no false alarm
+  ---
+  duration_ms: 846.751312
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-1 payment amount edited 70,000 -> 7,000: PAYMENT_AUDIT_VALUE_MISMATCH while the audit chain stays valid
+ok 31 - T-INT-VAL-1 payment amount edited 70,000 -> 7,000: PAYMENT_AUDIT_VALUE_MISMATCH while the audit chain stays valid
+  ---
+  duration_ms: 305.848467
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-1b cash relabelled as card on the payment row (CH-013 pattern) -> PAYMENT_AUDIT_VALUE_MISMATCH on tender
+ok 32 - T-INT-VAL-1b cash relabelled as card on the payment row (CH-013 pattern) -> PAYMENT_AUDIT_VALUE_MISMATCH on tender
+  ---
+  duration_ms: 258.527018
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-2 allocation edited to 7,000: ALLOCATION_MISMATCH (visit balance silently grows)
+ok 33 - T-INT-VAL-2 allocation edited to 7,000: ALLOCATION_MISMATCH (visit balance silently grows)
+  ---
+  duration_ms: 247.151149
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-3 receipt snapshot amount edited: RECEIPT_VALUE_MISMATCH and RECEIPT_SNAPSHOT_HASH_MISMATCH
+ok 34 - T-INT-VAL-3 receipt snapshot amount edited: RECEIPT_VALUE_MISMATCH and RECEIPT_SNAPSHOT_HASH_MISMATCH
+  ---
+  duration_ms: 252.665225
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-4 same edit with a recomputed snapshot hash: still RECEIPT_VALUE_MISMATCH (a stored hash alone proves nothing)
+ok 35 - T-INT-VAL-4 same edit with a recomputed snapshot hash: still RECEIPT_VALUE_MISMATCH (a stored hash alone proves nothing)
+  ---
+  duration_ms: 248.124742
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-4b receipt number swapped on the receipt row: RECEIPT_VALUE_MISMATCH against the audited number
+ok 36 - T-INT-VAL-4b receipt number swapped on the receipt row: RECEIPT_VALUE_MISMATCH against the audited number
+  ---
+  duration_ms: 238.240295
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-5 adjustments: refund relabelled as discount, and refund amount edited -> ADJUSTMENT_AUDIT_VALUE_MISMATCH
+ok 37 - T-INT-VAL-5 adjustments: refund relabelled as discount, and refund amount edited -> ADJUSTMENT_AUDIT_VALUE_MISMATCH
+  ---
+  duration_ms: 401.883414
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-5b care fee and correction delta edited -> CARE_AUDIT_VALUE_MISMATCH
+ok 38 - T-INT-VAL-5b care fee and correction delta edited -> CARE_AUDIT_VALUE_MISMATCH
+  ---
+  duration_ms: 237.497708
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-6 cash: counted figure edited, and the stored expected figure lowered to hide a shortfall -> both detected
+ok 39 - T-INT-VAL-6 cash: counted figure edited, and the stored expected figure lowered to hide a shortfall -> both detected
+  ---
+  duration_ms: 397.885625
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-7 a deleted adjustment or care row whose audit event remains -> AUDITED_ROW_MISSING
+ok 40 - T-INT-VAL-7 a deleted adjustment or care row whose audit event remains -> AUDITED_ROW_MISSING
+  ---
+  duration_ms: 243.819195
+  type: 'test'
+  ...
+# Subtest: T-INT-VAL-8 tenant isolation: clinic B sees none of clinic A findings
+ok 41 - T-INT-VAL-8 tenant isolation: clinic B sees none of clinic A findings
+  ---
+  duration_ms: 499.760388
+  type: 'test'
+  ...
+# Subtest: T-INT-LIMIT-1 honest limit: an edit that also rewrites the audit chain is invisible WITHOUT an owner checkpoint, and caught WITH one
+ok 42 - T-INT-LIMIT-1 honest limit: an edit that also rewrites the audit chain is invisible WITHOUT an owner checkpoint, and caught WITH one
+  ---
+  duration_ms: 369.631796
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-1 open period: cash stays "independent count required"; the period is shown as OPEN
+ok 43 - T-WB-CASH-1 open period: cash stays "independent count required"; the period is shown as OPEN
+  ---
+  duration_ms: 456.022539
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-2 owner-accepted count closes the period: wording says the PERIOD was counted, never that the payment is verified; desk sees no amounts
+ok 44 - T-WB-CASH-2 owner-accepted count closes the period: wording says the PERIOD was counted, never that the payment is verified; desk sees no amounts
+  ---
+  duration_ms: 268.483003
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-3 the owner (only) sees the accepted count independence flag and period difference
+ok 45 - T-WB-CASH-3 the owner (only) sees the accepted count independence flag and period difference
+  ---
+  duration_ms: 270.42836
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-4 cash recorded after the accepted count (but before closing) is covered by the NEXT period, not the closed one
+ok 46 - T-WB-CASH-4 cash recorded after the accepted count (but before closing) is covered by the NEXT period, not the closed one
+  ---
+  duration_ms: 255.442502
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-5 a submitted count that the owner has NOT accepted changes nothing (no premature claim)
+ok 47 - T-WB-CASH-5 a submitted count that the owner has NOT accepted changes nothing (no premature claim)
+  ---
+  duration_ms: 222.594177
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-6 card and mixed tenders: a counted drawer never upgrades card evidence; mixed visit stays pending
+ok 48 - T-WB-CASH-6 card and mixed tenders: a counted drawer never upgrades card evidence; mixed visit stays pending
+  ---
+  duration_ms: 259.764876
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-7 another clinic closing its period does not affect this clinic
+ok 49 - T-WB-CASH-7 another clinic closing its period does not affect this clinic
+  ---
+  duration_ms: 430.251414
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-8 a voided cash payment in a counted period reads VOIDED, and the visit is not called counted
+ok 50 - T-WB-CASH-8 a voided cash payment in a counted period reads VOIDED, and the visit is not called counted
+  ---
+  duration_ms: 287.767212
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-9 visit list on a new day after a long-closed period: nothing in the desk payload reveals any count figure
+ok 51 - T-WB-CASH-9 visit list on a new day after a long-closed period: nothing in the desk payload reveals any count figure
+  ---
+  duration_ms: 264.036496
+  type: 'test'
+  ...
+# Subtest: T-OWN-1 owner sees discount, write-off, refund (with receipt label), void, correction, free care and zeroed visits with totals; desk and dentist get 403
+ok 52 - T-OWN-1 owner sees discount, write-off, refund (with receipt label), void, correction, free care and zeroed visits with totals; desk and dentist get 403
+  ---
+  duration_ms: 683.218978
+  type: 'test'
+  ...
+# Subtest: T-OWN-2 payment evidence levels: open-period cash is RECORDED_ONLY, counted+closed period cash is CASH_IN_COUNTED_PERIOD, card is CARD_DESK_CLAIM
+ok 53 - T-OWN-2 payment evidence levels: open-period cash is RECORDED_ONLY, counted+closed period cash is CASH_IN_COUNTED_PERIOD, card is CARD_DESK_CLAIM
+  ---
+  duration_ms: 457.951387
+  type: 'test'
+  ...
+# Subtest: T-OWN-2b a payment re-entered from a numbered paper slip is PAPER_SLIP_RECORD, never upgraded by a later count
+ok 54 - T-OWN-2b a payment re-entered from a numbered paper slip is PAPER_SLIP_RECORD, never upgraded by a later count
+  ---
+  duration_ms: 423.389603
+  type: 'test'
+  ...
+# Subtest: T-OWN-3 a closed period with a count difference is reported as a number, neutrally
+ok 55 - T-OWN-3 a closed period with a count difference is reported as a number, neutrally
+  ---
+  duration_ms: 411.005017
+  type: 'test'
+  ...
+# Subtest: T-OWN-4 tenant isolation: clinic B owner sees none of clinic A decisions
+ok 56 - T-OWN-4 tenant isolation: clinic B owner sees none of clinic A decisions
+  ---
+  duration_ms: 539.686698
+  type: 'test'
+  ...
+# Subtest: T-OWN-5 window validation: malformed, impossible, reversed and >92-day windows are rejected; the window filters
+ok 57 - T-OWN-5 window validation: malformed, impossible, reversed and >92-day windows are rejected; the window filters
+  ---
+  duration_ms: 364.657373
+  type: 'test'
+  ...
+# Subtest: T-OWN-6 no free text leaves the endpoint: reason notes and correction reasons appear only as flags
+ok 58 - T-OWN-6 no free text leaves the endpoint: reason notes and correction reasons appear only as flags
+  ---
+  duration_ms: 344.890706
+  type: 'test'
+  ...
+# Subtest: T-OWN-7 wording is neutral: no accusatory vocabulary anywhere in the response
+ok 59 - T-OWN-7 wording is neutral: no accusatory vocabulary anywhere in the response
+  ---
+  duration_ms: 323.295366
+  type: 'test'
+  ...
+# Subtest: T-OWN-8 unresolved integrity findings are counted (receipt row deleted around the app) without naming a person
+ok 60 - T-OWN-8 unresolved integrity findings are counted (receipt row deleted around the app) without naming a person
+  ---
+  duration_ms: 355.757657
+  type: 'test'
+  ...
+# Subtest: T-OWN-9 (integration R72) the window uses clinic-local days: a discount made "today" locally is in today's local window even when the UTC date differs
+ok 61 - T-OWN-9 (integration R72) the window uses clinic-local days: a discount made "today" locally is in today's local window even when the UTC date differs
+  ---
+  duration_ms: 256.162774
+  type: 'test'
+  ...
+# Subtest: T-DAY-1 (RED on base) GET /visits?day uses the clinic-local day: 00:30 in Tunis on the 29th is not on the 28th list
+ok 62 - T-DAY-1 (RED on base) GET /visits?day uses the clinic-local day: 00:30 in Tunis on the 29th is not on the 28th list
+  ---
+  duration_ms: 432.908996
+  type: 'test'
+  ...
+# Subtest: T-DAY-2 an impossible or malformed day is a 400 on both the visit list and the day-board
+ok 63 - T-DAY-2 an impossible or malformed day is a 400 on both the visit list and the day-board
+  ---
+  duration_ms: 195.37722
+  type: 'test'
+  ...
+# Subtest: T-DAY-3 (RED on base) NO_SHOW cannot be recorded before the appointment time; CANCELLED still can (with reason)
+ok 64 - T-DAY-3 (RED on base) NO_SHOW cannot be recorded before the appointment time; CANCELLED still can (with reason)
+  ---
+  duration_ms: 195.851146
+  type: 'test'
+  ...
+# Subtest: T-DAY-4 (RED on base) same-name warning also fires when one record has no phone (elderly patient, relative adds a number later)
+ok 65 - T-DAY-4 (RED on base) same-name warning also fires when one record has no phone (elderly patient, relative adds a number later)
+  ---
+  duration_ms: 214.588526
+  type: 'test'
+  ...
+# Subtest: T-DAY-5 day-board lists the clinic-local day in time order with status summary, local time and patient flow fields
+ok 66 - T-DAY-5 day-board lists the clinic-local day in time order with status summary, local time and patient flow fields
+  ---
+  duration_ms: 199.671352
+  type: 'test'
+  ...
+# Subtest: T-DAY-6 a per-clinic timezone setting is honoured (Asia/Kolkata, +05:30)
+ok 67 - T-DAY-6 a per-clinic timezone setting is honoured (Asia/Kolkata, +05:30)
+  ---
+  duration_ms: 189.291098
+  type: 'test'
+  ...
+# Subtest: T-DAY-7 no-phone and same-name patients are flagged; the phone number itself never appears on the board
+ok 68 - T-DAY-7 no-phone and same-name patients are flagged; the phone number itself never appears on the board
+  ---
+  duration_ms: 197.71861
+  type: 'test'
+  ...
+# Subtest: T-DAY-8 role-aware: dentist defaults to own + unassigned visits; assistant sees no money and no status reasons; desk sees balances
+ok 69 - T-DAY-8 role-aware: dentist defaults to own + unassigned visits; assistant sees no money and no status reasons; desk sees balances
+  ---
+  duration_ms: 317.455661
+  type: 'test'
+  ...
+# Subtest: T-DAY-9 not-arrived-past-start and desk-marked cancellations/no-shows are flagged; summary counts them
+ok 70 - T-DAY-9 not-arrived-past-start and desk-marked cancellations/no-shows are flagged; summary counts them
+  ---
+  duration_ms: 201.662469
+  type: 'test'
+  ...
+# Subtest: T-DAY-10 tenant isolation: another clinic never appears, even with a dentistId from clinic A
+ok 71 - T-DAY-10 tenant isolation: another clinic never appears, even with a dentistId from clinic A
+  ---
+  duration_ms: 348.91487
+  type: 'test'
+  ...
+# Subtest: T-DAY-11 constant query count (no N+1): 3 visits and 40 visits cost the same number of SQL statements
+ok 72 - T-DAY-11 constant query count (no N+1): 3 visits and 40 visits cost the same number of SQL statements
+  ---
+  duration_ms: 378.569053
+  type: 'test'
+  ...
+# Subtest: T-DAY-12 an invalid clinic timezone setting fails loudly (never silently falls back to UTC)
+ok 73 - T-DAY-12 an invalid clinic timezone setting fails loudly (never silently falls back to UTC)
+  ---
+  duration_ms: 174.1529
+  type: 'test'
+  ...
+# Subtest: T-PAP-1 (RED on PR \#8) CH-030: a slip carrying patient A's file number cannot be posted to patient B's visit
+ok 74 - T-PAP-1 (RED on PR \#8) CH-030: a slip carrying patient A's file number cannot be posted to patient B's visit
+  ---
+  duration_ms: 565.127863
+  type: 'test'
+  ...
+# Subtest: T-PAP-2 (RED on PR \#8) a slip posted without the patient file number from the paper is listed for a human check against the patient copy
+ok 75 - T-PAP-2 (RED on PR \#8) a slip posted without the patient file number from the paper is listed for a human check against the patient copy
+  ---
+  duration_ms: 299.323489
+  type: 'test'
+  ...
+# Subtest: T-PAP-3 (RED on PR \#8) CH-029: the book reconciliation compares each slip with the care charged on its visit
+ok 76 - T-PAP-3 (RED on PR \#8) CH-029: the book reconciliation compares each slip with the care charged on its visit
+  ---
+  duration_ms: 303.409994
+  type: 'test'
+  ...
+# Subtest: T-PAP-4 outage window: care recorded in the window with no slip and no payment is listed; outside or paid visits are not
+ok 77 - T-PAP-4 outage window: care recorded in the window with no slip and no payment is listed; outside or paid visits are not
+  ---
+  duration_ms: 313.509682
+  type: 'test'
+  ...
+# Subtest: T-PAP-5 a slip dated on another day than its visit and two slips on one visit are review items (legitimate cases exist; wording neutral)
+ok 78 - T-PAP-5 a slip dated on another day than its visit and two slips on one visit are review items (legitimate cases exist; wording neutral)
+  ---
+  duration_ms: 275.039893
+  type: 'test'
+  ...
+# Subtest: T-PAP-6 replay compatibility: identical re-entry is DUPLICATE_ENTRY; adding a file number to an already-posted slip is a CONFLICT for the owner, never a second payment
+ok 79 - T-PAP-6 replay compatibility: identical re-entry is DUPLICATE_ENTRY; adding a file number to an already-posted slip is a CONFLICT for the owner, never a second payment
+  ---
+  duration_ms: 267.571245
+  type: 'test'
+  ...
+# Subtest: T-PAP-7 server killed mid-batch (transaction blocked on slip 3 of 5): nothing is half-posted; replay posts each slip exactly once
+ok 80 - T-PAP-7 server killed mid-batch (transaction blocked on slip 3 of 5): nothing is half-posted; replay posts each slip exactly once
+  ---
+  duration_ms: 612.540674
+  type: 'test'
+  ...
+# Subtest: T-PAP-8 owner exceptions surface the new paper review items with neutral wording
+ok 81 - T-PAP-8 owner exceptions surface the new paper review items with neutral wording
+  ---
+  duration_ms: 273.99679
+  type: 'test'
+  ...
+# Subtest: T-PAP-9 (RED on PR \#8) a slip pointing at another clinic's visit is rejected on its own; the other slips of the batch still post
+ok 82 - T-PAP-9 (RED on PR \#8) a slip pointing at another clinic's visit is rejected on its own; the other slips of the batch still post
+  ---
+  duration_ms: 453.747717
+  type: 'test'
+  ...
+# Subtest: T-DR-1 encrypted backup: no plaintext dump or clinic names on disk; manifest pins hash, facts and inventories
+ok 83 - T-DR-1 encrypted backup: no plaintext dump or clinic names on disk; manifest pins hash, facts and inventories
+  ---
+  duration_ms: 1660.607028
+  type: 'test'
+  ...
+# Subtest: T-DR-2 tampered archive, wrong passphrase, or manifest mismatch: refused before anything is restored
+ok 84 - T-DR-2 tampered archive, wrong passphrase, or manifest mismatch: refused before anything is restored
+  ---
+  duration_ms: 243.737424
+  type: 'test'
+  ...
+# {"drill":"T-DR-3","timingsMs":{"decryptMs":79,"restoreMs":208,"verifyMs":62},"restoredBytes":333143,"checks":16}
+# Subtest: T-DR-3 restore onto a FRESH PostgreSQL 16 instance with no application roles: every verification passes
+ok 85 - T-DR-3 restore onto a FRESH PostgreSQL 16 instance with no application roles: every verification passes
+  ---
+  duration_ms: 373.591195
+  type: 'test'
+  ...
+# Subtest: T-DR-4 the restored system works: staff log in, receipt numbering continues without a gap, tenants stay isolated
+ok 86 - T-DR-4 the restored system works: staff log in, receipt numbering continues without a gap, tenants stay isolated
+  ---
+  duration_ms: 278.469254
+  type: 'test'
+  ...
+# Subtest: T-DR-5 restoring an OLDER backup after newer activity is caught by the newer owner checkpoint; existing target is never overwritten
+ok 87 - T-DR-5 restoring an OLDER backup after newer activity is caught by the newer owner checkpoint; existing target is never overwritten
+  ---
+  duration_ms: 508.079425
+  type: 'test'
+  ...
+# Subtest: T-DR-6 CLI round trip: scripts/backup.ts then scripts/restore-verify.ts exit 0 with a passing report
+ok 88 - T-DR-6 CLI round trip: scripts/backup.ts then scripts/restore-verify.ts exit 0 with a passing report
+  ---
+  duration_ms: 766.344259
+  type: 'test'
+  ...
+# Subtest: T-PRT-1 first print is the ORIGINAL, later prints are COPY 1, COPY 2; no receipt number is consumed; every print is logged
+ok 89 - T-PRT-1 first print is the ORIGINAL, later prints are COPY 1, COPY 2; no receipt number is consumed; every print is logged
+  ---
+  duration_ms: 490.115221
+  type: 'test'
+  ...
+# Subtest: T-PRT-2 privacy: the receipt prints patient name and file number only, no internal ids, no staff-only evidence label, no care detail, no reason code
+ok 90 - T-PRT-2 privacy: the receipt prints patient name and file number only, no internal ids, no staff-only evidence label, no care detail, no reason code
+  ---
+  duration_ms: 304.336941
+  type: 'test'
+  ...
+# Subtest: T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-isolated numbers in the HTML
+ok 91 - T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-isolated numbers in the HTML
+  ---
+  duration_ms: 236.001106
+  type: 'test'
+  ...
+# Subtest: T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML
+ok 92 - T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML
+  ---
+  duration_ms: 214.100561
+  type: 'test'
+  ...
+# Subtest: T-PRT-5 void documents name the receipt they cancel; refund and void each keep their own number
+ok 93 - T-PRT-5 void documents name the receipt they cancel; refund and void each keep their own number
+  ---
+  duration_ms: 261.101652
+  type: 'test'
+  ...
+# Subtest: T-PRT-6 text is HTML-escaped (a name containing markup prints as text)
+ok 94 - T-PRT-6 text is HTML-escaped (a name containing markup prints as text)
+  ---
+  duration_ms: 203.991505
+  type: 'test'
+  ...
+# Subtest: T-PRT-7 every section keeps the fictional / not-a-fiscal-document notice in its language, and a fingerprint matching the stored snapshot hash
+ok 95 - T-PRT-7 every section keeps the fictional / not-a-fiscal-document notice in its language, and a fingerprint matching the stored snapshot hash
+  ---
+  duration_ms: 203.486381
+  type: 'test'
+  ...
+# Subtest: T-PRT-8 permissions and tenancy: dentist cannot print receipts; another clinic's receipt is 404
+ok 96 - T-PRT-8 permissions and tenancy: dentist cannot print receipts; another clinic's receipt is 404
+  ---
+  duration_ms: 395.258395
+  type: 'test'
+  ...
+# Subtest: T-PRT-9 no-phone intake form: FR/AR contract, no medical questions, and a filled fictional form posts to /patients unchanged
+ok 97 - T-PRT-9 no-phone intake form: FR/AR contract, no medical questions, and a filled fictional form posts to /patients unchanged
+  ---
+  duration_ms: 207.910316
+  type: 'test'
+  ...
+# Subtest: T-PRT-10 numbered outage slips: owner prints the exact book range, a reprint is marked, desk cannot print, and the slip fields feed the re-entry API
+ok 98 - T-PRT-10 numbered outage slips: owner prints the exact book range, a reprint is marked, desk cannot print, and the slip fields feed the re-entry API
+  ---
+  duration_ms: 279.356876
+  type: 'test'
+  ...
+# Subtest: T-PRT-11 integer-only money and clinic-local time formatting
+ok 99 - T-PRT-11 integer-only money and clinic-local time formatting
+  ---
+  duration_ms: 0.405884
+  type: 'test'
+  ...
+# Subtest: T-PRT-12 six concurrent first prints produce exactly one ORIGINAL and copies 1..5
+ok 100 - T-PRT-12 six concurrent first prints produce exactly one ORIGINAL and copies 1..5
+  ---
+  duration_ms: 227.836056
+  type: 'test'
+  ...
+# Subtest: T-CARE-1 unauthenticated care confirmation -> 401, visit stays unconfirmed
+ok 101 - T-CARE-1 unauthenticated care confirmation -> 401, visit stays unconfirmed
+  ---
+  duration_ms: 599.630841
+  type: 'test'
+  ...
+# Subtest: T-CARE-2 receptionist session -> 403 and a rate-limited denial counter for the owner
+ok 102 - T-CARE-2 receptionist session -> 403 and a rate-limited denial counter for the owner
+  ---
+  duration_ms: 33.635436
+  type: 'test'
+  ...
+# Subtest: T-CARE-4 body-supplied identity is ignored: receptionist sending role DENTIST -> 403
+ok 103 - T-CARE-4 body-supplied identity is ignored: receptionist sending role DENTIST -> 403
+  ---
+  duration_ms: 8.193529
+  type: 'test'
+  ...
+# Subtest: T-CARE-3 dentist confirms; duplicate rejected; correction is a new linked row; original unchanged
+ok 104 - T-CARE-3 dentist confirms; duplicate rejected; correction is a new linked row; original unchanged
+  ---
+  duration_ms: 40.232825
+  type: 'test'
+  ...
+# Subtest: T-CARE-5 free care needs an explicit reason
+ok 105 - T-CARE-5 free care needs an explicit reason
+  ---
+  duration_ms: 19.397342
+  type: 'test'
+  ...
+# Subtest: T-CARE-6 / T-ISO-1 cross-clinic: clinic B staff cannot see or act on clinic A records (404, no existence leak)
+ok 106 - T-CARE-6 / T-ISO-1 cross-clinic: clinic B staff cannot see or act on clinic A records (404, no existence leak)
+  ---
+  duration_ms: 16.673209
+  type: 'test'
+  ...
+# Subtest: T-ISO-2 database-level RLS: app role sees nothing without clinic context and only its clinic with it
+ok 107 - T-ISO-2 database-level RLS: app role sees nothing without clinic context and only its clinic with it
+  ---
+  duration_ms: 7.140916
+  type: 'test'
+  ...
+# Subtest: T-ISO-3 composite foreign keys block cross-clinic references even for the schema owner
+ok 108 - T-ISO-3 composite foreign keys block cross-clinic references even for the schema owner
+  ---
+  duration_ms: 15.950796
+  type: 'test'
+  ...
+# Subtest: T-PRIV-1 receptionist cannot escalate: staff management and audit checkpoints are owner-only
+ok 109 - T-PRIV-1 receptionist cannot escalate: staff management and audit checkpoints are owner-only
+  ---
+  duration_ms: 17.836359
+  type: 'test'
+  ...
+# Subtest: T-SESS-1 employee departure: deactivation revokes live sessions immediately
+ok 110 - T-SESS-1 employee departure: deactivation revokes live sessions immediately
+  ---
+  duration_ms: 183.641222
+  type: 'test'
+  ...
+# Subtest: T-SESS-2 lockout after 5 failures: correct password then refused (423)
+ok 111 - T-SESS-2 lockout after 5 failures: correct password then refused (423)
+  ---
+  duration_ms: 224.055296
+  type: 'test'
+  ...
+# Subtest: T-SESS-3 sensitive owner action requires recent re-authentication
+ok 112 - T-SESS-3 sensitive owner action requires recent re-authentication
+  ---
+  duration_ms: 88.677564
+  type: 'test'
+  ...
+# Subtest: T-ORG-1..3 / CH-019 HTTP guards: text/plain 415, foreign Origin 403, foreign Host 421, bad JSON 400, big body 413
+ok 113 - T-ORG-1..3 / CH-019 HTTP guards: text/plain 415, foreign Origin 403, foreign Host 421, bad JSON 400, big body 413
+  ---
+  duration_ms: 9.717074
+  type: 'test'
+  ...
+# Subtest: T-INPUT-1 hostile money and identifier inputs are rejected, never rounded
+ok 114 - T-INPUT-1 hostile money and identifier inputs are rejected, never rounded
+  ---
+  duration_ms: 78.23944
+  type: 'test'
+  ...
+# Subtest: T-VIS-2 desk cannot cancel or no-show a visit that has dentist-confirmed care
+ok 115 - T-VIS-2 desk cannot cancel or no-show a visit that has dentist-confirmed care
+  ---
+  duration_ms: 3.172931
+  type: 'test'
+  ...
+# Subtest: T-PAT-1 patient contact change keeps old and new values in the audit chain
+ok 116 - T-PAT-1 patient contact change keeps old and new values in the audit chain
+  ---
+  duration_ms: 9.231289
+  type: 'test'
+  ...
+# Subtest: T-IDEM-0 idempotency key is mandatory on writes
+ok 117 - T-IDEM-0 idempotency key is mandatory on writes
+  ---
+  duration_ms: 14.325336
+  type: 'test'
+  ...
+# Subtest: T-CASH-1 BLIND: counter-visible responses before and at submission contain no expected total or cash amounts
+ok 118 - T-CASH-1 BLIND: counter-visible responses before and at submission contain no expected total or cash amounts
+  ---
+  duration_ms: 522.411386
+  type: 'test'
+  ...
+# Subtest: T-CASH-2/3 retries are stored; recount needs a reason; owner sees first and latest difference
+ok 119 - T-CASH-2/3 retries are stored; recount needs a reason; owner sees first and latest difference
+  ---
+  duration_ms: 285.896507
+  type: 'test'
+  ...
+# Subtest: T-CASH-4 receptionist cannot submit a count (403) and cannot record drawer movements
+ok 120 - T-CASH-4 receptionist cannot submit a count (403) and cannot record drawer movements
+  ---
+  duration_ms: 204.179815
+  type: 'test'
+  ...
+# Subtest: T-CASH-6 software independence flags: owner who took cash, or a person holding RECEPTIONIST, is NOT independent
+ok 121 - T-CASH-6 software independence flags: owner who took cash, or a person holding RECEPTIONIST, is NOT independent
+  ---
+  duration_ms: 320.112341
+  type: 'test'
+  ...
+# Subtest: T-WIN-1 float + cash - owner-approved petty expense: expected 100,000; without float the old design showed a false +50,000
+ok 122 - T-WIN-1 float + cash - owner-approved petty expense: expected 100,000; without float the old design showed a false +50,000
+  ---
+  duration_ms: 267.600487
+  type: 'test'
+  ...
+# Subtest: T-WIN-2 / T-CASH-5 two periods: counted carry-forward after owner handover; closed period cannot be recounted; late cash goes to next period
+ok 123 - T-WIN-2 / T-CASH-5 two periods: counted carry-forward after owner handover; closed period cannot be recounted; late cash goes to next period
+  ---
+  duration_ms: 304.401398
+  type: 'test'
+  ...
+# Subtest: T-WIN-3 / FRAUD-SCENARIO-70-CASH patient pays 70,000, desk records 100,000 and pockets 30,000 -> count differs by -30,000 (neutral wording)
+ok 124 - T-WIN-3 / FRAUD-SCENARIO-70-CASH patient pays 70,000, desk records 100,000 and pockets 30,000 -> count differs by -30,000 (neutral wording)
+  ---
+  duration_ms: 214.875439
+  type: 'test'
+  ...
+# Subtest: T-CASH-CONC count submitted while 8 cash payments are in flight: stored expected equals recomputed expected for its cut-off
+ok 125 - T-CASH-CONC count submitted while 8 cash payments are in flight: stored expected equals recomputed expected for its cut-off
+  ---
+  duration_ms: 394.544766
+  type: 'test'
+  ...
+# Subtest: T-CASH-7 cash cannot be recorded with no open period; denominations must add up
+ok 126 - T-CASH-7 cash cannot be recorded with no open period; denominations must add up
+  ---
+  duration_ms: 402.70047
+  type: 'test'
+  ...
+# Subtest: T-CARD-1 desk card claim with no statement stays DESK_CLAIM; awaiting within lag, overdue after (T-STMT-5)
+ok 127 - T-CARD-1 desk card claim with no statement stays DESK_CLAIM; awaiting within lag, overdue after (T-STMT-5)
+  ---
+  duration_ms: 530.522707
+  type: 'test'
+  ...
+# Subtest: T-STMT-5b 10 claims settled on day 2 produce 0 exceptions (lag noise control)
+ok 128 - T-STMT-5b 10 claims settled on day 2 produce 0 exceptions (lag noise control)
+  ---
+  duration_ms: 474.157217
+  type: 'test'
+  ...
+# Subtest: T-STMT-1 edited file (inserted 150,000 line) vs owner-read terminal total 300,000 -> BLOCKED, 0 lines stored
+ok 129 - T-STMT-1 edited file (inserted 150,000 line) vs owner-read terminal total 300,000 -> BLOCKED, 0 lines stored
+  ---
+  duration_ms: 233.263251
+  type: 'test'
+  ...
+# Subtest: M-249-A total typed from a DESK-HANDLED slip is NOT an independent check (forged slip + forged file never silent)
+ok 130 - M-249-A total typed from a DESK-HANDLED slip is NOT an independent check (forged slip + forged file never silent)
+  ---
+  duration_ms: 254.968566
+  type: 'test'
+  ...
+# Subtest: T-STMT-2 replay: same file twice or renamed -> 0 new lines; two genuine identical lines -> 2, never 4
+ok 131 - T-STMT-2 replay: same file twice or renamed -> 0 new lines; two genuine identical lines -> 2, never 4
+  ---
+  duration_ms: 239.155085
+  type: 'test'
+  ...
+# Subtest: M-249-B inserted duplicate line + total from a compromised desk slip: imports, but flagged NOT independent and surfaces as an unmatched line
+ok 132 - M-249-B inserted duplicate line + total from a compromised desk slip: imports, but flagged NOT independent and surfaces as an unmatched line
+  ---
+  duration_ms: 244.220348
+  type: 'test'
+  ...
+# Subtest: M-249-C overlapping statements import only the surplus; a re-issued statement lacking earlier lines is BLOCKED; force imports new lines and reports the missing one
+ok 133 - M-249-C overlapping statements import only the surplus; a re-issued statement lacking earlier lines is BLOCKED; force imports new lines and reports the missing one
+  ---
+  duration_ms: 238.503488
+  type: 'test'
+  ...
+# Subtest: M-249-D reversal lines never satisfy a claim and always need owner review
+ok 134 - M-249-D reversal lines never satisfy a claim and always need owner review
+  ---
+  duration_ms: 242.539329
+  type: 'test'
+  ...
+# Subtest: T-STMT-3 amount-only match is a CANDIDATE, never "matched"; two claims + one line = BOTH ambiguous, independent of claim order (M-249 consumption race)
+ok 135 - T-STMT-3 amount-only match is a CANDIDATE, never "matched"; two claims + one line = BOTH ambiguous, independent of claim order (M-249 consumption race)
+  ---
+  duration_ms: 536.619126
+  type: 'test'
+  ...
+# Subtest: M-249-E owner confirmation can NEVER promote to PROVIDER_VERIFIED (API, DB constraint and privileges)
+ok 136 - M-249-E owner confirmation can NEVER promote to PROVIDER_VERIFIED (API, DB constraint and privileges)
+  ---
+  duration_ms: 254.972562
+  type: 'test'
+  ...
+# Subtest: T-STMT-4 desk role cannot import (403, nothing stored); owner needs fresh re-auth; import records actor + file hash + line count
+ok 137 - T-STMT-4 desk role cannot import (403, nothing stored); owner needs fresh re-auth; import records actor + file hash + line count
+  ---
+  duration_ms: 260.50355
+  type: 'test'
+  ...
+# Subtest: T-STMT-6 stale import banner when the newest statement is older than 7 days
+ok 138 - T-STMT-6 stale import banner when the newest statement is older than 7 days
+  ---
+  duration_ms: 223.03163
+  type: 'test'
+  ...
+# Subtest: T-STMT-7 wrong account or out-of-period lines -> REJECTED_SCOPE, 0 lines; non-card lines discarded and never stored
+ok 139 - T-STMT-7 wrong account or out-of-period lines -> REJECTED_SCOPE, 0 lines; non-card lines discarded and never stored
+  ---
+  duration_ms: 226.246042
+  type: 'test'
+  ...
+# Subtest: T-STMT-8 privacy: statement lines store only date, amount, ref, last-4 (no description column exists)
+ok 140 - T-STMT-8 privacy: statement lines store only date, amount, ref, last-4 (no description column exists)
+  ---
+  duration_ms: 7.685806
+  type: 'test'
+  ...
+# Subtest: T-CARD-3 pair test: cash relabelled as card -> drawer +100,000 over AND card claim overdue; neither signal alone separates the cases
+ok 141 - T-CARD-3 pair test: cash relabelled as card -> drawer +100,000 over AND card claim overdue; neither signal alone separates the cases
+  ---
+  duration_ms: 267.645288
+  type: 'test'
+  ...
+# Subtest: FRAUD-SCENARIO-70 partial payment: fee 100,000; pay 70,000 cash -> receipt states 70,000 and balance 30,000
+ok 142 - FRAUD-SCENARIO-70 partial payment: fee 100,000; pay 70,000 cash -> receipt states 70,000 and balance 30,000
+  ---
+  duration_ms: 425.620184
+  type: 'test'
+  ...
+# Subtest: T-IDEM-1 same key + same body twice -> ONE payment, ONE receipt; replay flagged
+ok 143 - T-IDEM-1 same key + same body twice -> ONE payment, ONE receipt; replay flagged
+  ---
+  duration_ms: 44.049564
+  type: 'test'
+  ...
+# Subtest: T-IDEM-2 same key + different body -> 409 IDEMPOTENCY_KEY_REUSED, nothing written
+ok 144 - T-IDEM-2 same key + different body -> 409 IDEMPOTENCY_KEY_REUSED, nothing written
+  ---
+  duration_ms: 39.7075
+  type: 'test'
+  ...
+# Subtest: T-IDEM-3 different keys, identical amount within 2 minutes -> needs explicit confirmation
+ok 145 - T-IDEM-3 different keys, identical amount within 2 minutes -> needs explicit confirmation
+  ---
+  duration_ms: 38.590264
+  type: 'test'
+  ...
+# Subtest: T-IDEM-CONC 10 parallel requests with the same key (network retry storm) -> exactly one payment and one receipt
+ok 146 - T-IDEM-CONC 10 parallel requests with the same key (network retry storm) -> exactly one payment and one receipt
+  ---
+  duration_ms: 68.650073
+  type: 'test'
+  ...
+# Subtest: T-RACE-1 two parallel different-key payments of 60,000 on a 100,000 balance -> one succeeds, one 409
+ok 147 - T-RACE-1 two parallel different-key payments of 60,000 on a 100,000 balance -> one succeeds, one 409
+  ---
+  duration_ms: 27.842642
+  type: 'test'
+  ...
+# Subtest: T-REC-CONC 20 parallel payments on 20 visits -> receipt numbers unique and contiguous
+ok 148 - T-REC-CONC 20 parallel payments on 20 visits -> receipt numbers unique and contiguous
+  ---
+  duration_ms: 404.480144
+  type: 'test'
+  ...
+# Subtest: T-PAY-2 hostile payment inputs: zero, negative, float, string, over balance, no tender, no care
+ok 149 - T-PAY-2 hostile payment inputs: zero, negative, float, string, over balance, no tender, no care
+  ---
+  duration_ms: 52.347031
+  type: 'test'
+  ...
+# Subtest: T-ADJ-1 receptionist cannot discount, refund or void; dentist discount works; owner refund needs credit
+ok 150 - T-ADJ-1 receptionist cannot discount, refund or void; dentist discount works; owner refund needs credit
+  ---
+  duration_ms: 129.970309
+  type: 'test'
+  ...
+# Subtest: T-VOID-1 owner void: original payment and receipt preserved, VOID receipt numbered, cannot void twice
+ok 151 - T-VOID-1 owner void: original payment and receipt preserved, VOID receipt numbered, cannot void twice
+  ---
+  duration_ms: 69.726683
+  type: 'test'
+  ...
+# Subtest: T-REPRINT-1 reprint is marked COPY and never consumes a number
+ok 152 - T-REPRINT-1 reprint is marked COPY and never consumes a number
+  ---
+  duration_ms: 36.017899
+  type: 'test'
+  ...
+# Subtest: T-MONEY-1 exact millime arithmetic: 3 x 33,333 + 1 = 100,000 with no float drift
+ok 153 - T-MONEY-1 exact millime arithmetic: 3 x 33,333 + 1 = 100,000 with no float drift
+  ---
+  duration_ms: 43.671558
+  type: 'test'
+  ...
+# Subtest: T-REC-1 / T-EVT-3(restart) REAL process restart (SIGKILL): receipts continue at next number, events and sessions survive
+ok 154 - T-REC-1 / T-EVT-3(restart) REAL process restart (SIGKILL): receipts continue at next number, events and sessions survive
+  ---
+  duration_ms: 799.079469
+  type: 'test'
+  ...
+# Subtest: T-TX-1 transaction rollback mid-payment leaves no payment, no receipt number consumed, no audit, no idempotency record
+ok 155 - T-TX-1 transaction rollback mid-payment leaves no payment, no receipt number consumed, no audit, no idempotency record
+  ---
+  duration_ms: 49.511208
+  type: 'test'
+  ...
+# Subtest: T-EVT-4 least privilege: the API database role cannot UPDATE/DELETE/TRUNCATE evidence tables
+ok 156 - T-EVT-4 least privilege: the API database role cannot UPDATE/DELETE/TRUNCATE evidence tables
+  ---
+  duration_ms: 8.482352
+  type: 'test'
+  ...
+# Subtest: T-EVT-5 append-only triggers block UPDATE/DELETE even for the schema owner role
+ok 157 - T-EVT-5 append-only triggers block UPDATE/DELETE even for the schema owner role
+  ---
+  duration_ms: 8.253545
+  type: 'test'
+  ...
+# Subtest: T-EVT-2 superuser alters one stored event -> verify names the first bad sequence number
+ok 158 - T-EVT-2 superuser alters one stored event -> verify names the first bad sequence number
+  ---
+  duration_ms: 13.538067
+  type: 'test'
+  ...
+# Subtest: T-EVT-3 tail truncation is invisible without an anchor and detected WITH the owner-held checkpoint
+ok 159 - T-EVT-3 tail truncation is invisible without an anchor and detected WITH the owner-held checkpoint
+  ---
+  duration_ms: 447.408335
+  type: 'test'
+  ...
+# Subtest: T-MISS-1 integrity check detects a payment deleted around the app and a row inserted without an audit event
+ok 160 - T-MISS-1 integrity check detects a payment deleted around the app and a row inserted without an audit event
+  ---
+  duration_ms: 426.702363
+  type: 'test'
+  ...
+# Subtest: T-BKP-1 backup -> restore drill: restored copy verifies; restoring an OLDER backup is caught by a newer owner checkpoint
+ok 161 - T-BKP-1 backup -> restore drill: restored copy verifies; restoring an OLDER backup is caught by a newer owner checkpoint
+  ---
+  duration_ms: 458.696349
+  type: 'test'
+  ...
+# Subtest: T-PAPER-1 import 12 slips once -> exactly 12 payments totalling 800,000; electronic R sequence unchanged
+ok 162 - T-PAPER-1 import 12 slips once -> exactly 12 payments totalling 800,000; electronic R sequence unchanged
+  ---
+  duration_ms: 721.52948
+  type: 'test'
+  ...
+# Subtest: T-PAPER-2 re-entering P-007 (same content, new request) -> 0 payments, total stays 800,000, 1 owner-review item
+ok 163 - T-PAPER-2 re-entering P-007 (same content, new request) -> 0 payments, total stays 800,000, 1 owner-review item
+  ---
+  duration_ms: 24.280813
+  type: 'test'
+  ...
+# Subtest: T-PAPER-3 conflict: P-007 re-keyed at 90,000 (was 150,000) -> both kept, neither overwrites, neutral wording
+ok 164 - T-PAPER-3 conflict: P-007 re-keyed at 90,000 (was 150,000) -> both kept, neither overwrites, neutral wording
+  ---
+  duration_ms: 21.911519
+  type: 'test'
+  ...
+# Subtest: T-PAPER-5 void: recorded with reason, counts 0, stays in sequence; void with an amount is rejected
+ok 165 - T-PAPER-5 void: recorded with reason, counts 0, stays in sequence; void with an amount is rejected
+  ---
+  duration_ms: 18.05596
+  type: 'test'
+  ...
+# Subtest: T-PAPER-4 sequence check: custodian declares P-014..P-020 unused except P-016 -> exactly 1 "not accounted for"
+ok 166 - T-PAPER-4 sequence check: custodian declares P-014..P-020 unused except P-016 -> exactly 1 "not accounted for"
+  ---
+  duration_ms: 29.251564
+  type: 'test'
+  ...
+# Subtest: T-PAPER-7 out-of-range slip, unknown visit, and amount above balance are rejected per slip without blocking the batch
+ok 167 - T-PAPER-7 out-of-range slip, unknown visit, and amount above balance are rejected per slip without blocking the batch
+  ---
+  duration_ms: 28.51388
+  type: 'test'
+  ...
+# Subtest: T-PAPER-8 paper and electronic identifiers stay distinct; paper card slip is still only a DESK_CLAIM
+ok 168 - T-PAPER-8 paper and electronic identifiers stay distinct; paper card slip is still only a DESK_CLAIM
+  ---
+  duration_ms: 28.256355
+  type: 'test'
+  ...
+# Subtest: T-PAPER-6 persistence: after a REAL process restart, re-importing the whole drill again creates 0 payments
+ok 169 - T-PAPER-6 persistence: after a REAL process restart, re-importing the whole drill again creates 0 payments
+  ---
+  duration_ms: 334.928666
+  type: 'test'
+  ...
+# Subtest: T-PAPER-9 book issuance: owner only, custodian must not be the desk, ranges cannot overlap
+ok 170 - T-PAPER-9 book issuance: owner only, custodian must not be the desk, ranges cannot overlap
+  ---
+  duration_ms: 14.661471
+  type: 'test'
+  ...
+# Subtest: T-DASH-BLIND before any count the owner list holds no expected-cash figure (170000 never appears)
+ok 171 - T-DASH-BLIND before any count the owner list holds no expected-cash figure (170000 never appears)
+  ---
+  duration_ms: 535.651934
+  type: 'test'
+  ...
+# Subtest: AC-DASH-1 synthetic day: count 150,000 vs expected 170,000 -> one -20,000 item; visit C unresolved; no receipt gaps; scope line present
+ok 172 - AC-DASH-1 synthetic day: count 150,000 vs expected 170,000 -> one -20,000 item; visit C unresolved; no receipt gaps; scope line present
+  ---
+  duration_ms: 32.272387
+  type: 'test'
+  ...
+# Subtest: T-RES-1 resolution is per item with a reason code; receptionist cannot resolve; resolved items leave the list but are counted
+ok 173 - T-RES-1 resolution is per item with a reason code; receptionist cannot resolve; resolved items leave the list but are counted
+  ---
+  duration_ms: 128.351006
+  type: 'test'
+  ...
+# Subtest: T-DASH-2 receptionist and dentist cannot read the owner exception list
+ok 174 - T-DASH-2 receptionist and dentist cannot read the owner exception list
+  ---
+  duration_ms: 7.438053
+  type: 'test'
+  ...
+# Subtest: T-DASH-3 desk-marked no-show surfaces as INFO for the owner
+ok 175 - T-DASH-3 desk-marked no-show surfaces as INFO for the owner
+  ---
+  duration_ms: 33.857441
+  type: 'test'
+  ...
+# Subtest: T-WB-ADJ-1 care 100,000 written off to zero, no payment -> OWNER_REVIEW_ZEROED_BALANCE with the write-off visible
+ok 176 - T-WB-ADJ-1 care 100,000 written off to zero, no payment -> OWNER_REVIEW_ZEROED_BALANCE with the write-off visible
+  ---
+  duration_ms: 626.031869
+  type: 'test'
+  ...
+# Subtest: T-WB-ADJ-2 care 100,000 corrected by -100,000 -> OWNER_REVIEW_ZEROED_BALANCE; correction row links to the original
+ok 177 - T-WB-ADJ-2 care 100,000 corrected by -100,000 -> OWNER_REVIEW_ZEROED_BALANCE; correction row links to the original
+  ---
+  duration_ms: 23.265373
+  type: 'test'
+  ...
+# Subtest: T-WB-ADJ-3 explicitly free care (fee 0 + reason, nothing else) keeps VISIT_COMPLETE_NO_PAYMENT_REQUIRED
+ok 178 - T-WB-ADJ-3 explicitly free care (fee 0 + reason, nothing else) keeps VISIT_COMPLETE_NO_PAYMENT_REQUIRED
+  ---
+  duration_ms: 19.142424
+  type: 'test'
+  ...
+# Subtest: T-WB-ADJ-4 discount then full cash payment -> reconciliation pending, discount still visible
+ok 179 - T-WB-ADJ-4 discount then full cash payment -> reconciliation pending, discount still visible
+  ---
+  duration_ms: 43.95931
+  type: 'test'
+  ...
+# Subtest: T-WB-PRIV-1 receptionist sees reason codes and that a reason exists, but not free-text notes or reasons
+ok 180 - T-WB-PRIV-1 receptionist sees reason codes and that a reason exists, but not free-text notes or reasons
+  ---
+  duration_ms: 47.042963
+  type: 'test'
+  ...
+# Subtest: T-WB-TENANT-1 adjustments of another clinic never appear; foreign visit id -> 404 identical to unknown id
+ok 181 - T-WB-TENANT-1 adjustments of another clinic never appear; foreign visit id -> 404 identical to unknown id
+  ---
+  duration_ms: 42.166461
+  type: 'test'
+  ...
+# Subtest: T-WB-VOID-1 owner void: payment shows VOIDED and the VOID receipt number is visible on the visit
+ok 182 - T-WB-VOID-1 owner void: payment shows VOIDED and the VOID receipt number is visible on the visit
+  ---
+  duration_ms: 79.774677
+  type: 'test'
+  ...
+# Subtest: T-WB-REFUND-1 partial refund after a fee correction: payment PARTLY_RETURNED, refund receipt visible
+ok 183 - T-WB-REFUND-1 partial refund after a fee correction: payment PARTLY_RETURNED, refund receipt visible
+  ---
+  duration_ms: 83.426451
+  type: 'test'
+  ...
+# Subtest: T-STATE-1 (CH-031 latent) a privileged DB change to CANCELLED after care+payment is surfaced for owner review, not CLOSED_WITHOUT_CARE
+ok 184 - T-STATE-1 (CH-031 latent) a privileged DB change to CANCELLED after care+payment is surfaced for owner review, not CLOSED_WITHOUT_CARE
+  ---
+  duration_ms: 49.241514
+  type: 'test'
+  ...
+# Subtest: T-CL-SURF-1 repeated surface letters (36 MM) -> 400 VALIDATION_FAILED, nothing stored
+ok 185 - T-CL-SURF-1 repeated surface letters (36 MM) -> 400 VALIDATION_FAILED, nothing stored
+  ---
+  duration_ms: 405.577249
+  type: 'test'
+  ...
+# Subtest: T-CL-SURF-2 anterior letters on a posterior tooth (36 IF) -> 400
+ok 186 - T-CL-SURF-2 anterior letters on a posterior tooth (36 IF) -> 400
+  ---
+  duration_ms: 14.978151
+  type: 'test'
+  ...
+# Subtest: T-CL-SURF-3 surfaces without a tooth (null MOD) -> 400
+ok 187 - T-CL-SURF-3 surfaces without a tooth (null MOD) -> 400
+  ---
+  duration_ms: 12.446681
+  type: 'test'
+  ...
+# Subtest: T-CL-SURF-4 valid sites are accepted and stored canonically (36 MOD; 36 dom -> MOD; 11 MID; no site)
+ok 188 - T-CL-SURF-4 valid sites are accepted and stored canonically (36 MOD; 36 dom -> MOD; 11 MID; no site)
+  ---
+  duration_ms: 76.964424
+  type: 'test'
+  ...
+# Subtest: T-CL-SURF-5 table of invalid inputs, all rejected by the one shared validator
+ok 189 - T-CL-SURF-5 table of invalid inputs, all rejected by the one shared validator
+  ---
+  duration_ms: 103.314546
+  type: 'test'
+  ...
+# Subtest: T-CL-SURF-6 duplicate guard compares canonical sites: DOM after MOD on the same visit needs confirmRepeat
+ok 190 - T-CL-SURF-6 duplicate guard compares canonical sites: DOM after MOD on the same visit needs confirmRepeat
+  ---
+  duration_ms: 23.351303
+  type: 'test'
+  ...
+# Subtest: FDI permanent and primary dental ranges
+ok 191 - FDI permanent and primary dental ranges
+  ---
+  duration_ms: 0.640361
+  type: 'test'
+  ...
+# Subtest: FDI to Universal conversion is display-only
+ok 192 - FDI to Universal conversion is display-only
+  ---
+  duration_ms: 1.219089
+  type: 'test'
+  ...
+# Subtest: Clinical site must be explicit, unambiguous and valid
+ok 193 - Clinical site must be explicit, unambiguous and valid
+  ---
+  duration_ms: 0.166853
+  type: 'test'
+  ...
+# Subtest: Surface normalization cannot silently accept anatomically invalid input
+ok 194 - Surface normalization cannot silently accept anatomically invalid input
+  ---
+  duration_ms: 0.331713
+  type: 'test'
+  ...
+# Subtest: T-ENC-1 full fictional encounter: desk intake -> dentist review/finding/note/plan/perform -> checkout -> longitudinal record -> site amendment
+ok 195 - T-ENC-1 full fictional encounter: desk intake -> dentist review/finding/note/plan/perform -> checkout -> longitudinal record -> site amendment
+  ---
+  duration_ms: 838.606266
+  type: 'test'
+  ...
+# Subtest: T-ENC-2 roles: receptionist, non-clinician owner and assistant get 403 on every clinical read/write; other clinic gets 404
+ok 196 - T-ENC-2 roles: receptionist, non-clinician owner and assistant get 403 on every clinical read/write; other clinic gets 404
+  ---
+  duration_ms: 153.83138
+  type: 'test'
+  ...
+# Subtest: T-NOTE-1 notes are immutable: addendum, single strike with reason, late entry rules, hash in audit not text, tamper detected on read
+ok 197 - T-NOTE-1 notes are immutable: addendum, single strike with reason, late entry rules, hash in audit not text, tamper detected on read
+  ---
+  duration_ms: 154.383903
+  type: 'test'
+  ...
+# Subtest: T-NOTE-2 duplicate submission: the same Idempotency-Key stores one note; cancelled visit refuses notes
+ok 198 - T-NOTE-2 duplicate submission: the same Idempotency-Key stores one note; cancelled visit refuses notes
+  ---
+  duration_ms: 29.461142
+  type: 'test'
+  ...
+# Subtest: T-PLAN-1 plan status machine and concurrent perform on two visits: exactly one care item, no orphan charge
+ok 199 - T-PLAN-1 plan status machine and concurrent perform on two visits: exactly one care item, no orphan charge
+  ---
+  duration_ms: 65.843513
+  type: 'test'
+  ...
+# Subtest: T-PLAN-2 perform rules: other patient visit, fee override vs quote, missing estimate, alert gate keeps the plan open
+ok 200 - T-PLAN-2 perform rules: other patient visit, fee override vs quote, missing estimate, alert gate keeps the plan open
+  ---
+  duration_ms: 96.062665
+  type: 'test'
+  ...
+# Subtest: T-FIND-1 chart findings: exactly one site, provisional rules enforced, strike once, struck excluded from the tooth view
+ok 201 - T-FIND-1 chart findings: exactly one site, provisional rules enforced, strike once, struck excluded from the tooth view
+  ---
+  duration_ms: 48.338814
+  type: 'test'
+  ...
+# Subtest: T-ENC-3 audit chain and integrity check stay green after a full clinical day
+ok 202 - T-ENC-3 audit chain and integrity check stay green after a full clinical day
+  ---
+  duration_ms: 69.563381
+  type: 'test'
+  ...
+# Subtest: T-ENC-4 (CH-018) the desk cannot mark a visit NO_SHOW/CANCELLED once the dentist documented it (note or finding)
+ok 203 - T-ENC-4 (CH-018) the desk cannot mark a visit NO_SHOW/CANCELLED once the dentist documented it (note or finding)
+  ---
+  duration_ms: 39.146364
+  type: 'test'
+  ...
+# Subtest: T-ENC-5 (M-263) a cancelled visit accepts no finding, no planned treatment and no payment; nothing is written
+ok 204 - T-ENC-5 (M-263) a cancelled visit accepts no finding, no planned treatment and no payment; nothing is written
+  ---
+  duration_ms: 40.332153
+  type: 'test'
+  ...
+# Subtest: T-MED-1 desk declares an alert: gets only an id back, sees presence counts, cannot read detail
+ok 205 - T-MED-1 desk declares an alert: gets only an id back, sees presence counts, cannot read detail
+  ---
+  duration_ms: 729.416141
+  type: 'test'
+  ...
+# Subtest: T-MED-2 dentist verifies, updates, resolves via revisions; old revisions kept; stale revision -> 409
+ok 206 - T-MED-2 dentist verifies, updates, resolves via revisions; old revisions kept; stale revision -> 409
+  ---
+  duration_ms: 49.041035
+  type: 'test'
+  ...
+# Subtest: T-MED-3 concurrent revisions of one alert: exactly one wins, no forked chain
+ok 207 - T-MED-3 concurrent revisions of one alert: exactly one wins, no forked chain
+  ---
+  duration_ms: 43.518397
+  type: 'test'
+  ...
+# Subtest: T-MED-4 care confirmation is gated by the CURRENT alert set (stale hash refused, implicit ack recorded)
+ok 208 - T-MED-4 care confirmation is gated by the CURRENT alert set (stale hash refused, implicit ack recorded)
+  ---
+  duration_ms: 67.539747
+  type: 'test'
+  ...
+# Subtest: T-MED-5 explicit acknowledgement for the visit unblocks care; a new alert afterwards blocks again
+ok 209 - T-MED-5 explicit acknowledgement for the visit unblocks care; a new alert afterwards blocks again
+  ---
+  duration_ms: 64.068105
+  type: 'test'
+  ...
+# Subtest: T-MED-6 no-known-allergies is an explicit dated assertion, refused while an allergy alert is active
+ok 210 - T-MED-6 no-known-allergies is an explicit dated assertion, refused while an allergy alert is active
+  ---
+  duration_ms: 50.232422
+  type: 'test'
+  ...
+# Subtest: T-MED-7 tenant isolation: other clinic sees 404 for patient and alert ids, never counts
+ok 211 - T-MED-7 tenant isolation: other clinic sees 404 for patient and alert ids, never counts
+  ---
+  duration_ms: 33.874637
+  type: 'test'
+  ...
+# Subtest: T-MED-8 validation and privacy: unknown code, OTHER without detail, duplicate active code; audit carries no free text
+ok 212 - T-MED-8 validation and privacy: unknown code, OTHER without detail, duplicate active code; audit carries no free text
+  ---
+  duration_ms: 37.382168
+  type: 'test'
+  ...
+# Subtest: T-MED-9 OWNER+DENTIST holds the union of permissions (clinical read/write allowed)
+ok 213 - T-MED-9 OWNER+DENTIST holds the union of permissions (clinical read/write allowed)
+  ---
+  duration_ms: 15.701709
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-1 money neutral: total, balance, payments and receipts are identical before and after
+ok 214 - T-CL-AMEND-1 money neutral: total, balance, payments and receipts are identical before and after
+  ---
+  duration_ms: 719.9192
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-2 history: original row unchanged, amendment linked, effective site exposed
+ok 215 - T-CL-AMEND-2 history: original row unchanged, amendment linked, effective site exposed
+  ---
+  duration_ms: 36.980435
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-3 chain: stale expectation -> 409 with current head; concurrent amendments -> exactly one wins
+ok 216 - T-CL-AMEND-3 chain: stale expectation -> 409 with current head; concurrent amendments -> exactly one wins
+  ---
+  duration_ms: 66.186678
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-4 no-op and replay: same site -> SITE_UNCHANGED; same Idempotency-Key -> stored response, one row
+ok 217 - T-CL-AMEND-4 no-op and replay: same site -> SITE_UNCHANGED; same Idempotency-Key -> stored response, one row
+  ---
+  duration_ms: 35.965287
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-5 a later fee correction carries the effective site, not the amended-away one
+ok 218 - T-CL-AMEND-5 a later fee correction carries the effective site, not the amended-away one
+  ---
+  duration_ms: 29.984546
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-6 duplicate guard uses the effective site
+ok 219 - T-CL-AMEND-6 duplicate guard uses the effective site
+  ---
+  duration_ms: 37.085401
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-ROLE-1/2 receptionist, owner and assistant cannot amend; body identity and fee fields never apply
+ok 220 - T-CL-AMEND-ROLE-1/2 receptionist, owner and assistant cannot amend; body identity and fee fields never apply
+  ---
+  duration_ms: 49.478037
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-TENANT-1/2 other clinic, CORRECTION rows and unknown ids -> identical 404
+ok 221 - T-CL-AMEND-TENANT-1/2 other clinic, CORRECTION rows and unknown ids -> identical 404
+  ---
+  duration_ms: 36.091645
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-VAL site validation is the same as for confirmation (MM, 36 IF, surfaces without tooth, OTHER without note)
+ok 222 - T-CL-AMEND-VAL site validation is the same as for confirmation (MM, 36 IF, surfaces without tooth, OTHER without note)
+  ---
+  duration_ms: 45.92489
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-DB-1 the API role cannot rewrite or forge amendment history
+ok 223 - T-CL-AMEND-DB-1 the API role cannot rewrite or forge amendment history
+  ---
+  duration_ms: 51.221481
+  type: 'test'
+  ...
+# Subtest: T-CL-AMEND-AUD-1 exactly one audit event; codes and sites only, no free text; chain still verifies
+ok 224 - T-CL-AMEND-AUD-1 exactly one audit event; codes and sites only, no free text; chain still verifies
+  ---
+  duration_ms: 84.987031
+  type: 'test'
+  ...
+# (node:58489) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: R46-SQLITE: 20 visits local outbox survives reopen, detects duplicate/conflict/missing
+ok 225 - R46-SQLITE: 20 visits local outbox survives reopen, detects duplicate/conflict/missing
+  ---
+  duration_ms: 30.017277
+  type: 'test'
+  ...
+# Subtest: R46-PAPER 20 fictional visits: 16 partial cash, 2 void, 1 unused, 1 missing; replay unchanged
+ok 226 - R46-PAPER 20 fictional visits: 16 partial cash, 2 void, 1 unused, 1 missing; replay unchanged
+  ---
+  duration_ms: 1039.029458
+  type: 'test'
+  ...
+# Subtest: T-CINT-0 a full fictional clinical visit produces no false alarm (every clinical table populated)
+ok 227 - T-CINT-0 a full fictional clinical visit produces no false alarm (every clinical table populated)
+  ---
+  duration_ms: 601.016998
+  type: 'test'
+  ...
+# Subtest: T-CINT-1 (RED before fix) note text edited without touching its hash -> CLINICAL_NOTE_CONTENT_HASH_MISMATCH
+ok 228 - T-CINT-1 (RED before fix) note text edited without touching its hash -> CLINICAL_NOTE_CONTENT_HASH_MISMATCH
+  ---
+  duration_ms: 336.243761
+  type: 'test'
+  ...
+# Subtest: T-CINT-2 (RED before fix) note text AND hash rewritten consistently -> mismatch with the hash captured in the audit event
+ok 229 - T-CINT-2 (RED before fix) note text AND hash rewritten consistently -> mismatch with the hash captured in the audit event
+  ---
+  duration_ms: 315.237717
+  type: 'test'
+  ...
+# Subtest: T-CINT-3 (RED before fix) finding, plan estimate, plan event, alert severity, review, acknowledgement and site amendment edits are each detected
+ok 230 - T-CINT-3 (RED before fix) finding, plan estimate, plan event, alert severity, review, acknowledgement and site amendment edits are each detected
+  ---
+  duration_ms: 2506.824673
+  type: 'test'
+  ...
+# Subtest: T-CINT-4 (RED before fix) a deleted finding and a finding inserted around the application are both reported
+ok 231 - T-CINT-4 (RED before fix) a deleted finding and a finding inserted around the application are both reported
+  ---
+  duration_ms: 303.590828
+  type: 'test'
+  ...
+# Subtest: T-ROLE-1 (RED before fix) with clinical permissions widened to ASSISTANT, an assistant cannot author rows that would read as dentist-authored
+ok 232 - T-ROLE-1 (RED before fix) with clinical permissions widened to ASSISTANT, an assistant cannot author rows that would read as dentist-authored
+  ---
+  duration_ms: 477.25647
+  type: 'test'
+  ...
+# Subtest: T-POOL-8 (RED before fix) a client released inside an open transaction is not reused with that transaction
+ok 233 - T-POOL-8 (RED before fix) a client released inside an open transaction is not reused with that transaction
+  ---
+  duration_ms: 162.482474
+  type: 'test'
+  ...
+# Subtest: T-POOL-9 (RED before fix) an error on an idle pooled client is logged with its code, never with credentials
+ok 234 - T-POOL-9 (RED before fix) an error on an idle pooled client is logged with its code, never with credentials
+  ---
+  duration_ms: 33.564015
+  type: 'test'
+  ...
+# Subtest: T-ERR-2 constraint failures reach the client as neutral errors: no PostgreSQL detail, no values, no table name, no SQL
+ok 235 - T-ERR-2 constraint failures reach the client as neutral errors: no PostgreSQL detail, no values, no table name, no SQL
+  ---
+  duration_ms: 245.805662
+  type: 'test'
+  ...
+# Subtest: T-ARCH-6 only the platform layer talks to the pg driver; only Db builds a pool
+ok 236 - T-ARCH-6 only the platform layer talks to the pg driver; only Db builds a pool
+  ---
+  duration_ms: 1.867879
+  type: 'test'
+  ...
+# Subtest: T-PLAN-3 eight concurrent performs on eight visits, then four on one visit: one care item, one COMPLETED event, no orphan charge, chain intact
+ok 237 - T-PLAN-3 eight concurrent performs on eight visits, then four on one visit: one care item, one COMPLETED event, no orphan charge, chain intact
+  ---
+  duration_ms: 615.861805
+  type: 'test'
+  ...
+# JOURNEY {"step":"clinic opened","clinics":2,"day":"2026-10-28","openingFloatMillimes":20000}
+# JOURNEY {"step":"patients registered","count":7,"duplicateWarning":"CONFLICT","elderlyNoPhone":1}
+# JOURNEY {"step":"day-board","visits":6,"flagsOnElder":["IN_PERSON_CONTACT_ONLY","SAME_NAME_OTHER_FILE","NOT_ARRIVED_PAST_START"],"timezone":"Africa/Tunis"}
+# JOURNEY {"step":"medical alert declared by desk","deskSeesPresenceOnly":true,"criticalAlertCount":1}
+# JOURNEY {"step":"dentist encounter","alertVerified":true,"historyReviewed":true,"finding":1,"signedNote":1,"planPerformedFeeMillimes":80000,"otherCare":3}
+# JOURNEY {"step":"role boundaries","deskClinicalWrite":403,"assistantClinicalWrite":403,"ownerClinicalRead":403,"assistantBoardHasMoney":false}
+# JOURNEY {"step":"checkout","receipts":["R-000001","R-000002","R-000003","R-000004","R-000005"],"cashMillimes":80000,"cardClaimMillimes":50000,"discountMillimes":10000,"refundMillimes":10000,"voidedMillimes":30000}
+# JOURNEY {"step":"receipt printed","original":"R-000001","copy":1,"langs":["fr","ar"],"largePrintPt":18}
+# JOURNEY {"step":"missed visits","noShow":1,"cancelled":1,"cancelTreatedVisitRefused":"Cannot change visit from COMPLETED to CANCELLED"}
+# JOURNEY {"step":"paper outage","wrongPatientRejected":true,"posted":1,"replay":"DUPLICATE_ENTRY","void":1,"unused":2,"unaccounted":["P-205"],"careWithoutPayment":0}
+# JOURNEY {"step":"blind count","countedMillimes":135000,"expectedMillimes":110000,"differenceMillimes":25000,"wording":"count differs by 25000 millimes — owner review pending (not an accusation)","counterIndependent":true}
+# JOURNEY {"step":"period closed","workbenchNextAction":"RECORD_OR_FOLLOW_UP_PAYMENT","cashEvidence":"DESK_CASH__DRAWER_PERIOD_COUNTED"}
+# JOURNEY {"step":"owner review","evidenceLevels":{"CASH_IN_COUNTED_PERIOD":2,"CARD_DESK_CLAIM":1,"PAPER_SLIP_RECORD":1},"returns":["REFUND:R-000003","PAYMENT_VOID:R-000005"],"exceptionKinds":["CASH_COUNT_DIFFERS","AUDIT_CHECKPOINT_DUE","PAPER_DUPLICATE_ENTRY","PAPER_NOT_ACCOUNTED_FOR","DENIED_PRIVILEGED_ATTEMPT","DESK_MARKED_CANCELLED","DESK_MARKED_NO_SHOW"],"integrityOk":true,"auditEvents":61}
+# JOURNEY {"step":"privacy sweep","deskResponsesChecked":6,"assistantResponsesChecked":1,"clinicalFreeTextFound":0}
+# JOURNEY {"step":"clinic B isolation","patientOfA":404,"receiptOfA":404,"paperBookOfA":404,"boardTotal":1,"reviewItems":0}
+# JOURNEY {"step":"backup and restore","checks":16,"allPassed":true,"timingsMs":{"decryptMs":78,"restoreMs":176,"verifyMs":52},"clinicalRowsMatch":true,"restoredIntegrityOk":true}
+# Subtest: T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dentist, owner; second clinic isolated; backup restored
+ok 238 - T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dentist, owner; second clinic isolated; backup restored
+  ---
+  duration_ms: 1936.357407
+  type: 'test'
+  ...
+# Subtest: T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+ok 239 - T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+  ---
+  duration_ms: 839.890755
+  type: 'test'
+  ...
+# Subtest: T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+ok 240 - T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+  ---
+  duration_ms: 832.317942
+  type: 'test'
+  ...
+# Subtest: T-API-7 every route in the table has at least one recorded example
+ok 241 - T-API-7 every route in the table has at least one recorded example
+  ---
+  duration_ms: 26.938731
+  type: 'test'
+  ...
+# Subtest: T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+ok 242 - T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+  ---
+  duration_ms: 14.966374
+  type: 'test'
+  ...
+# Subtest: T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+ok 243 - T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+  ---
+  duration_ms: 72.401004
+  type: 'test'
+  ...
+# Subtest: T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+ok 244 - T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+  ---
+  duration_ms: 1229.403448
+  type: 'test'
+  ...
+# Subtest: T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+ok 245 - T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+  ---
+  duration_ms: 26.074387
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-0 a clean cash day (payments, movement, count, refund, close, carry-forward count) has no findings
+ok 246 - T-INT-CASH-0 a clean cash day (payments, movement, count, refund, close, carry-forward count) has no findings
+  ---
+  duration_ms: 617.263194
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-A (M-267 1) opening float + stored expected edited together is reported (first period and a carry-forward period)
+ok 247 - T-INT-CASH-A (M-267 1) opening float + stored expected edited together is reported (first period and a carry-forward period)
+  ---
+  duration_ms: 538.798439
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-B (M-267 1) count submitted_at moved back + expected edited to match is reported
+ok 248 - T-INT-CASH-B (M-267 1) count submitted_at moved back + expected edited to match is reported
+  ---
+  duration_ms: 228.687159
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-C (CH-034) a cash payment moved past the count cut-off + expected edited to match is reported
+ok 249 - T-INT-CASH-C (CH-034) a cash payment moved past the count cut-off + expected edited to match is reported
+  ---
+  duration_ms: 228.352758
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-D (CH-034) a cash movement or a refund moved in time is reported
+ok 250 - T-INT-CASH-D (CH-034) a cash movement or a refund moved in time is reported
+  ---
+  duration_ms: 315.543595
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-E (M-267 6) a deleted cash period returns findings instead of aborting the integrity check
+ok 251 - T-INT-CASH-E (M-267 6) a deleted cash period returns findings instead of aborting the integrity check
+  ---
+  duration_ms: 214.822596
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-F (M-267 5) stored difference or denominations edited alone are reported
+ok 252 - T-INT-CASH-F (M-267 5) stored difference or denominations edited alone are reported
+  ---
+  duration_ms: 209.997922
+  type: 'test'
+  ...
+# Subtest: T-INT-RCPT-1 (M-267 2) a receipt snapshot field edited with its hash recomputed is reported
+ok 253 - T-INT-RCPT-1 (M-267 2) a receipt snapshot field edited with its hash recomputed is reported
+  ---
+  duration_ms: 218.43318
+  type: 'test'
+  ...
+# Subtest: T-INT-CORR-1 (M-267 3) a correction row tooth/procedure edited, or a care reason edited, is reported
+ok 254 - T-INT-CORR-1 (M-267 3) a correction row tooth/procedure edited, or a care reason edited, is reported
+  ---
+  duration_ms: 410.113839
+  type: 'test'
+  ...
+# Subtest: T-INT-ADJ-1 (M-267 4) a refund moved to another visit, or an adjustment note edited, is reported (note compared by hash only)
+ok 255 - T-INT-ADJ-1 (M-267 4) a refund moved to another visit, or an adjustment note edited, is reported (note compared by hash only)
+  ---
+  duration_ms: 275.781786
+  type: 'test'
+  ...
+# Subtest: T-INT-SCOPE-1 (M-267 7) called without row-level security, the check still only looks at the requested clinic
+ok 256 - T-INT-SCOPE-1 (M-267 7) called without row-level security, the check still only looks at the requested clinic
+  ---
+  duration_ms: 397.483756
+  type: 'test'
+  ...
+# Subtest: T-SET-1 defaults are readable by every role; only the owner (with password re-entry) can change them
+ok 257 - T-SET-1 defaults are readable by every role; only the owner (with password re-entry) can change them
+  ---
+  duration_ms: 420.572992
+  type: 'test'
+  ...
+# Subtest: T-SET-2 validation: unknown keys, invalid timezone, out-of-range numbers and a missing reason are refused; nothing is written
+ok 258 - T-SET-2 validation: unknown keys, invalid timezone, out-of-range numbers and a missing reason are refused; nothing is written
+  ---
+  duration_ms: 424.244892
+  type: 'test'
+  ...
+# Subtest: T-SET-3 changing the timezone: impact confirmation when visits exist, audited, history kept, day lists follow immediately
+ok 259 - T-SET-3 changing the timezone: impact confirmation when visits exist, audited, history kept, day lists follow immediately
+  ---
+  duration_ms: 373.397585
+  type: 'test'
+  ...
+# Subtest: T-SET-4 tenant isolation and append-only history: another clinic is unaffected; the app role cannot edit or delete a change
+ok 260 - T-SET-4 tenant isolation and append-only history: another clinic is unaffected; the app role cannot edit or delete a change
+  ---
+  duration_ms: 410.958226
+  type: 'test'
+  ...
+# Subtest: T-SET-5 a superuser edit of a setting change (e.g. shifting the clinic day) is caught by the integrity check
+ok 261 - T-SET-5 a superuser edit of a setting change (e.g. shifting the clinic day) is caught by the integrity check
+  ---
+  duration_ms: 269.810449
+  type: 'test'
+  ...
+# Subtest: T-SET-6 the bootstrap timezone (clinics.settings) is honoured until the owner changes it; settings drive the board grace and checkpoint reminder
+ok 262 - T-SET-6 the bootstrap timezone (clinics.settings) is honoured until the owner changes it; settings drive the board grace and checkpoint reminder
+  ---
+  duration_ms: 263.119753
+  type: 'test'
+  ...
+# Subtest: T-SET-7 (RED before fix) owner exceptions use the clinic day: an early-morning visit today (Kolkata) is not a past visit
+ok 263 - T-SET-7 (RED before fix) owner exceptions use the clinic day: an early-morning visit today (Kolkata) is not a past visit
+  ---
+  duration_ms: 217.984372
+  type: 'test'
+  ...
+# Subtest: T-SET-8 (RED before fix) card claims are dated by the clinic day, not UTC: a card payment at 00:30 Tunis belongs to that day
+ok 264 - T-SET-8 (RED before fix) card claims are dated by the clinic day, not UTC: a card payment at 00:30 Tunis belongs to that day
+  ---
+  duration_ms: 243.712714
+  type: 'test'
+  ...
+# Subtest: T-SET-9 (RED before fix) the medical-history next-review date counts from the clinic day, not the UTC day
+ok 265 - T-SET-9 (RED before fix) the medical-history next-review date counts from the clinic day, not the UTC day
+  ---
+  duration_ms: 155.7802
+  type: 'test'
+  ...
+# Subtest: T-LAB-1 lifecycle: assistant creates and tracks logistics, try-in round trip, dentist fits; invalid jumps refused; history kept
+ok 266 - T-LAB-1 lifecycle: assistant creates and tracks logistics, try-in round trip, dentist fits; invalid jumps refused; history kept
+  ---
+  duration_ms: 410.771766
+  type: 'test'
+  ...
+# Subtest: T-LAB-2 authorization: desk sees a status board without clinical detail and cannot create or track; owner has no case access
+ok 267 - T-LAB-2 authorization: desk sees a status board without clinical detail and cannot create or track; owner has no case access
+  ---
+  duration_ms: 200.950842
+  type: 'test'
+  ...
+# Subtest: T-LAB-3 cancellation and remake need a dentist and a reason; a remake is a new linked case with the responsible party
+ok 268 - T-LAB-3 cancellation and remake need a dentist and a reason; a remake is a new linked case with the responsible party
+  ---
+  duration_ms: 193.790644
+  type: 'test'
+  ...
+# Subtest: T-LAB-4 MF19: received lab work without a linked billed care item appears after labUnbilledDays; linking the care item clears it
+ok 269 - T-LAB-4 MF19: received lab work without a linked billed care item appears after labUnbilledDays; linking the care item clears it
+  ---
+  duration_ms: 292.372364
+  type: 'test'
+  ...
+# Subtest: T-LAB-5 lab invoices: owner-only clinic expense, cases must belong to the supplier, unique per supplier, MF19 invoice item
+ok 270 - T-LAB-5 lab invoices: owner-only clinic expense, cases must belong to the supplier, unique per supplier, MF19 invoice item
+  ---
+  duration_ms: 173.609333
+  type: 'test'
+  ...
+# Subtest: T-LAB-6 isolation: another clinic cannot see, track, link or invoice a case; a visit of another patient cannot be attached
+ok 271 - T-LAB-6 isolation: another clinic cannot see, track, link or invoice a case; a visit of another patient cannot be attached
+  ---
+  duration_ms: 313.251864
+  type: 'test'
+  ...
+# Subtest: T-LAB-7 concurrency: six parallel status changes on one case record exactly one transition
+ok 272 - T-LAB-7 concurrency: six parallel status changes on one case record exactly one transition
+  ---
+  duration_ms: 151.030932
+  type: 'test'
+  ...
+# Subtest: T-STK-1 stock ledger: receipts and usage keep a running on-hand; never below zero; reorder flag; expiring received lots listed
+ok 273 - T-STK-1 stock ledger: receipts and usage keep a running on-hand; never below zero; reorder flag; expiring received lots listed
+  ---
+  duration_ms: 165.965417
+  type: 'test'
+  ...
+# Subtest: T-STK-2 owner adjustments and discards need a reason; history in sequence; concurrent usage never oversells
+ok 274 - T-STK-2 owner adjustments and discards need a reason; history in sequence; concurrent usage never oversells
+  ---
+  duration_ms: 193.76815
+  type: 'test'
+  ...
+# Subtest: T-STK-3 integrity: an edited stock row and a lab invoice amount changed outside the app are reported; the ledger is append-only
+ok 275 - T-STK-3 integrity: an edited stock row and a lab invoice amount changed outside the app are reported; the ledger is append-only
+  ---
+  duration_ms: 165.848081
+  type: 'test'
+  ...
+# Subtest: T-MIG-1 (RED before fix) a database with an applied migration this code does not know is refused, not silently used
+ok 276 - T-MIG-1 (RED before fix) a database with an applied migration this code does not know is refused, not silently used
+  ---
+  duration_ms: 301.436079
+  type: 'test'
+  ...
+# Subtest: T-MIG-2 migrationStatus reports current / pending / modified / unknown without applying anything
+ok 277 - T-MIG-2 migrationStatus reports current / pending / modified / unknown without applying anything
+  ---
+  duration_ms: 177.076963
+  type: 'test'
+  ...
+# Subtest: T-MIG-3 a failing migration rolls back completely (no half schema, no record) and the fixed file applies on the next run
+ok 278 - T-MIG-3 a failing migration rolls back completely (no half schema, no record) and the fixed file applies on the next run
+  ---
+  duration_ms: 149.27197
+  type: 'test'
+  ...
+# Subtest: T-START-1 (RED before fix) the server refuses to start on a schema that is ahead of the code, and says why
+ok 279 - T-START-1 (RED before fix) the server refuses to start on a schema that is ahead of the code, and says why
+  ---
+  duration_ms: 228.32853
+  type: 'test'
+  ...
+# Subtest: T-START-2 (RED before fix) a wrong database password stops startup with a safe message (no password, no URL)
+ok 280 - T-START-2 (RED before fix) a wrong database password stops startup with a safe message (no password, no URL)
+  ---
+  duration_ms: 84.642086
+  type: 'test'
+  ...
+# Subtest: T-START-3 a healthy database starts; GET /api/v1/health/ready reports ready, then not ready (503) when the schema moves ahead
+ok 281 - T-START-3 a healthy database starts; GET /api/v1/health/ready reports ready, then not ready (503) when the schema moves ahead
+  ---
+  duration_ms: 134.154733
+  type: 'test'
+  ...
+# Subtest: T-MIG-4 scripts/migrate.ts --check exits 0 on a current schema and 1 (with the reason) on a schema ahead of the code
+ok 282 - T-MIG-4 scripts/migrate.ts --check exits 0 on a current schema and 1 (with the reason) on a schema ahead of the code
+  ---
+  duration_ms: 261.388827
+  type: 'test'
+  ...
+# Subtest: T-DOC-1 doctor: Node major and PostgreSQL 16 checks, TLS policy of DATABASE_URL, migrations; never prints secrets
+ok 283 - T-DOC-1 doctor: Node major and PostgreSQL 16 checks, TLS policy of DATABASE_URL, migrations; never prints secrets
+  ---
+  duration_ms: 10.959316
+  type: 'test'
+  ...
+# Subtest: T-CP-1 the owner creates a checkpoint: one line with a check code, a printable FR/AR sheet, no patient data; desk and dentist cannot
+ok 284 - T-CP-1 the owner creates a checkpoint: one line with a check code, a printable FR/AR sheet, no patient data; desk and dentist cannot
+  ---
+  duration_ms: 539.212219
+  type: 'test'
+  ...
+# Subtest: T-CP-2 verifying kept lines: match, mistyped line (CHECKSUM_FAILED, never "tampered"), wrong clinic, malformed, legacy line
+ok 285 - T-CP-2 verifying kept lines: match, mistyped line (CHECKSUM_FAILED, never "tampered"), wrong clinic, malformed, legacy line
+  ---
+  duration_ms: 574.905586
+  type: 'test'
+  ...
+# Subtest: T-CP-3 a superuser rewrites a payment AND the whole audit chain consistently: invisible from inside, caught by the outside line
+ok 286 - T-CP-3 a superuser rewrites a payment AND the whole audit chain consistently: invisible from inside, caught by the outside line
+  ---
+  duration_ms: 310.128117
+  type: 'test'
+  ...
+# Subtest: T-CP-4 (RED before fix) a careless rewrite that leaves the database's own checkpoint copies is flagged by the integrity check and status
+ok 287 - T-CP-4 (RED before fix) a careless rewrite that leaves the database's own checkpoint copies is flagged by the integrity check and status
+  ---
+  duration_ms: 337.067594
+  type: 'test'
+  ...
+# Subtest: T-CP-5 removed records: the last events deleted and the head moved back consistently -> CHAIN_SHORTER from the outside line
+ok 288 - T-CP-5 removed records: the last events deleted and the head moved back consistently -> CHAIN_SHORTER from the outside line
+  ---
+  duration_ms: 305.859615
+  type: 'test'
+  ...
+# Subtest: T-CP-6 stale checkpoints: never taken -> due; older than 7 days -> due with age; a fresh one clears it; events since are counted
+ok 289 - T-CP-6 stale checkpoints: never taken -> due; older than 7 days -> due with age; a fresh one clears it; events since are counted
+  ---
+  duration_ms: 289.034807
+  type: 'test'
+  ...
+# Subtest: T-CP-7 restore: an OLDER backup restored after a newer checkpoint is caught from the printed line; the latest backup passes
+ok 290 - T-CP-7 restore: an OLDER backup restored after a newer checkpoint is caught from the printed line; the latest backup passes
+  ---
+  duration_ms: 1471.887683
+  type: 'test'
+  ...
+# Subtest: T-CP-8 line format: every field is covered by the check code; tolerant of surrounding spaces and upper-case hex
+ok 291 - T-CP-8 line format: every field is covered by the check code; tolerant of surrounding spaces and upper-case hex
+  ---
+  duration_ms: 0.553993
+  type: 'test'
+  ...
+# Subtest: T-DOCS-1 dentist attaches a fictional X-ray: declared, verified, GPS removed (orientation kept), ACTIVE, audited download with safe headers
+ok 292 - T-DOCS-1 dentist attaches a fictional X-ray: declared, verified, GPS removed (orientation kept), ACTIVE, audited download with safe headers
+  ---
+  duration_ms: 429.596263
+  type: 'test'
+  ...
+# Subtest: T-DOCS-2 authorization: only the dentist uploads, reads and downloads; owner records deletion requests only; anonymous uploads are refused before the body is read
+ok 293 - T-DOCS-2 authorization: only the dentist uploads, reads and downloads; owner records deletion requests only; anonymous uploads are refused before the body is read
+  ---
+  duration_ms: 242.229979
+  type: 'test'
+  ...
+# Subtest: T-DOCS-3 type and size rules: allow-listed declared types; bytes decide the type; size and SHA-256 must match; caps enforced
+ok 294 - T-DOCS-3 type and size rules: allow-listed declared types; bytes decide the type; size and SHA-256 must match; caps enforced
+  ---
+  duration_ms: 277.292882
+  type: 'test'
+  ...
+# Subtest: T-DOCS-4 tenant and patient isolation: other clinic sees nothing; a visit of another patient cannot be attached (API and database)
+ok 295 - T-DOCS-4 tenant and patient isolation: other clinic sees nothing; a visit of another patient cannot be attached (API and database)
+  ---
+  duration_ms: 390.254227
+  type: 'test'
+  ...
+# Subtest: T-DOCS-5 screening: active-content PDFs (also \#-escaped) and polyglot JPEGs are REJECTED and never served; clean PDF, PNG metadata and DICOM handled
+ok 296 - T-DOCS-5 screening: active-content PDFs (also \#-escaped) and polyglot JPEGs are REJECTED and never served; clean PDF, PNG metadata and DICOM handled
+  ---
+  duration_ms: 272.270436
+  type: 'test'
+  ...
+# Subtest: T-DOCS-6 wrong patient: dentist marks ENTERED_IN_ERROR with a reason and re-attaches the same bytes to the right patient; original withdrawn, never deleted
+ok 297 - T-DOCS-6 wrong patient: dentist marks ENTERED_IN_ERROR with a reason and re-attaches the same bytes to the right patient; original withdrawn, never deleted
+  ---
+  duration_ms: 213.14962
+  type: 'test'
+  ...
+# Subtest: T-DOCS-7 retention: an owner deletion request is recorded and audited but executes nothing; the database refuses deletes and edits
+ok 298 - T-DOCS-7 retention: an owner deletion request is recorded and audited but executes nothing; the database refuses deletes and edits
+  ---
+  duration_ms: 234.41216
+  type: 'test'
+  ...
+# Subtest: T-DOCS-8 tampered stored bytes: download refuses (500 CONTENT_INTEGRITY_FAILED) and the owner integrity check reports DOCUMENT_CONTENT_MISMATCH
+ok 299 - T-DOCS-8 tampered stored bytes: download refuses (500 CONTENT_INTEGRITY_FAILED) and the owner integrity check reports DOCUMENT_CONTENT_MISMATCH
+  ---
+  duration_ms: 220.265169
+  type: 'test'
+  ...
+# Subtest: T-DOCS-9 storage is replaceable: the same API runs on an in-memory store (no bytes in PostgreSQL); a corrupted store is detected on read
+ok 300 - T-DOCS-9 storage is replaceable: the same API runs on an in-memory store (no bytes in PostgreSQL); a corrupted store is detected on read
+  ---
+  duration_ms: 224.87439
+  type: 'test'
+  ...
+# Subtest: T-DOCS-10 an unavailable screener keeps content in QUARANTINE (not served) until a later screen passes
+ok 301 - T-DOCS-10 an unavailable screener keeps content in QUARANTINE (not served) until a later screen passes
+  ---
+  duration_ms: 202.825343
+  type: 'test'
+  ...
+# Subtest: T-DOCS-11 concurrent uploads of one document: exactly one stores; the same bytes replay, different bytes are refused
+ok 302 - T-DOCS-11 concurrent uploads of one document: exactly one stores; the same bytes replay, different bytes are refused
+  ---
+  duration_ms: 208.613185
+  type: 'test'
+  ...
+# Subtest: T-DOCS-12 integrity: rows written around the application, or audit/row disagreement, are reported
+ok 303 - T-DOCS-12 integrity: rows written around the application, or audit/row disagreement, are reported
+  ---
+  duration_ms: 205.599353
+  type: 'test'
+  ...
+# Subtest: T-DOCS-13 backup and fresh restore carry the document bytes: the restored download has the same SHA-256
+ok 304 - T-DOCS-13 backup and fresh restore carry the document bytes: the restored download has the same SHA-256
+  ---
+  duration_ms: 888.682649
+  type: 'test'
+  ...
+# Subtest: T-DOCS-14 byte inspection units: magic bytes, JPEG/PNG location stripping never mutates its input, unparseable EXIF is dropped
+ok 305 - T-DOCS-14 byte inspection units: magic bytes, JPEG/PNG location stripping never mutates its input, unparseable EXIF is dropped
+  ---
+  duration_ms: 0.307148
+  type: 'test'
+  ...
+# Subtest: T-TLS-REAL-1 verify-full with the pinned test CA: encrypted session to a real PostgreSQL 16 (pg_stat_ssl)
+ok 306 - T-TLS-REAL-1 verify-full with the pinned test CA: encrypted session to a real PostgreSQL 16 (pg_stat_ssl)
+  ---
+  duration_ms: 137.069046
+  type: 'test'
+  ...
+# Subtest: T-TLS-REAL-2 a server certificate from an unrelated CA is rejected (no connection, no plaintext fallback)
+ok 307 - T-TLS-REAL-2 a server certificate from an unrelated CA is rejected (no connection, no plaintext fallback)
+  ---
+  duration_ms: 4.948503
+  type: 'test'
+  ...
+# Subtest: T-TLS-REAL-3 a certificate for another host name: verify-full rejects, verify-ca accepts (the documented weakness, M-266 (1))
+ok 308 - T-TLS-REAL-3 a certificate for another host name: verify-full rejects, verify-ca accepts (the documented weakness, M-266 (1))
+  ---
+  duration_ms: 634.357086
+  type: 'test'
+  ...
+# Subtest: T-TLS-REAL-4 the whole application over verified TLS: migrate as owner, API as app role, login, every API connection encrypted
+ok 309 - T-TLS-REAL-4 the whole application over verified TLS: migrate as owner, API as app role, login, every API connection encrypted
+  ---
+  duration_ms: 332.94195
+  type: 'test'
+  ...
+# Subtest: T-DENY-DAY-1 a denied attempt is counted on the CLINIC day, not the database server day
+ok 310 - T-DENY-DAY-1 a denied attempt is counted on the CLINIC day, not the database server day
+  ---
+  duration_ms: 508.720188
+  type: 'test'
+  ...
+# Subtest: T-MED-FLOOD-1 unverified desk declarations are bounded per patient; identical repeats refused; the dentist is never limited
+ok 311 - T-MED-FLOOD-1 unverified desk declarations are bounded per patient; identical repeats refused; the dentist is never limited
+  ---
+  duration_ms: 464.528065
+  type: 'test'
+  ...
+# Subtest: T-CRASH-1 PostgreSQL crash mid-burst: errors not hangs, self-recovery without an API restart, nothing acknowledged lost, retries never duplicate
+ok 312 - T-CRASH-1 PostgreSQL crash mid-burst: errors not hangs, self-recovery without an API restart, nothing acknowledged lost, retries never duplicate
+  ---
+  duration_ms: 1882.47384
+  type: 'test'
+  ...
+# Subtest: T-ERR-1 voiding a receipt-less paper-outage payment refers to no original receipt
+ok 313 - T-ERR-1 voiding a receipt-less paper-outage payment refers to no original receipt
+  ---
+  duration_ms: 536.121173
+  type: 'test'
+  ...
+# Subtest: T-KERNEL-LOCK-1 advisoryLock uses the legacy lock key
+ok 314 - T-KERNEL-LOCK-1 advisoryLock uses the legacy lock key
+  ---
+  duration_ms: 150.773749
+  type: 'test'
+  ...
+# Subtest: T-KERNEL-ARRAY-1 PostgreSQL array parsing
+ok 315 - T-KERNEL-ARRAY-1 PostgreSQL array parsing
+  ---
+  duration_ms: 1.097011
+  type: 'test'
+  ...
+# Subtest: T-KERNEL-HASH-1 sha256OrNull
+ok 316 - T-KERNEL-HASH-1 sha256OrNull
+  ---
+  duration_ms: 0.313968
+  type: 'test'
+  ...
+# Subtest: T-KERNEL-SITE-1 tooth list and area code readers
+ok 317 - T-KERNEL-SITE-1 tooth list and area code readers
+  ---
+  duration_ms: 0.561134
+  type: 'test'
+  ...
+# Subtest: T-KERNEL-DAY-1 clinicDay validation and default
+ok 318 - T-KERNEL-DAY-1 clinicDay validation and default
+  ---
+  duration_ms: 12.22302
+  type: 'test'
+  ...
+# Subtest: T-WIRE-1 billing without the cash module refuses CASH instead of recording it outside any cash period
+ok 319 - T-WIRE-1 billing without the cash module refuses CASH instead of recording it outside any cash period
+  ---
+  duration_ms: 0.93935
+  type: 'test'
+  ...
+# Subtest: T-WIRE-2 the composition root wires billing to the cash module
+ok 320 - T-WIRE-2 the composition root wires billing to the cash module
+  ---
+  duration_ms: 31.786617
+  type: 'test'
+  ...
+# Subtest: T-WIRE-3 isUniqueViolation matches only a PostgreSQL unique violation
+ok 321 - T-WIRE-3 isUniqueViolation matches only a PostgreSQL unique violation
+  ---
+  duration_ms: 0.160234
+  type: 'test'
+  ...
+# Subtest: T-WIRE-4 a second, different cash-period resolver is refused; re-wiring the same one is harmless
+ok 322 - T-WIRE-4 a second, different cash-period resolver is refused; re-wiring the same one is harmless
+  ---
+  duration_ms: 0.611921
+  type: 'test'
+  ...
+# Subtest: T-WIRE-5 resetting the resolver returns to fail-closed even after the app was built in this process
+ok 323 - T-WIRE-5 resetting the resolver returns to fail-closed even after the app was built in this process
+  ---
+  duration_ms: 0.200976
+  type: 'test'
+  ...
+# Subtest: T-TZ-APPT-6 (CH-038) a scheduledAt without a UTC offset is refused with 400 whatever the server timezone, and nothing is stored
+ok 324 - T-TZ-APPT-6 (CH-038) a scheduledAt without a UTC offset is refused with 400 whatever the server timezone, and nothing is stored
+  ---
+  duration_ms: 475.474245
+  type: 'test'
+  ...
+# Subtest: T-TZ-APPT-6b times WITH an offset are stored as the same instant whatever the server timezone (contract unchanged)
+ok 325 - T-TZ-APPT-6b times WITH an offset are stored as the same instant whatever the server timezone (contract unchanged)
+  ---
+  duration_ms: 285.607741
+  type: 'test'
+  ...
+# Subtest: T-TZ-APPT-6c an impossible calendar date or time is refused instead of being moved to another day
+ok 326 - T-TZ-APPT-6c an impossible calendar date or time is refused instead of being moved to another day
+  ---
+  duration_ms: 201.69839
+  type: 'test'
+  ...
+# Subtest: T-TZ-APPT-6d the same rule applies to a late clinical entry (effectiveAt), the only other isoTime caller
+ok 327 - T-TZ-APPT-6d the same rule applies to a late clinical entry (effectiveAt), the only other isoTime caller
+  ---
+  duration_ms: 197.818427
+  type: 'test'
+  ...
+# Subtest: T-TZ-APPT-6e isoTime unit: returns the canonical UTC instant, independent of process.env.TZ
+ok 328 - T-TZ-APPT-6e isoTime unit: returns the canonical UTC instant, independent of process.env.TZ
+  ---
+  duration_ms: 0.686204
+  type: 'test'
+  ...
+# Subtest: T-EXC-KEY-1 resolving one integrity finding does not hide a later, different finding of the same kind
+ok 329 - T-EXC-KEY-1 resolving one integrity finding does not hide a later, different finding of the same kind
+  ---
+  duration_ms: 550.599917
+  type: 'test'
+  ...
+# Subtest: T-EXC-KEY-2 resolving the checkpoint reminder does not silence it after the next checkpoint goes stale
+ok 330 - T-EXC-KEY-2 resolving the checkpoint reminder does not silence it after the next checkpoint goes stale
+  ---
+  duration_ms: 326.521127
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-LEGACY-0 an honest pre-R73-H cash history (payments, movement, refund, close, carry-forward count) stays clean
+ok 331 - T-INT-CASH-LEGACY-0 an honest pre-R73-H cash history (payments, movement, refund, close, carry-forward count) stays clean
+  ---
+  duration_ms: 625.330933
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-LEGACY-1 (CH-035) pre-R73-H: a cash item moved across a count cut-off inside the ±120 s tolerance is reported as INCONCLUSIVE, not as verified
+ok 332 - T-INT-CASH-LEGACY-1 (CH-035) pre-R73-H: a cash item moved across a count cut-off inside the ±120 s tolerance is reported as INCONCLUSIVE, not as verified
+  ---
+  duration_ms: 534.318872
+  type: 'test'
+  ...
+# Subtest: T-INT-CASH-LEGACY-2 pre-R73-H: a carried-forward period start moved past a cash payment (hiding it from every count) is reported
+ok 333 - T-INT-CASH-LEGACY-2 pre-R73-H: a carried-forward period start moved past a cash payment (hiding it from every count) is reported
+  ---
+  duration_ms: 249.016468
+  type: 'test'
+  ...
+# Subtest: S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+ok 334 - S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+  ---
+  duration_ms: 763.095223
+  type: 'test'
+  ...
+# Subtest: S3B no open or closed-only cash period fails closed without financial rows
+ok 335 - S3B no open or closed-only cash period fails closed without financial rows
+  ---
+  duration_ms: 234.012146
+  type: 'test'
+  ...
+# Subtest: T-SP1-MIG-1 concurrent runners apply a pending migration exactly once
+ok 336 - T-SP1-MIG-1 concurrent runners apply a pending migration exactly once
+  ---
+  duration_ms: 353.847511
+  type: 'test'
+  ...
+# Subtest: S4 durable intent survives lost key, process restart, new login and concurrent new-key retries
+ok 337 - S4 durable intent survives lost key, process restart, new login and concurrent new-key retries
+  ---
+  duration_ms: 602.578339
+  type: 'test'
+  ...
+# Subtest: S4 concurrent prepares reserve one active intention; legacy new-key payments cannot bypass it
+ok 338 - S4 concurrent prepares reserve one active intention; legacy new-key payments cannot bypass it
+  ---
+  duration_ms: 229.575208
+  type: 'test'
+  ...
+# Subtest: S4 stale recovery, changed body, cancellation and ledger changes fail closed
+ok 339 - S4 stale recovery, changed body, cancellation and ledger changes fail closed
+  ---
+  duration_ms: 265.538632
+  type: 'test'
+  ...
+# Subtest: S4 commit failure rolls payment, receipt number, audit and idempotency back; same intention recovers
+ok 340 - S4 commit failure rolls payment, receipt number, audit and idempotency back; same intention recovers
+  ---
+  duration_ms: 244.751531
+  type: 'test'
+  ...
+# Subtest: S4 a new partial payment must explicitly acknowledge the previous payment, not blindly repeat
+ok 341 - S4 a new partial payment must explicitly acknowledge the previous payment, not blindly repeat
+  ---
+  duration_ms: 244.850442
+  type: 'test'
+  ...
+# Subtest: S4 current roles and tenant boundaries protect every recovery/write/cancel route
+ok 342 - S4 current roles and tenant boundaries protect every recovery/write/cancel route
+  ---
+  duration_ms: 485.074593
+  type: 'test'
+  ...
+# Subtest: S4 mixed /print and /reprint share unique copy sequence; preparations never attest delivery
+ok 343 - S4 mixed /print and /reprint share unique copy sequence; preparations never attest delivery
+  ---
+  duration_ms: 224.04995
+  type: 'test'
+  ...
+# Subtest: S4 reprint before any original makes subsequent print a distinct copy
+ok 344 - S4 reprint before any original makes subsequent print a distinct copy
+  ---
+  duration_ms: 214.372204
+  type: 'test'
+  ...
+# Subtest: S4 real SIGKILL after commit with discarded response recovers through new process and login
+ok 345 - S4 real SIGKILL after commit with discarded response recovers through new process and login
+  ---
+  duration_ms: 513.026047
+  type: 'test'
+  ...
+# Subtest: S4 inconsistent multiple pending intentions fail closed instead of choosing one
+ok 346 - S4 inconsistent multiple pending intentions fail closed instead of choosing one
+  ---
+  duration_ms: 233.201155
+  type: 'test'
+  ...
+# Subtest: WORKFLOW: one visit progresses from check-in to dentist care to partial/full cash checkout
+ok 347 - WORKFLOW: one visit progresses from check-in to dentist care to partial/full cash checkout
+  ---
+  duration_ms: 495.545361
+  type: 'test'
+  ...
+# Subtest: WORKFLOW privacy: logged-out blocked, other clinic hidden, assistant not granted financial workbench
+ok 348 - WORKFLOW privacy: logged-out blocked, other clinic hidden, assistant not granted financial workbench
+  ---
+  duration_ms: 138.613344
+  type: 'test'
+  ...
+# Subtest: WORKFLOW: card desk claims stay unverified in the combined visit view
+ok 349 - WORKFLOW: card desk claims stay unverified in the combined visit view
+  ---
+  duration_ms: 49.395293
+  type: 'test'
+  ...
+# Subtest: WORKFLOW: owner-reviewed imported statement is NOT provider-verified
+ok 350 - WORKFLOW: owner-reviewed imported statement is NOT provider-verified
+  ---
+  duration_ms: 288.58387
+  type: 'test'
+  ...
+1..350
+# tests 350
+# suites 0
+# pass 349
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 97025.340427
