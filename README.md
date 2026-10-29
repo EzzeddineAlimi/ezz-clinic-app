@@ -12,7 +12,7 @@ EZZ Clinic brings patient registration, appointments, dentist-authored care, pay
 | Area | Implementation status |
 | --- | --- |
 | **Backend** | TypeScript / Node.js 22 / PostgreSQL 16 modular monolith integrated into `main` through [PR #42](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/42). |
-| **Web application** | React, TypeScript and Vite receptionist slice in [PR #43](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/43), subject to independent review and merge. |
+| **Web application** | React, TypeScript and Vite receptionist slice merged to `main` through [PR #43](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/43), following independent Muse M-275 review. |
 | **Receptionist workflow** | Real staff login, patient search and registration, daily clinic agenda, appointment scheduling and arrival recording; frontend connects to real API and fictional PostgreSQL records. |
 | **Languages** | French and Arabic with responsive right-to-left (RTL) layouts in the receptionist slice. |
 | **Other backend capabilities** | Server-enforced roles and clinic isolation, authenticated dentist care, payments, receipts, cash-period evidence, owner review, paper recovery and audit checks — **not yet all exposed in the web UI**. |
@@ -71,6 +71,12 @@ Open **http://127.0.0.1:5173**. Use only the seeded **fictional** clinic and sta
 
 For exact setup requirements, test commands, port assumptions, teardown and troubleshooting, follow the [frontend run instructions](frontend/README.md) rather than improvising production configuration.
 
+## Private phone preview (fictional data only)
+
+A **temporary GitHub Codespaces** configuration is being prepared for testing the merged receptionist slice from a signed-in phone. The preview must use a **Private** forwarded port, never a public port or real patient data. It is not a production deployment.
+
+Follow the [Codespaces phone preview guide](docs/operations/CODESPACES-FICTIONAL-PREVIEW.md) for the exact branch selection, startup, access checks and teardown. A working Codespace and its private URL require the repository owner's GitHub sign-in; configuration alone does not create a live service.
+
 ## Engineering and verification
 
 The application uses server-derived staff identity and clinic scope, PostgreSQL-enforced data boundaries, integer **millimes** for monetary amounts, unique write-intent idempotency keys, and audit records for sensitive changes. The frontend shows server-authorized results; hiding buttons is **not** a security boundary.
@@ -85,7 +91,7 @@ Automated tests and sample screenshots use fictional data. A passing test suite 
 
 ## What's next
 
-1. Independently review and merge the receptionist frontend.
+1. Test the merged receptionist frontend in a private, GitHub-authenticated, fictional-data-only Codespaces preview (not production).
 2. Complete the dentist workflow, checkout, payment/receipt printing and owner cash-review screens against the existing backend contracts.
 3. Test a private fictional-data deployment before considering any real-clinic rollout.
 4. Resolve outstanding production authentication, privacy/clinical access, scheduling concurrency, receipt-timezone, document screening, independent financial evidence, and Tunisian clinical/fiscal/CNAM requirements.
