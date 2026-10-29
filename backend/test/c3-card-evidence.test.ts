@@ -8,13 +8,15 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, startApi, standardFixture, newVisit, confirmCare, adminConn, reauth, type TestDb, type Api } from './helpers.ts';
 import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
+import { localDate } from '../src/modules/settings.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
 after(async () => { await api.close(); await db.drop(); });
 
-const TODAY = new Date().toISOString().slice(0, 10);
-const day = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
+const CLINIC_ZONE = 'Africa/Tunis'; // The standard fixture's configured clinic timezone.
+const TODAY = localDate(CLINIC_ZONE);
+const day = (n: number) => localDate(CLINIC_ZONE, new Date(Date.now() + n * 86400_000));
 const HEADER = 'date,amount_tnd,type,terminal_ref,card_last4,description';
 const csv = (...rows: string[]) => [HEADER, ...rows].join('\n');
 
