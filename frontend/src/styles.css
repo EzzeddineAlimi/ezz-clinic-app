@@ -1315,3 +1315,34 @@ dialog::backdrop {
  #receipt-print {position:absolute;inset:0;background:white;color:black}
  dialog::backdrop {background:white}
 }
+
+
+
+/* Owner cash workspace: no expected figure is present while the blind count form is active. */
+.owner-cash { max-width: 860px; }
+.cash-body { padding: 0 26px 28px; }
+.cash-form { display: grid; gap: 18px; max-width: 480px; margin-block: 24px; }
+.cash-form > label { display: grid; gap: 7px; font-size: 13px; }
+.cash-form > button { justify-self: start; }
+.cash-view-tabs { display: flex; gap: 10px; margin-block: 24px; flex-wrap: wrap; }
+.cash-figures { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-block: 18px; padding: 20px; border-radius: 13px; background: #f4f7f4; }
+.cash-figures dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 650; text-align: end; }
+.cash-figures dt { min-width: 0; }
+.cash-close { margin-block: 32px 8px; padding-block: 24px 0; border-top: 1px solid var(--line); }
+.cash-body .check-label { display: flex; align-items: flex-start; gap: 12px; line-height: 1.55; }
+.cash-body .check-label input { flex-shrink: 0; margin-top: 3px; }
+@media (max-width: 760px) { .cash-body { padding-inline: 16px; } .cash-figures { gap: 8px; padding: 14px; font-size: 12px; } }
+
+
+
+/* Dentist-only encounter. Long text wraps, notes remain visibly attributed to authors. */
+.clinical-workspace { display: grid; gap: 16px; }
+.clinical-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.clinical-nav button { padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; }
+.clinical-nav button[aria-pressed="true"] { background: #eaf1eb; color: #164b3e; font-weight: 650; }
+.clinical-entry { display: grid; gap: 7px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; margin-block: 10px; overflow-wrap: anywhere; }
+.clinical-entry small { color: var(--muted); }
+.clinical-workspace .cash-form { display: grid; gap: 15px; padding-top: 20px; }
+.clinical-workspace .cash-form fieldset { border: 0; display: grid; gap: 12px; padding: 0; }
+.clinical-workspace .cash-form label { display: grid; gap: 6px; font-size: 13px; }
+.clinical-workspace .cash-form button { justify-self: start; }
