@@ -178,6 +178,11 @@ function VisitRow({
         />
       )}
       <div className="visit-actions">
+        {canConfirmCare && !["CANCELLED", "NO_SHOW"].includes(v.status) && (
+          <button className="secondary compact" onClick={() => setClinical(true)}>
+            {clinicalText[lang].title}
+          </button>
+        )}
         {canConfirmCare && ["ARRIVED", "IN_CHAIR", "COMPLETED"].includes(v.status) && (
           <button className="secondary compact" onClick={() => confirmCare(v)}>
             {w.confirmCare}
