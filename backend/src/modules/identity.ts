@@ -18,6 +18,7 @@ import { AppError, fail } from '../platform/errors.ts';
 import { asBody, str, oneOf, uuid } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
+import { clinicTimezone } from './settings.ts';
 
 const scrypt = promisify(crypto.scrypt) as (pw: string, salt: Buffer, len: number, opts: crypto.ScryptOptions) => Promise<Buffer>;
 
@@ -142,11 +143,16 @@ export async function authenticate(db: Db, token: string): Promise<Actor | null>
   });
 }
 
+/** Rate-limited denial counter, one row per staff, permission and CLINIC day (R73-I: was the server's current_date). */
 export async function recordDenial(db: Db, actor: Actor, permission: string) {
-  await db.tx(actor.clinicId, tx => tx.query(
-    `INSERT INTO security_denials (clinic_id, staff_id, action, day) VALUES ($1, $2, $3, current_date)
-     ON CONFLICT (clinic_id, staff_id, action, day) DO UPDATE SET count = security_denials.count + 1, last_at = now()`,
-    [actor.clinicId, actor.staffId, permission]));
+  await db.tx(actor.clinicId, async tx => {
+    // An invalid stored timezone must not turn a 403 into another error: the counter then falls back to UTC.
+    const tz = await clinicTimezone(tx, actor.clinicId).catch(() => 'UTC');
+    await tx.query(
+      `INSERT INTO security_denials (clinic_id, staff_id, action, day) VALUES ($1, $2, $3, (now() AT TIME ZONE $4)::date)
+       ON CONFLICT (clinic_id, staff_id, action, day) DO UPDATE SET count = security_denials.count + 1, last_at = now()`,
+      [actor.clinicId, actor.staffId, permission, tz]);
+  });
 }
 
 export const idempotency: SecurityHooks['idempotency'] = {

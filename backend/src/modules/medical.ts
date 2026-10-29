@@ -25,6 +25,8 @@ import { appendAudit } from './audit.ts';
 import { getPatient, getVisit } from './patients.ts';
 import { clinicTimezone, localDate } from './settings.ts';
 
+/** R73-I (D-6, M-264): unverified desk/assistant declarations allowed per patient before a dentist reviews them. ASSUMPTION, adjustable after clinical review. */
+export const MAX_UNVERIFIED_DECLARED_ALERTS = 5;
 export const ALERT_CODES = [
   'ALLERGY_PENICILLIN', 'ALLERGY_LATEX', 'ALLERGY_LOCAL_ANAESTHETIC', 'ALLERGY_OTHER',
   'ANTICOAGULANT_VKA', 'ANTICOAGULANT_DOAC', 'ANTIPLATELET', 'ANTIRESORPTIVE_OR_ANTIANGIOGENIC',
@@ -193,6 +195,17 @@ export const medicalRoutes: Route[] = dentistAuthored([
       const source = dentist ? 'DENTIST_VERIFIED' : 'PATIENT_DECLARED';
       const dup = (await currentAlerts(tx, params.id!)).find(a => a.status === 'ACTIVE' && a.code === code && code !== 'OTHER' && code !== 'ALLERGY_OTHER');
       if (dup) fail('CONFLICT', 'An active alert with this code already exists; revise it instead', dentist ? { existingAlertId: dup.id, chainId: dup.chainId } : undefined);
+      if (!dentist) {
+        // R73-I (D-6, M-264 2): each declaration changes the alert set the dentist must acknowledge before treating, so
+        // unverified desk/assistant declarations are bounded per patient and an identical repeat is refused. Nothing from
+        // the existing alerts is echoed to the declarer. The dentist is never limited.
+        const active = (await currentAlerts(tx, params.id!)).filter(a => a.status === 'ACTIVE');
+        const norm = (s: string | null) => (s ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+        if (active.some(a => a.code === code && norm(a.detail) === norm(detail)))
+          fail('CONFLICT', 'This declaration is already recorded for the patient and waits for the dentist');
+        if (active.filter(a => a.source === 'PATIENT_DECLARED').length >= MAX_UNVERIFIED_DECLARED_ALERTS)
+          fail('CONFLICT', 'Several declarations already wait for the dentist; ask the dentist to review them before adding more', { limit: MAX_UNVERIFIED_DECLARED_ALERTS });
+      }
       const chainId = randomUUID();
       const a = await tx.one<{ id: string; recorded_at: string }>(`INSERT INTO medical_alerts (clinic_id, patient_id, chain_id, revision, code, severity, detail, source, status, recorded_by, recorded_role)
           VALUES ($1,$2,$3,1,$4,$5,$6,$7,'ACTIVE',$8,$9) RETURNING id, recorded_at`, [actor!.clinicId, params.id!, chainId, code, severity, detail, source, actor!.staffId, role]);
