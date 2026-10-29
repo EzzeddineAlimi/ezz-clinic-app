@@ -319,6 +319,13 @@ export function Checkout({
   const recovered = data.data?.recovery;
   const serverPending = recovered?.intentions.find((i: DurableIntent) => i.status === "PENDING");
   const activeIntent = serverPending ?? prepared;
+  let matchingPrior = false;
+  try {
+    const millimes = tndToMillimes(value);
+    matchingPrior = !!tender && !!data.data?.history.payments.some(
+      p => p.amountMillimes === millimes && p.tender === tender,
+    );
+  } catch { /* Invalid amount cannot match a prior payment. */ }
   const blocked = pending || data.loading || !!data.error || !data.data?.consistent || needsRecovery;
   return (
     <Modal title={t.title} w={w} busy={pending} close={close}>
