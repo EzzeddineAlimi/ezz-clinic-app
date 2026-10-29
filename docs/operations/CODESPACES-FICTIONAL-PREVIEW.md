@@ -8,13 +8,13 @@
 - Create the Codespace from the **reviewed branch containing `.devcontainer/`**, not an older `main` lacking these files.
 - Forward **only port 5173**, with port visibility explicitly shown as **Private**, never Public or Organization.
 - GitHub authenticates private forwarded ports; open the port URL in a browser signed in as the Codespace owner.
-- The web browser makes same-origin API calls through the Vite **built preview** proxy. Port **4180** stays bound to loopback and is not forwarded. PostgreSQL has **no TCP listener**, **no published port**, and is accessed over a Docker Compose shared Unix socket only.
+- The web browser makes same-origin API calls through the Vite **built preview** proxy. To authenticate the private forwarded port, the browser sends GitHub's own same-origin authentication cookie **only at the exact Codespaces HTTPS preview hostname**. The EZZ app itself still does not create or read session cookies; API permissions remain enforced using the app's memory-only bearer session. Port **4180** stays bound to loopback and is not forwarded. PostgreSQL has **no TCP listener**, **no published port**, and is accessed over a Docker Compose shared Unix socket only.
 - The backend's `isSynthetic` requirement remains unchanged; no patient data or image from a real clinic belongs in this Codespace. Fictional credentials are intentionally published for a fixture **behind the separate private GitHub port authentication**; if the port accidentally becomes public, STOP THE PREVIEW.
 
 ## Start from a phone (no laptop required)
 
-1. Open the [EZZ Clinic GitHub repository](https://github.com/EzzeddineAlimi/ezz-clinic-app) in Safari or your preferred browser and sign in.
-2. Choose **Code → Codespaces → ... → New with options** (the wording may vary). Select the branch with this preview configuration and create the Codespace. Choose the smallest machine offered that can run Node 22 and PostgreSQL 16. You will be able to open its editor in the browser.
+1. Open [**Create EZZ Clinic private Codespace from the preview branch**](https://codespaces.new/EzzeddineAlimi/ezz-clinic-app/tree/gpt/codespaces-private-fictional-preview) in Safari, and sign in to GitHub. This link selects the branch containing `.devcontainer/`; no repository-wide merge is needed for the test.
+2. Confirm the selected branch is `gpt/codespaces-private-fictional-preview`, then create the Codespace (or use **Code → Codespaces → New with options** in the repository). Choose the smallest suitable machine; Codespaces can incur compute/storage charges. You will be able to open its editor in the browser.
 3. Allow the container to finish `postCreateCommand` (it installs both locked npm dependency sets). Open a terminal in the Codespace.
 4. Run:
    ```sh
