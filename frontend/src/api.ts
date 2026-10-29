@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { encounterSchema, noteCreatedSchema, findingCreatedSchema, planItemCreatedSchema } from "./clinical-contracts.ts";
 import {
   balanceSchema,
   historySchema,
@@ -220,6 +221,30 @@ export class Api {
       }),
       { body, key },
     );
+  }
+  /** Clinical detail is dentist-only; the server enforces clinical.read/write independently. */
+  encounter(id: string, signal?: AbortSignal) {
+    return this.call(`/visits/${id}/encounter`, encounterSchema, { signal });
+  }
+  signClinicalNote(id: string, sections: Record<string, unknown>, key: string) {
+    return this.call(`/visits/${id}/clinical-notes`, noteCreatedSchema, {
+      body: sections, key,
+    });
+  }
+  recordChartFinding(id: string, finding: Record<string, unknown>, key: string) {
+    return this.call(`/visits/${id}/chart-findings`, findingCreatedSchema, {
+      body: finding, key,
+    });
+  }
+  addTreatmentPlanItem(patientId: string, body: Record<string, unknown>, key: string) {
+    return this.call(`/patients/${patientId}/treatment-plan-items`, planItemCreatedSchema, {
+      body, key,
+    });
+  }
+  transitionTreatmentPlanItem(id: string, body: { status: "ACCEPTED" | "DECLINED" | "CANCELLED"; reason?: string }, key: string) {
+    return this.call(`/treatment-plan-items/${id}/status`, planItemCreatedSchema, {
+      body, key,
+    });
   }
   /** Dentist-only full clinical alert set; never use the desk-safe presence summary for treatment approval. */
   medicalAlerts(patientId: string, signal?: AbortSignal) {
