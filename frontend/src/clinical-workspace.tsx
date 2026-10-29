@@ -192,7 +192,23 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                 <strong><bdi>{p.procedureCode} · {p.procedureLabel}</bdi></strong>
                 <p>{t.tooth}: {p.toothFdi ?? "—"} · {p.status}</p>
                 <p>{p.estimatedFeeMillimes === null ? "—" : amount(p.estimatedFeeMillimes)}</p>
+                {(p.status === "PROPOSED" || p.status === "ACCEPTED") && (
+                  <PlanStatusForm lang={lang} status={p.status}
+                    disabled={!editable || intent.uncertain}
+                    submit={event => fromForm(event, "status", p.id, fields => {
+                      const status = String(fields.get("status") ?? "");
+                      if (!["ACCEPTED", "DECLINED", "CANCELLED"].includes(status))
+                        throw new ApiError("VALIDATION_FAILED", 400);
+                      return statusInput(
+                        status as "ACCEPTED" | "DECLINED" | "CANCELLED",
+                        String(fields.get("reason") ?? ""),
+                      );
+                    })} />
+                )}
               </article>)}
+              <PlanForm lang={lang} disabled={!editable || intent.uncertain}
+                submit={event => fromForm(event, "plan", visit.patient.id,
+                  fields => planInput(fields, visit.id))} />
             </>}
           </>
         )}
