@@ -164,7 +164,7 @@ test("Pending intention reloads without capture and can be explicitly cancelled 
 
 test("Missing cash period blocks cash; assistant is denied, foreign clinic neutral, malformed 401 clears UI", async ({ page, request }) => {
   const f = await fixture(request, "other-fictional");
-  const assistant = await token(request, "assistant", "other-fictional");
+  const assistant = await token(request, "assistant", "web-fictional");
   const foreign = await token(request, "desk", "web-fictional");
   for (const [auth, status] of [[assistant, 403], [foreign, 404]] as const) {
     const r = await request.get("/api/v1/visits/" + f.id + "/payment-recovery", {
