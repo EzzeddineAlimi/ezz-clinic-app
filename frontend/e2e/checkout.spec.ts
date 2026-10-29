@@ -148,6 +148,56 @@ test("Identical second card payment requires reviewed history and explicit disti
   expect(h.payments[0].receiptId).not.toBe(h.payments[1].receiptId);
 });
 
+test("Record-time duplicate denial explains pending recovery, cancel and explicit new payment", async ({ page, request }) => {
+  const f = await fixture(request);
+  await login(page);
+  let d = await open(page, f.familyName);
+  await prepare(d, "10.000", "CARD");
+  await record(d);
+  await expect(d.getByRole("heading", {name:/Reçu R-/})).toBeVisible();
+  await d.getByRole("button", {name:"Fermer le formulaire"}).click();
+
+  // An old client or another staff member can prepare without the duplicate override;
+  // this must still fail when recording and the UI must allow safe resolution.
+  const auth = { Authorization: "Bearer " + f.desk };
+  const s = await request.get("/api/v1/visits/" + f.id + "/payment-recovery", { headers: auth });
+  expect(s.status()).toBe(200);
+  const recovery = await s.json() as { recoveryVersion: string; paymentIds: string[] };
+  const pending = await request.post("/api/v1/visits/" + f.id + "/payment-intents", {
+    headers: { ...auth, "Idempotency-Key": crypto.randomUUID() },
+    data: { amountMillimes: 10000, tender: "CARD",
+      recoveryVersion: recovery.recoveryVersion,
+      acknowledgedPaymentIds: recovery.paymentIds },
+  });
+  expect(pending.status()).toBe(201);
+  d = await open(page, f.familyName);
+  await review(d);
+  await d.getByRole("checkbox", {name:/paiement distinct a réellement été reçu/}).check();
+  const denied = page.waitForResponse(r => r.url().endsWith("/record") && r.status() === 409);
+  await d.getByRole("button", {name:"Confirmer l’encaissement"}).click();
+  expect((await (await denied).json()).error.code).toBe("POSSIBLE_DUPLICATE_PAYMENT");
+  await expect(d.getByTestId("record-denied-guidance")).toContainText("nouvelle intention");
+  await expect(d.getByRole("button", {name:"Confirmer l’encaissement"})).toBeDisabled();
+  await review(d);
+  await d.getByRole("checkbox", {name:/cette intention n’a enregistré aucun paiement/}).check();
+  await d.getByLabel("Raison de l’annulation").fill("Double intent verified, not recorded");
+  await d.getByRole("button", {name:/Annuler cette intention/}).click();
+  await expect(d.getByTestId("record-denied-guidance")).toHaveCount(0);
+
+  const firstHistory = await request.get("/api/v1/visits/" + f.id + "/payments", {headers:auth});
+  expect((await firstHistory.json()).payments).toHaveLength(1);
+  await d.getByLabel("Montant (TND)").fill("10.000");
+  await d.getByLabel("Mode de paiement").selectOption("CARD");
+  await review(d);
+  await d.getByRole("checkbox", {name:/DEUXIÈME paiement distinct/}).check();
+  await d.getByRole("button", {name:"Préparer le paiement"}).click();
+  await expect(d.getByText(/Paiement en attente de décision/)).toBeVisible();
+  await record(d);
+  await expect(d.getByTestId("checkout-balance")).toHaveText("80.000 TND");
+  const finalHistory = await request.get("/api/v1/visits/" + f.id + "/payments", {headers:auth});
+  expect((await finalHistory.json()).payments).toHaveLength(2);
+});
+
 test("Pending intention reloads without capture and can be explicitly cancelled after reconciliation", async ({ page, request }) => {
   const f = await fixture(request);
   await login(page);
