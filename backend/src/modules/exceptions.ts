@@ -10,6 +10,7 @@
 import { tableExists, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
+import { sha256 } from '../platform/canonical.ts';
 import { asBody, str, optStr } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
 import { clinicSettings, clinicTimezone, localDate } from './settings.ts';
@@ -125,14 +126,16 @@ const integrityExceptions: ExceptionSource = async ({ tx, clinicId, asOfStart, s
   for (const f of integ.findings) {
     // CH-035: inconclusive legacy history is not a detected change; it is shown as such, at its own severity.
     const inconclusive = (f.refs as { verdict?: string } | undefined)?.verdict === 'INCONCLUSIVE';
-    out.push({ key: `integrity:${f.check.toLowerCase()}:finding`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: inconclusive ? 'MEDIUM' : 'HIGH', wording: f.detail,
+    // R75-E: one key per finding (check + detail), so resolving one never hides a later, different one of the same kind.
+    out.push({ key: `integrity:${sha256(f.check + '\n' + f.detail).slice(0, 16)}:${f.check.toLowerCase()}`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: inconclusive ? 'MEDIUM' : 'HIGH', wording: f.detail,
       known: inconclusive ? 'Old history: the exact time was not recorded, so this could not be verified' : 'Detected by recomputation',
       unknown: inconclusive ? 'Whether anything was changed' : 'Who changed the data outside the app',
       nextStep: inconclusive ? 'Compare with the paper count sheet of that period' : 'Stop and compare with the latest owner checkpoint and backup' });
   }
-  const cp = await tx.maybeOne<{ at: string }>('SELECT max(created_at) AS at FROM audit_checkpoints');
+  const cp = await tx.maybeOne<{ at: string; seq: number | null }>('SELECT max(created_at) AS at, max(seq) AS seq FROM audit_checkpoints WHERE clinic_id = $1', [clinicId]);
   if (!cp?.at || new Date(cp.at).getTime() < asOfStart - checkpointDueDays * 86400_000) {
-    out.push({ key: 'audit:checkpoint:due', kind: 'AUDIT_CHECKPOINT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: `No owner checkpoint in the last ${checkpointDueDays} days`, known: `Last checkpoint: ${cp?.at ?? 'never'}`,
+    // R75-E: keyed by the last checkpoint, so a resolution covers this gap only, not every later one.
+    out.push({ key: `audit:${cp?.seq ?? 'never'}:checkpoint_due`, kind: 'AUDIT_CHECKPOINT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: `No owner checkpoint in the last ${checkpointDueDays} days`, known: `Last checkpoint: ${cp?.at ?? 'never'}`,
       unknown: 'Changes since then are tamper-evident only inside the database', nextStep: 'Create a checkpoint and keep the printed line outside the clinic system' });
   }
   return out;
