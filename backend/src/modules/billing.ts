@@ -261,7 +261,8 @@ export const billingRoutes: Route[] = [
       const cashPeriodId = await cashPeriodFor(tx, actor!, p.tender);
       const a = await tx.one<{ id: string; created_at: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, payment_id, tender, cash_period_id, authorized_by, authorized_role, created_at)
           VALUES ($1,$2,$3,'PAYMENT_VOID',$4,$5,$6,$7,$8,$9,$10,'OWNER', clock_timestamp()) RETURNING id, created_at`, [actor!.clinicId, p.visit_id, p.patient_id, p.amount_millimes, reasonCode, reasonNote, p.id, p.tender, cashPeriodId, actor!.staffId]);
-      const orig = await tx.one<{ number: number }>('SELECT number FROM receipts WHERE payment_id = $1', [p.id]).catch(() => ({ number: 0 }));
+      // A paper-outage payment has no desk receipt: the VOID receipt then refers to none (null), as before R74.
+      const orig = (await tx.maybeOne<{ number: number }>('SELECT number FROM receipts WHERE payment_id = $1', [p.id])) ?? { number: 0 };
       const receipt = await issueReceipt(tx, actor!, 'VOID', { adjustmentId: a.id }, p.visit_id, { voidsReceiptNumber: orig.number || null, amountMillimes: p.amount_millimes, tender: p.tender, reasonCode });
       await appendAudit(tx, actor!, 'payment.voided', 'adjustment', a.id, { paymentId: p.id, amountMillimes: p.amount_millimes, reasonCode, receiptNumber: receipt.number, voidsReceiptNumber: orig.number || null,
         visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: sha256OrNull(reasonNote) });

@@ -103,3 +103,11 @@ test('ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open d
 test('ARCH-8 business modules reach PostgreSQL only through platform/db.ts (no driver imports)', () => {
   for (const f of readdirSync(join(SRC, 'modules'))) assert.ok(!/from '\.\.\/platform\/(postgres|pgwire)\.ts'/.test(read(`modules/${f}`)), `modules/${f} imports the driver`);
 });
+
+test('ARCH-9 modules do not swallow errors with a catch-all; expected absences use maybeOne (one documented fallback)', () => {
+  const ALLOWED_FALLBACKS: Record<string, number> = { 'modules/identity.ts': 1 }; // recordDenial: an invalid stored timezone must not turn a 403 into a 500
+  for (const rel of serverFiles().filter(r => r.startsWith('modules/'))) {
+    const n = (read(rel).match(/\.catch\(\(\) =>/g) ?? []).length;
+    assert.ok(n <= (ALLOWED_FALLBACKS[rel] ?? 0), `${rel}: ${n} catch-all(s); use maybeOne or handle the specific error`);
+  }
+});
