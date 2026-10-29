@@ -221,6 +221,25 @@ export class Api {
       { body, key },
     );
   }
+  /** Dentist-only full clinical alert set; never use the desk-safe presence summary for treatment approval. */
+  medicalAlerts(patientId: string, signal?: AbortSignal) {
+    return this.call(
+      `/patients/${patientId}/medical-alerts`,
+      z.object({
+        patientId: z.string(),
+        alertSetHash: z.string().regex(/^[0-9a-f]{64}$/),
+        alerts: z.array(z.object({
+          id: z.string(),
+          code: z.string(),
+          severity: z.enum(["CRITICAL", "CAUTION"]),
+          detail: z.string().nullable(),
+          source: z.enum(["PATIENT_DECLARED", "DENTIST_VERIFIED"]),
+          status: z.enum(["ACTIVE", "RESOLVED", "ENTERED_IN_ERROR"]),
+        })),
+      }),
+      { signal },
+    );
+  }
   confirmCare(id: string, body: Record<string, unknown>, key: string) {
     return this.call(
       `/visits/${id}/care`,
@@ -254,6 +273,8 @@ export class WriteIntent {
     return this.body ?? candidate;
   }
   failed(error: unknown) {
-    this.uncertain = error instanceof ApiError && error.code === "NETWORK";
+    this.uncertain =
+      error instanceof ApiError &&
+      (error.code === "NETWORK" || error.status >= 500);
   }
 }
