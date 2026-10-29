@@ -162,6 +162,10 @@ function VisitRow({
           </p>
         )}
       </div>
+      {clinical && (
+        <ClinicalWorkspace api={api} visit={v} lang={lang} w={w}
+          close={() => setClinical(false)} />
+      )}
       {checkout && (
         <Checkout
           api={api}
