@@ -3,6 +3,7 @@
  */
 import {test,before,after} from 'node:test';
 import assert from 'node:assert/strict';
+import { localDate } from '../src/modules/settings.ts';
 import {createTestDb,startApi,standardFixture,confirmCare,seedClinic,newVisit,reauth,type Api,type TestDb} from './helpers.ts';
 
 let db:TestDb,api:Api,fixture:Awaited<ReturnType<typeof standardFixture>>;
@@ -94,8 +95,8 @@ test('WORKFLOW: owner-reviewed imported statement is NOT provider-verified',asyn
  const paid=await api.call('POST','/api/v1/visits/'+visit+'/payments',{
   token:F.desk,body:{amountMillimes:20_000,tender:'CARD',cardTerminalRef:'T9'}});
  assert.equal(paid.status,201);
- const now=new Date().toISOString().slice(0,10);
- const inThreeDays=new Date(Date.now()+3*86400_000).toISOString().slice(0,10);
+ const now=localDate('Africa/Tunis');
+ const inThreeDays=localDate('Africa/Tunis',new Date(Date.now()+3*86400_000));
  const csv=['date,amount_tnd,type,terminal_ref,card_last4,description',
   now+',20.000,CARD,T9,,fictional-reference'].join('\n');
  const imported=await api.call('POST','/api/v1/card/statement-imports',{token:F.owner,body:{
