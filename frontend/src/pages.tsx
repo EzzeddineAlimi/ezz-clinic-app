@@ -20,6 +20,7 @@ export function DayBoard({
 }: {
   board: Board;
   w: Words;
+  lang: Lang;
   writable: boolean;
   api: Api;
   refreshed: () => void;
