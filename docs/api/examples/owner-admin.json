@@ -1,0 +1,486 @@
+{
+  "title": "Owner administration: staff, settings history, audit and checkpoint verification, health",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "owner-admin",
+      "title": "Liveness (public)",
+      "role": "PUBLIC",
+      "method": "GET",
+      "route": "/api/v1/health",
+      "path": "/api/v1/health",
+      "request": null,
+      "status": 200,
+      "response": {
+        "status": "ok",
+        "build": "v0.2-fictional",
+        "fictionalDataOnly": true
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Readiness (public): 200 ready, 503 when the database or schema is not right",
+      "role": "PUBLIC",
+      "method": "GET",
+      "route": "/api/v1/health/ready",
+      "path": "/api/v1/health/ready",
+      "request": null,
+      "status": 200,
+      "response": {
+        "status": "ready",
+        "checks": {
+          "database": "ok",
+          "migrations": "current"
+        }
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Staff list",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/staff",
+      "path": "/api/v1/staff",
+      "request": null,
+      "status": 200,
+      "response": {
+        "staff": [
+          {
+            "id": "<id-1>",
+            "username": "assistant",
+            "display_name": "Fictional assistant",
+            "active": true,
+            "roles": [
+              "ASSISTANT"
+            ]
+          },
+          {
+            "id": "<id-2>",
+            "username": "dentist",
+            "display_name": "Fictional dentist",
+            "active": true,
+            "roles": [
+              "DENTIST"
+            ]
+          },
+          {
+            "id": "<id-3>",
+            "username": "desk",
+            "display_name": "Fictional desk",
+            "active": true,
+            "roles": [
+              "RECEPTIONIST"
+            ]
+          },
+          {
+            "id": "<id-4>",
+            "username": "owner",
+            "display_name": "Fictional owner",
+            "active": true,
+            "roles": [
+              "OWNER"
+            ]
+          },
+          {
+            "id": "<id-5>",
+            "username": "temp",
+            "display_name": "Fictional temp",
+            "active": true,
+            "roles": [
+              "RECEPTIONIST"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Create a staff account (password re-entry window applies)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/staff",
+      "path": "/api/v1/staff",
+      "request": {
+        "username": "dentist-two",
+        "displayName": "Dr Fictif Deux",
+        "password": "<password>",
+        "roles": [
+          "DENTIST"
+        ]
+      },
+      "status": 201,
+      "response": {
+        "staff": {
+          "id": "<id-6>",
+          "username": "dentist-two",
+          "displayName": "Dr Fictif Deux",
+          "roles": [
+            "DENTIST"
+          ]
+        }
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Grant a role",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/staff/:id/roles",
+      "path": "/api/v1/staff/<id-6>/roles",
+      "request": {
+        "role": "ASSISTANT",
+        "op": "GRANT"
+      },
+      "status": 200,
+      "response": {
+        "staffId": "<id-6>",
+        "role": "ASSISTANT",
+        "op": "GRANT",
+        "roles": [
+          "ASSISTANT",
+          "DENTIST"
+        ]
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Reset a staff password (owner only; no self-service recovery)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/staff/:id/reset-password",
+      "path": "/api/v1/staff/<id-5>/reset-password",
+      "request": {
+        "newPassword": "<password>"
+      },
+      "status": 200,
+      "response": {
+        "staffId": "<id-5>",
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Deactivate a staff account (sessions revoked)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/staff/:id/deactivate",
+      "path": "/api/v1/staff/<id-5>/deactivate",
+      "request": {
+        "reason": "Fictional departure"
+      },
+      "status": 200,
+      "response": {
+        "staffId": "<id-5>",
+        "active": false,
+        "sessionsRevoked": 0
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Change a clinic setting",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/clinic/settings",
+      "path": "/api/v1/clinic/settings",
+      "request": {
+        "changes": {
+          "notArrivedGraceMinutes": 20
+        },
+        "reason": "Fictional: busier waiting room"
+      },
+      "status": 200,
+      "response": {
+        "applied": [
+          {
+            "key": "notArrivedGraceMinutes",
+            "from": 15,
+            "to": 20
+          }
+        ],
+        "settings": {
+          "timezone": "Africa/Tunis",
+          "checkpointDueDays": 7,
+          "notArrivedGraceMinutes": 20,
+          "labUnbilledDays": 30
+        },
+        "sources": {
+          "timezone": "default",
+          "checkpointDueDays": "default",
+          "notArrivedGraceMinutes": "changed",
+          "labUnbilledDays": "default"
+        }
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Clinic settings history",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/clinic/settings/history",
+      "path": "/api/v1/clinic/settings/history",
+      "request": null,
+      "status": 200,
+      "response": {
+        "changes": [
+          {
+            "id": "<id-7>",
+            "key": "notArrivedGraceMinutes",
+            "from": 15,
+            "to": 20,
+            "reason": "Fictional: busier waiting room",
+            "changedBy": "Fictional owner",
+            "changedAt": "<timestamp>"
+          }
+        ]
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Verify the audit chain",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/audit/verify",
+      "path": "/api/v1/audit/verify",
+      "request": {},
+      "status": 200,
+      "response": {
+        "ok": true,
+        "eventCount": 9,
+        "lastSeq": 9,
+        "lastHash": "<sha256>",
+        "findings": [],
+        "anchorsChecked": 0,
+        "scope": "Checks recorded entries only; events never entered cannot be detected (CH-002)."
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Legacy checkpoint endpoint (kept; prefer /owner/checkpoints)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/audit/checkpoints",
+      "path": "/api/v1/audit/checkpoints",
+      "request": {
+        "note": "Fictional legacy checkpoint"
+      },
+      "status": 201,
+      "response": {
+        "checkpoint": {
+          "clinicId": "<id-8>",
+          "seq": 9,
+          "hash": "<sha256>",
+          "createdAt": "<timestamp>"
+        },
+        "printLine": "EZZ-CHECKPOINT <id-8> seq=9 hash=a4c957d17a3e9103254e5aff5d7dd1922ffe6f0f741cc8cc3254d475ae27e8c4 at=2026-10-29T02:35:05.481Z",
+        "instruction": "Keep this line outside the clinic system (paper, personal email or phone). It is the independent evidence."
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Owner checkpoint (the line to keep outside the system)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/owner/checkpoints",
+      "path": "/api/v1/owner/checkpoints",
+      "request": {
+        "note": "Fictional weekly checkpoint"
+      },
+      "status": 201,
+      "response": {
+        "checkpoint": {
+          "clinicCode": "astra-demo-2",
+          "seq": 10,
+          "hash": "<sha256>",
+          "at": "<timestamp>",
+          "checkCode": "ccc7b85c",
+          "hashGroups": "8e59 cf83 2662 3789 0059 8957 ca37 ba4e d6d5 cbfc 6cf4 ee09 f0a6 942e 80e2 77ab"
+        },
+        "line": "EZZ-CP2 clinic=astra-demo-2 seq=10 hash=8e59cf832662378900598957ca37ba4ed6d5cbfc6cf4ee09f0a6942e80e277ab at=2026-10-29T02:35:05.488Z check=ccc7b85c",
+        "document": {
+          "documentType": "AUDIT_CHECKPOINT",
+          "reference": "astra-demo-2#10",
+          "size": "normal",
+          "fontPt": 12,
+          "sections": [
+            {
+              "lang": "fr",
+              "dir": "ltr",
+              "title": "Point de contrôle du registre (propriétaire)",
+              "mark": null,
+              "notice": "Prouve que l'historique enregistré jusqu'à ce point n'a pas été réécrit, supprimé ni restauré à une version antérieure. Ne peut pas montrer un paiement ou un soin jamais enregistré.",
+              "lines": [
+                {
+                  "key": "clinic",
+                  "label": "Cabinet",
+                  "value": "astra-demo-2",
+                  "isolate": true
+                },
+                {
+                  "key": "seq",
+                  "label": "Numéro de séquence",
+                  "value": "10",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "at",
+                  "label": "Pris le (UTC)",
+                  "value": "<timestamp>",
+                  "isolate": true
+                },
+                {
+                  "key": "hash",
+                  "label": "Empreinte",
+                  "value": "8e59 cf83 2662 3789 0059 8957 ca37 ba4e d6d5 cbfc 6cf4 ee09 f0a6 942e 80e2 77ab",
+                  "isolate": true
+                },
+                {
+                  "key": "check",
+                  "label": "Code de contrôle",
+                  "value": "ccc7b85c",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "line",
+                  "label": "Ligne complète",
+                  "value": "EZZ-CP2 clinic=astra-demo-2 seq=10 hash=8e59cf832662378900598957ca37ba4ed6d5cbfc6cf4ee09f0a6942e80e277ab at=2026-10-29T02:35:05.488Z check=ccc7b85c",
+                  "isolate": true
+                },
+                {
+                  "key": "keep",
+                  "label": "Conservez cette feuille HORS du cabinet et hors du système (coffre, domicile, photo personnelle). C'est elle qui sert de preuve.",
+                  "value": "",
+                  "isolate": false
+                },
+                {
+                  "key": "signature",
+                  "label": "Signature du propriétaire et date",
+                  "value": "",
+                  "isolate": false
+                }
+              ]
+            },
+            {
+              "lang": "ar",
+              "dir": "rtl",
+              "title": "نقطة مراقبة السجل (المالك)",
+              "mark": null,
+              "notice": "يُثبت أن السجل المسجّل حتى هذه النقطة لم يُعَد كتابته أو حذفه أو استرجاعه إلى نسخة أقدم. لا يمكنه إظهار دفعة أو علاج لم يُسجَّل أبداً.",
+              "lines": [
+                {
+                  "key": "clinic",
+                  "label": "العيادة",
+                  "value": "astra-demo-2",
+                  "isolate": true
+                },
+                {
+                  "key": "seq",
+                  "label": "رقم التسلسل",
+                  "value": "10",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "at",
+                  "label": "أُخذ في (التوقيت العالمي)",
+                  "value": "<timestamp>",
+                  "isolate": true
+                },
+                {
+                  "key": "hash",
+                  "label": "البصمة",
+                  "value": "8e59 cf83 2662 3789 0059 8957 ca37 ba4e d6d5 cbfc 6cf4 ee09 f0a6 942e 80e2 77ab",
+                  "isolate": true
+                },
+                {
+                  "key": "check",
+                  "label": "رمز التحقق",
+                  "value": "ccc7b85c",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "line",
+                  "label": "السطر الكامل",
+                  "value": "EZZ-CP2 clinic=astra-demo-2 seq=10 hash=8e59cf832662378900598957ca37ba4ed6d5cbfc6cf4ee09f0a6942e80e277ab at=2026-10-29T02:35:05.488Z check=ccc7b85c",
+                  "isolate": true
+                },
+                {
+                  "key": "keep",
+                  "label": "احتفظ بهذه الورقة خارج العيادة وخارج النظام (خزنة، منزل، صورة شخصية). هي التي تُعدّ دليلاً.",
+                  "value": "",
+                  "isolate": false
+                },
+                {
+                  "key": "signature",
+                  "label": "إمضاء المالك والتاريخ",
+                  "value": "",
+                  "isolate": false
+                }
+              ]
+            }
+          ]
+        },
+        "instruction": "Print or copy this line and keep it outside the clinic system. Only that outside copy is evidence; the copy inside the database is a convenience.",
+        "scope": "A checkpoint proves that the recorded history up to its sequence number was not rewritten, deleted or rolled back afterwards. It cannot show that money or care that was never recorded happened (CH-002)."
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Verify kept checkpoint lines (one good, one with a typo)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/owner/checkpoints/verify",
+      "path": "/api/v1/owner/checkpoints/verify",
+      "request": {
+        "lines": [
+          "EZZ-CP2 clinic=astra-demo-2 seq=10 hash=8e59cf832662378900598957ca37ba4ed6d5cbfc6cf4ee09f0a6942e80e277ab at=2026-10-29T02:35:05.488Z check=ccc7b85c",
+          "EZZ-CP2 clinic=astra-demo-2 seq=11 hash=8e59cf832662378900598957ca37ba4ed6d5cbfc6cf4ee09f0a6942e80e277ab at=2026-10-29T02:35:05.488Z check=ccc7b85c"
+        ]
+      },
+      "status": 200,
+      "response": {
+        "ok": false,
+        "results": [
+          {
+            "index": 0,
+            "verdict": "MATCHES",
+            "wording": "The recorded history up to this checkpoint is exactly as it was when the checkpoint was taken.",
+            "seq": 10,
+            "takenAt": "<timestamp>",
+            "legacyFormat": false
+          },
+          {
+            "index": 1,
+            "verdict": "CHECKSUM_FAILED",
+            "wording": "The line was probably copied with a mistake. Re-read the original; this is not evidence of tampering.",
+            "detail": "The check code does not match the line: a character was probably copied wrongly. Re-read the original paper; this is not evidence of tampering."
+          }
+        ],
+        "chain": {
+          "ok": true,
+          "eventCount": 11,
+          "lastSeq": 11,
+          "otherFindings": []
+        },
+        "scope": "A checkpoint proves that the recorded history up to its sequence number was not rewritten, deleted or rolled back afterwards. It cannot show that money or care that was never recorded happened (CH-002)."
+      }
+    },
+    {
+      "file": "owner-admin",
+      "title": "Log out (the token stops working)",
+      "role": "ASSISTANT",
+      "method": "POST",
+      "route": "/api/v1/session/logout",
+      "path": "/api/v1/session/logout",
+      "request": {},
+      "status": 200,
+      "response": {
+        "loggedOut": true
+      }
+    }
+  ]
+}

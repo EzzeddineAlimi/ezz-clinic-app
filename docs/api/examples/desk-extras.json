@@ -1,0 +1,157 @@
+{
+  "title": "Desk extras: patient record and contact, visit lists, current cash period",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "desk-extras",
+      "title": "Register a patient without a phone (in-person contact)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/patients",
+      "path": "/api/v1/patients",
+      "request": {
+        "familyName": "Ben Fictif",
+        "givenName": "Hedi",
+        "contactPreference": "IN_PERSON",
+        "isSynthetic": true
+      },
+      "status": 201,
+      "response": {
+        "patient": {
+          "id": "<id-9>",
+          "fileNo": 1,
+          "familyName": "Ben Fictif",
+          "givenName": "Hedi",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "phone": null,
+          "contactPreference": "IN_PERSON",
+          "preferredLanguage": "fr",
+          "createdAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Patient record (identity and contact only)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id",
+      "path": "/api/v1/patients/<id-9>",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patient": {
+          "id": "<id-9>",
+          "fileNo": 1,
+          "familyName": "Ben Fictif",
+          "givenName": "Hedi",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "phone": null,
+          "contactPreference": "IN_PERSON",
+          "preferredLanguage": "fr",
+          "createdAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Change contact details (reason required, audited)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/contact",
+      "path": "/api/v1/patients/<id-9>/contact",
+      "request": {
+        "phone": "+216 20 000 002",
+        "contactPreference": "BASIC_PHONE_CALL",
+        "reason": "Fictional: new phone"
+      },
+      "status": 200,
+      "response": {
+        "patient": {
+          "id": "<id-9>",
+          "fileNo": 1,
+          "familyName": "Ben Fictif",
+          "givenName": "Hedi",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "phone": "+216 20 000 002",
+          "contactPreference": "BASIC_PHONE_CALL",
+          "preferredLanguage": "fr",
+          "createdAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Book a visit",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits",
+      "path": "/api/v1/visits",
+      "request": {
+        "patientId": "<id-9>",
+        "scheduledAt": "<timestamp>",
+        "dentistId": "<id-2>"
+      },
+      "status": 201,
+      "response": {
+        "visit": {
+          "id": "<id-10>",
+          "patientId": "<id-9>",
+          "scheduledAt": "<timestamp>",
+          "dentistId": "<id-2>",
+          "durationMin": 30,
+          "status": "SCHEDULED"
+        }
+      }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Visits of a clinic day",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/visits",
+      "path": "/api/v1/visits?day=2026-10-28",
+      "request": null,
+      "status": 200,
+      "response": {
+        "day": "2026-10-28",
+        "timezone": "Africa/Tunis",
+        "visits": [
+          {
+            "id": "<id-10>",
+            "patientId": "<id-9>",
+            "fileNo": 1,
+            "familyName": "Ben Fictif",
+            "givenName": "Hedi",
+            "dentistId": "<id-2>",
+            "scheduledAt": "<timestamp>",
+            "durationMin": 30,
+            "status": "SCHEDULED",
+            "careItemCount": 0
+          }
+        ]
+      }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Current cash period (blind: no expected figure)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/cash/periods/current",
+      "path": "/api/v1/cash/periods/current",
+      "request": null,
+      "status": 200,
+      "response": {
+        "period": null
+      }
+    }
+  ]
+}

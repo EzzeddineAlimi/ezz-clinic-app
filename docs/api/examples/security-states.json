@@ -370,7 +370,7 @@
       "route": "/api/v1/session/reauth",
       "path": "/api/v1/session/reauth",
       "request": {
-        "password": "fictional-pass-123"
+        "password": "<password>"
       },
       "status": 200,
       "response": {

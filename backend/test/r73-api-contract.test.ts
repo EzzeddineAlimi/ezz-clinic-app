@@ -7,13 +7,14 @@
  *   T-API-4  the documented role matrix is what the server enforces: for EVERY permissioned route and EVERY role,
  *            forbidden roles get 403 FORBIDDEN_ROLE naming that permission and allowed roles never do.
  *   T-API-5  OpenAPI sanity: unique operationIds, resolvable $refs, declared path parameters, known permissions.
+ *   T-API-6  (R73-I) the same record/compare contract for the remaining operations; T-API-7 every route now has an example.
  */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createTestDb, startApi, seedClinic, STANDARD_STAFF, type Api, type TestDb } from './helpers.ts';
-import { runWorkflows, normaliser, shapeOf, shapeBreaks, type Step } from './api-workflows.ts';
+import { runWorkflows, runMoreWorkflows, normaliser, shapeOf, shapeBreaks, type Step } from './api-workflows.ts';
 import { renderOpenApi, renderEndpointTable, EXAMPLES_DIR } from '../scripts/gen-openapi.ts';
 import { buildRoutes } from '../src/app.ts';
 import { PERMISSIONS } from '../src/modules/identity.ts';
@@ -50,6 +51,43 @@ test('T-API-1 recorded fictional workflow examples: same statuses, compatible sh
       assert.deepEqual(breaks, [], `${file} step "${r.title}" (${r.method} ${r.route}): breaking response change`);
     });
   }
+});
+
+const MORE_FILES = { 'owner-admin': 'Owner administration: staff, settings history, audit and checkpoint verification, health',
+  'desk-extras': 'Desk extras: patient record and contact, visit lists, current cash period',
+  'clinical-extras': 'Dentist extras: plan items, alert acknowledgement, perform, site amendment, addenda, findings in error, clinical record',
+  'money-and-cash': 'Money and cash: workbench, discount, payments, receipts, correction + refund, void, drawer movement, count, close, exception resolution',
+  'paper-and-card': 'Card statements and paper-outage slip books',
+  'documents-lab-stock': 'Documents (list, metadata, download headers, deletion request, entered in error), lab cases and invoices, stock' } as const;
+
+async function recordOrCompare(files: Record<string, string>, steps: Step[]) {
+  if (process.env.EZZ_RECORD_EXAMPLES === '1') {
+    mkdirSync(EXAMPLES_DIR, { recursive: true });
+    for (const [file, title] of Object.entries(files)) {
+      writeFileSync(join(EXAMPLES_DIR, `${file}.json`), JSON.stringify({ title, fictional: true,
+        generatedBy: 'EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)', placeholders: '<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token',
+        steps: steps.filter(s => s.file === file) }, null, 2) + '\n');
+    }
+    return;
+  }
+  for (const file of Object.keys(files)) {
+    const recorded = (JSON.parse(readFileSync(join(EXAMPLES_DIR, `${file}.json`), 'utf8')) as { steps: Step[] }).steps;
+    const live = steps.filter(s => s.file === file);
+    assert.deepEqual(live.map(s => `${s.method} ${s.route} -> ${s.status}`), recorded.map(s => `${s.method} ${s.route} -> ${s.status}`), `${file}: steps or statuses changed`);
+    recorded.forEach((r, i) => assert.deepEqual(shapeBreaks(shapeOf(r.response), shapeOf(live[i]!.response)), [], `${file} step "${r.title}" (${r.method} ${r.route}): breaking response change`));
+  }
+}
+
+test('T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes', async () => {
+  const n = normaliser();
+  const steps = (await runMoreWorkflows(api, db)).map(s => ({ ...s, path: n.path(s.path), request: n.walk(s.request), response: n.walk(s.response) }) as unknown as Step);
+  await recordOrCompare(MORE_FILES, steps);
+});
+
+test('T-API-7 every route in the table has at least one recorded example', () => {
+  const doc = JSON.parse(renderOpenApi());
+  const missing = Object.entries(doc.paths as Record<string, Record<string, { 'x-ezz-example': boolean }>>).flatMap(([p, ops]) => Object.entries(ops).filter(([, o]) => !o['x-ezz-example']).map(([m]) => `${m.toUpperCase()} ${p}`));
+  assert.deepEqual(missing, []);
 });
 
 test('T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples', () => {

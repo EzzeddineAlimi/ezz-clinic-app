@@ -16,7 +16,8 @@ production-ready. Muse remains the independent reviewer; Astra owns the frontend
 | #26 | `r73/e-lab-stock` | #25 | `0848839` | E: lab cases (MF19) and basic stock | 291 / 290 / 0 / 1 (both) |
 | #27 | `r73/f-benchmarks` | #26 | `f5526dc` | F: benchmarks + readiness 503 fix + PostgreSQL crash test | 292 / 291 / 0 / 1 (both, on `a28d785`; `f5526dc` renames a test ID only) |
 | #28 | `r73/g-api-contracts` | #27 | `6253027` | G: OpenAPI, recorded examples, contract tests, frontend security states, this handoff | local 297 / 296 / 0 / 1 (both) |
-| #29 | `r73/h-b06-hardening` | #28 | the commit adding this row | H: B06 integrity hardening for Muse M-267 (1–7) and CH-034 | local 308 / 307 / 0 / 1 (both) |
+| #29 | `r73/h-b06-hardening` | #28 | `67f7948` | H: B06 integrity hardening for Muse M-267 (1–7) and CH-034 | local 308 / 307 / 0 / 1 (both) |
+| #30 | `r73/i-residuals` | #29 | the commit adding this row | I: clinic-day denial counter, bounded desk alert declarations, recorded examples for all 102 operations | local 312 / 311 / 0 / 1 (both) |
 
 - The skipped test everywhere is the pre-existing manual T-TLS-5. It is superseded by T-TLS-REAL-1..4, which run in CI.
 - All CI runs are GitHub Actions `backend-ci.yml` (PostgreSQL 16 service, Node 22). They include `npm run test:dist` and the migration ledger check added in B.
@@ -71,6 +72,11 @@ production-ready. Muse remains the independent reviewer; Astra owns the frontend
 - `frontend-security-states.md`.
 - T-API-1..5: the role matrix is checked live for all 384 role/route pairs.
 
+**I — residuals and complete examples**
+- Denials are counted on the clinic day (T-DENY-DAY-1).
+- Unverified desk/assistant alert declarations: at most 5 per patient (an adjustable assumption pending clinical review), identical repeats refused, the dentist never limited (T-MED-FLOOD-1; R72 D-6 / Muse M-264 (2)).
+- Recorded examples now cover all 102 operations (T-API-6, T-API-7); passwords are masked in examples.
+
 **H — B06 hardening (Muse M-267 1–7, CH-034)**
 - Audit payloads anchor exact row timestamps, the full receipt snapshot hash, the denominations hash, and correction procedure/site.
 - Free text is anchored by hash only.
@@ -108,7 +114,7 @@ production-ready. Muse remains the independent reviewer; Astra owns the frontend
 From R72's table:
 - **Closed:** D-1 and D-7.
 - **Still open:** D-2, D-3, D-4, D-5, D-6, D-8, D-9, D-10 (now addressed by A's workflow) and D-11.
-- **New residual:** `security_denials.day` still uses the UTC `current_date` (`identity.ts`, the denial counter). It is low impact: the 7-day window shifts by up to one hour.
+- **Closed in #30:** `security_denials.day` now uses the clinic day; R72 D-6 (desk declaration flood) is bounded.
 
 ## 4. Setup
 
@@ -187,11 +193,10 @@ New in R73 (each also listed in its package doc):
 2. **Port `7518a40` (the T-PRT-3 date fix)** to #20, and to #21 via the integration process (`prs.txt` and `rebuild.sh`), when those heads next move.
 3. **O-2 (scaling):** incremental integrity verification from the latest owner checkpoint. Re-verify the chain only after the anchor; recompute value checks only for rows newer than it. Keep a full mode for the owner on demand. Measure with `npm run bench` at 10×300 and a larger run.
 4. **Close the remaining small residuals:**
-   - `security_denials` clinic-local day;
    - pagination for the B11 review (D-8);
-   - rate limits on OTHER declarations (D-6);
    - constraint names in errors (D-4) if Muse asks.
-5. **Astra hand-off support:** answer contract questions from `docs/api/*`. Add recorded examples for the remaining 64 operations (`x-ezz-example: false` in `openapi.json`), starting with the paper, card, lab, stock and staff screens.
+   (The clinic-day denial counter and the D-6 declaration bound were done in #30.)
+5. **Astra hand-off support:** answer contract questions from `docs/api/*`. All 102 operations have recorded examples since #30; keep them current by re-recording after intended API changes (T-API-1, T-API-6 and T-API-7 enforce this).
 
 Lower priority:
 - O-1 (cash count waits behind a continuous payment stream): only if a reviewer judges it relevant at clinic volumes.

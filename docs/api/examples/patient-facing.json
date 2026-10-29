@@ -40,7 +40,7 @@
                 {
                   "key": "date",
                   "label": "Date",
-                  "value": "29/10/2026 03:04",
+                  "value": "29/10/2026 03:35",
                   "isolate": true,
                   "emphasis": false
                 },
@@ -110,7 +110,7 @@
                 {
                   "key": "fingerprint",
                   "label": "Empreinte",
-                  "value": "959187ceff32",
+                  "value": "0ab2cd1b5cdc",
                   "isolate": true,
                   "emphasis": false
                 }
@@ -133,7 +133,7 @@
                 {
                   "key": "date",
                   "label": "التاريخ",
-                  "value": "29/10/2026 03:04",
+                  "value": "29/10/2026 03:35",
                   "isolate": true,
                   "emphasis": false
                 },
@@ -203,7 +203,7 @@
                 {
                   "key": "fingerprint",
                   "label": "البصمة",
-                  "value": "959187ceff32",
+                  "value": "0ab2cd1b5cdc",
                   "isolate": true,
                   "emphasis": false
                 }

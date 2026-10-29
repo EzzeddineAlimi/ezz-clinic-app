@@ -124,6 +124,20 @@
             "nextStep": "Create a checkpoint and keep the printed line outside the clinic system"
           },
           {
+            "key": "security:<id-23>:denied_clinical_read",
+            "kind": "DENIED_PRIVILEGED_ATTEMPT",
+            "evidence": "SYSTEM_CHECK",
+            "severity": "INFO",
+            "wording": "1 denied attempt(s) of \"clinical.read\" by a staff account in 7 days",
+            "known": "The account lacked the role; nothing was changed",
+            "unknown": "Whether it was a mistake",
+            "nextStep": "Mention it at the next staff check-in if repeated",
+            "refs": {
+              "staffId": "<id-23>",
+              "action": "clinical.read"
+            }
+          },
+          {
             "key": "security:<id-1>:denied_cash_review",
             "kind": "DENIED_PRIVILEGED_ATTEMPT",
             "evidence": "SYSTEM_CHECK",
@@ -148,20 +162,6 @@
             "nextStep": "Mention it at the next staff check-in if repeated",
             "refs": {
               "staffId": "<id-1>",
-              "action": "clinical.read"
-            }
-          },
-          {
-            "key": "security:<id-23>:denied_clinical_read",
-            "kind": "DENIED_PRIVILEGED_ATTEMPT",
-            "evidence": "SYSTEM_CHECK",
-            "severity": "INFO",
-            "wording": "1 denied attempt(s) of \"clinical.read\" by a staff account in 7 days",
-            "known": "The account lacked the role; nothing was changed",
-            "unknown": "Whether it was a mistake",
-            "nextStep": "Mention it at the next staff check-in if repeated",
-            "refs": {
-              "staffId": "<id-23>",
               "action": "clinical.read"
             }
           }
@@ -278,10 +278,10 @@
           "seq": 27,
           "hash": "<sha256>",
           "at": "<timestamp>",
-          "checkCode": "29ab5ae1",
-          "hashGroups": "cb05 3d3e c3ed 9aa8 d2b0 4f04 9a55 5e14 d231 b1c3 9e0a f400 8008 1940 a206 4263"
+          "checkCode": "66cef55d",
+          "hashGroups": "cb88 1a44 6b77 a732 1e9e 28fb a6b5 5cd6 a52d f378 a492 d90e 0606 c924 d6da 2003"
         },
-        "line": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb053d3ec3ed9aa8d2b04f049a555e14d231b1c39e0af40080081940a2064263 at=2026-10-29T02:04:18.039Z check=29ab5ae1",
+        "line": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb881a446b77a7321e9e28fba6b55cd6a52df378a492d90e0606c924d6da2003 at=2026-10-29T02:35:04.915Z check=66cef55d",
         "document": {
           "documentType": "AUDIT_CHECKPOINT",
           "reference": "astra-demo#27",
@@ -317,20 +317,20 @@
                 {
                   "key": "hash",
                   "label": "Empreinte",
-                  "value": "cb05 3d3e c3ed 9aa8 d2b0 4f04 9a55 5e14 d231 b1c3 9e0a f400 8008 1940 a206 4263",
+                  "value": "cb88 1a44 6b77 a732 1e9e 28fb a6b5 5cd6 a52d f378 a492 d90e 0606 c924 d6da 2003",
                   "isolate": true
                 },
                 {
                   "key": "check",
                   "label": "Code de contrôle",
-                  "value": "29ab5ae1",
+                  "value": "66cef55d",
                   "isolate": true,
                   "emphasis": true
                 },
                 {
                   "key": "line",
                   "label": "Ligne complète",
-                  "value": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb053d3ec3ed9aa8d2b04f049a555e14d231b1c39e0af40080081940a2064263 at=2026-10-29T02:04:18.039Z check=29ab5ae1",
+                  "value": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb881a446b77a7321e9e28fba6b55cd6a52df378a492d90e0606c924d6da2003 at=2026-10-29T02:35:04.915Z check=66cef55d",
                   "isolate": true
                 },
                 {
@@ -376,20 +376,20 @@
                 {
                   "key": "hash",
                   "label": "البصمة",
-                  "value": "cb05 3d3e c3ed 9aa8 d2b0 4f04 9a55 5e14 d231 b1c3 9e0a f400 8008 1940 a206 4263",
+                  "value": "cb88 1a44 6b77 a732 1e9e 28fb a6b5 5cd6 a52d f378 a492 d90e 0606 c924 d6da 2003",
                   "isolate": true
                 },
                 {
                   "key": "check",
                   "label": "رمز التحقق",
-                  "value": "29ab5ae1",
+                  "value": "66cef55d",
                   "isolate": true,
                   "emphasis": true
                 },
                 {
                   "key": "line",
                   "label": "السطر الكامل",
-                  "value": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb053d3ec3ed9aa8d2b04f049a555e14d231b1c39e0af40080081940a2064263 at=2026-10-29T02:04:18.039Z check=29ab5ae1",
+                  "value": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb881a446b77a7321e9e28fba6b55cd6a52df378a492d90e0606c924d6da2003 at=2026-10-29T02:35:04.915Z check=66cef55d",
                   "isolate": true
                 },
                 {

@@ -1,0 +1,772 @@
+{
+  "title": "Documents (list, metadata, download headers, deletion request, entered in error), lab cases and invoices, stock",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "documents-lab-stock",
+      "title": "Documents of a patient",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id/documents",
+      "path": "/api/v1/patients/<id-9>/documents",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patientId": "<id-9>",
+        "documents": [
+          {
+            "id": "<id-45>",
+            "patientId": "<id-9>",
+            "visitId": null,
+            "modality": "PANORAMIC_OPG",
+            "title": "Fictional OPG",
+            "teeth": [],
+            "areaCode": null,
+            "acquiredOn": null,
+            "source": "EXTERNAL_RADIOLOGY",
+            "status": "ACTIVE",
+            "reassignedFromId": null,
+            "createdAt": "<timestamp>",
+            "declared": {
+              "type": "image/png",
+              "sizeBytes": 67,
+              "sha256": "<sha256>"
+            },
+            "content": {
+              "type": "image/png",
+              "sizeBytes": 67,
+              "sha256": "<sha256>",
+              "receivedSha256": "<sha256>",
+              "locationMetadataRemoved": []
+            },
+            "downloadable": true
+          }
+        ]
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Document metadata and history",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/documents/:id",
+      "path": "/api/v1/documents/<id-45>",
+      "request": null,
+      "status": 200,
+      "response": {
+        "document": {
+          "id": "<id-45>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "modality": "PANORAMIC_OPG",
+          "title": "Fictional OPG",
+          "teeth": [],
+          "areaCode": null,
+          "acquiredOn": null,
+          "source": "EXTERNAL_RADIOLOGY",
+          "status": "ACTIVE",
+          "reassignedFromId": null,
+          "createdAt": "<timestamp>",
+          "declared": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>"
+          },
+          "content": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>",
+            "receivedSha256": "<sha256>",
+            "locationMetadataRemoved": []
+          },
+          "downloadable": true
+        },
+        "uploadedBy": "Fictional dentist",
+        "history": [
+          {
+            "seq": 1,
+            "kind": "CONTENT_STORED",
+            "status": "QUARANTINE",
+            "screener": null,
+            "reason": null,
+            "by": "Fictional dentist",
+            "at": "<timestamp>"
+          },
+          {
+            "seq": 2,
+            "kind": "SCREEN_PASSED",
+            "status": "ACTIVE",
+            "screener": "structural-format-check-v1 (not a malware scanner)",
+            "reason": null,
+            "by": "Fictional dentist",
+            "at": "<timestamp>"
+          }
+        ]
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Download (binary attachment; headers shown instead of bytes)",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/documents/:id/content",
+      "path": "/api/v1/documents/<id-45>/content",
+      "request": null,
+      "status": 200,
+      "response": {
+        "headers": {
+          "content-type": "image/png",
+          "content-disposition": "attachment; filename=\"ezz-document-440ee285.png\"",
+          "x-content-sha256": "<sha256>",
+          "content-security-policy": "default-src 'none'; frame-ancestors 'none'; sandbox",
+          "cache-control": "no-store"
+        },
+        "bytes": "<67 bytes>"
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Re-screen: only QUARANTINE content (here ACTIVE, so refused)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/documents/:id/screen",
+      "path": "/api/v1/documents/<id-45>/screen",
+      "request": {},
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "CONFLICT",
+          "message": "Only QUARANTINE documents are screened; this one is ACTIVE"
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Owner records a deletion request (nothing is deleted)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/documents/:id/deletion-requests",
+      "path": "/api/v1/documents/<id-45>/deletion-requests",
+      "request": {
+        "basis": "PATIENT_REQUEST",
+        "reason": "Fictional erasure request"
+      },
+      "status": 201,
+      "response": {
+        "request": {
+          "id": "<id-46>",
+          "documentId": "<id-45>",
+          "basis": "PATIENT_REQUEST",
+          "requestedAt": "<timestamp>",
+          "state": "AWAITING_RETENTION_POLICY",
+          "executed": false
+        },
+        "note": "Recorded only. No document is deleted by this version: deletion needs an approved retention and deletion policy (legal review, open question Q16)."
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Deletion requests waiting for a retention policy",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/document-deletion-requests",
+      "path": "/api/v1/document-deletion-requests",
+      "request": null,
+      "status": 200,
+      "response": {
+        "requests": [
+          {
+            "id": "<id-46>",
+            "documentId": "<id-45>",
+            "basis": "PATIENT_REQUEST",
+            "reason": "Fictional erasure request",
+            "requestedBy": "Fictional owner",
+            "requestedAt": "<timestamp>",
+            "state": "AWAITING_RETENTION_POLICY",
+            "executed": false
+          }
+        ]
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Dentist marks a document entered in error",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/documents/:id/entered-in-error",
+      "path": "/api/v1/documents/<id-45>/entered-in-error",
+      "request": {
+        "reason": "Fictional: wrong patient, re-attached elsewhere"
+      },
+      "status": 200,
+      "response": {
+        "document": {
+          "id": "<id-45>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "modality": "PANORAMIC_OPG",
+          "title": "Fictional OPG",
+          "teeth": [],
+          "areaCode": null,
+          "acquiredOn": null,
+          "source": "EXTERNAL_RADIOLOGY",
+          "status": "ENTERED_IN_ERROR",
+          "reassignedFromId": null,
+          "createdAt": "<timestamp>",
+          "declared": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>"
+          },
+          "content": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>",
+            "receivedSha256": "<sha256>",
+            "locationMetadataRemoved": []
+          },
+          "downloadable": false
+        },
+        "reassigned": null
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Lab suppliers",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/lab/suppliers",
+      "path": "/api/v1/lab/suppliers",
+      "request": null,
+      "status": 200,
+      "response": {
+        "suppliers": []
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Assistant records that the case was sent",
+      "role": "ASSISTANT",
+      "method": "POST",
+      "route": "/api/v1/lab-cases/:id/status",
+      "path": "/api/v1/lab-cases/<id-47>/status",
+      "request": {
+        "status": "SENT"
+      },
+      "status": 200,
+      "response": {
+        "labCase": {
+          "id": "<id-47>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "supplier": {
+            "id": "<id-48>",
+            "name": "Laboratoire Fictif Sousse"
+          },
+          "caseType": "CROWN",
+          "teeth": [
+            46
+          ],
+          "areaCode": null,
+          "material": null,
+          "shade": null,
+          "impression": "PHYSICAL",
+          "instructions": null,
+          "dueOn": null,
+          "status": "SENT",
+          "remakeOfId": null,
+          "remakeResponsibility": null,
+          "createdRole": "ASSISTANT",
+          "createdAt": "<timestamp>",
+          "allowedNext": [
+            "TRY_IN_RETURNED",
+            "RECEIVED",
+            "CANCELLED"
+          ]
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Received back from the lab",
+      "role": "ASSISTANT",
+      "method": "POST",
+      "route": "/api/v1/lab-cases/:id/status",
+      "path": "/api/v1/lab-cases/<id-47>/status",
+      "request": {
+        "status": "RECEIVED"
+      },
+      "status": 200,
+      "response": {
+        "labCase": {
+          "id": "<id-47>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "supplier": {
+            "id": "<id-48>",
+            "name": "Laboratoire Fictif Sousse"
+          },
+          "caseType": "CROWN",
+          "teeth": [
+            46
+          ],
+          "areaCode": null,
+          "material": null,
+          "shade": null,
+          "impression": "PHYSICAL",
+          "instructions": null,
+          "dueOn": null,
+          "status": "RECEIVED",
+          "remakeOfId": null,
+          "remakeResponsibility": null,
+          "createdRole": "ASSISTANT",
+          "createdAt": "<timestamp>",
+          "allowedNext": [
+            "FITTED",
+            "CANCELLED"
+          ]
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Dentist requests a remake (new linked case)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/lab-cases/:id/remake",
+      "path": "/api/v1/lab-cases/<id-47>/remake",
+      "request": {
+        "reason": "Fictional: shade mismatch",
+        "responsibility": "LAB"
+      },
+      "status": 201,
+      "response": {
+        "original": {
+          "id": "<id-47>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "supplier": {
+            "id": "<id-48>",
+            "name": "Laboratoire Fictif Sousse"
+          },
+          "caseType": "CROWN",
+          "teeth": [
+            46
+          ],
+          "areaCode": null,
+          "material": null,
+          "shade": null,
+          "impression": "PHYSICAL",
+          "instructions": null,
+          "dueOn": null,
+          "status": "REMAKE_REQUESTED",
+          "remakeOfId": null,
+          "remakeResponsibility": null,
+          "createdRole": "ASSISTANT",
+          "createdAt": "<timestamp>",
+          "allowedNext": []
+        },
+        "remake": {
+          "id": "<id-49>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "supplier": {
+            "id": "<id-48>",
+            "name": "Laboratoire Fictif Sousse"
+          },
+          "caseType": "CROWN",
+          "teeth": [
+            46
+          ],
+          "areaCode": null,
+          "material": null,
+          "shade": null,
+          "impression": "PHYSICAL",
+          "instructions": null,
+          "dueOn": null,
+          "status": "CREATED",
+          "remakeOfId": "<id-47>",
+          "remakeResponsibility": "LAB",
+          "createdRole": "DENTIST",
+          "createdAt": "<timestamp>",
+          "allowedNext": [
+            "SENT",
+            "CANCELLED"
+          ]
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Lab cases of a patient",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id/lab-cases",
+      "path": "/api/v1/patients/<id-9>/lab-cases",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patientId": "<id-9>",
+        "labCases": [
+          {
+            "id": "<id-49>",
+            "patientId": "<id-9>",
+            "visitId": null,
+            "supplier": {
+              "id": "<id-48>",
+              "name": "Laboratoire Fictif Sousse"
+            },
+            "caseType": "CROWN",
+            "teeth": [
+              46
+            ],
+            "areaCode": null,
+            "material": null,
+            "shade": null,
+            "impression": "PHYSICAL",
+            "instructions": null,
+            "dueOn": null,
+            "status": "CREATED",
+            "remakeOfId": "<id-47>",
+            "remakeResponsibility": "LAB",
+            "createdRole": "DENTIST",
+            "createdAt": "<timestamp>",
+            "allowedNext": [
+              "SENT",
+              "CANCELLED"
+            ]
+          },
+          {
+            "id": "<id-47>",
+            "patientId": "<id-9>",
+            "visitId": null,
+            "supplier": {
+              "id": "<id-48>",
+              "name": "Laboratoire Fictif Sousse"
+            },
+            "caseType": "CROWN",
+            "teeth": [
+              46
+            ],
+            "areaCode": null,
+            "material": null,
+            "shade": null,
+            "impression": "PHYSICAL",
+            "instructions": null,
+            "dueOn": null,
+            "status": "REMAKE_REQUESTED",
+            "remakeOfId": null,
+            "remakeResponsibility": null,
+            "createdRole": "ASSISTANT",
+            "createdAt": "<timestamp>",
+            "allowedNext": []
+          }
+        ]
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Lab case with history",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/lab-cases/:id",
+      "path": "/api/v1/lab-cases/<id-47>",
+      "request": null,
+      "status": 200,
+      "response": {
+        "labCase": {
+          "id": "<id-47>",
+          "patientId": "<id-9>",
+          "visitId": null,
+          "supplier": {
+            "id": "<id-48>",
+            "name": "Laboratoire Fictif Sousse"
+          },
+          "caseType": "CROWN",
+          "teeth": [
+            46
+          ],
+          "areaCode": null,
+          "material": null,
+          "shade": null,
+          "impression": "PHYSICAL",
+          "instructions": null,
+          "dueOn": null,
+          "status": "REMAKE_REQUESTED",
+          "remakeOfId": null,
+          "remakeResponsibility": null,
+          "createdRole": "ASSISTANT",
+          "createdAt": "<timestamp>",
+          "allowedNext": []
+        },
+        "history": [
+          {
+            "seq": 1,
+            "status": "SENT",
+            "reason": null,
+            "byRole": "ASSISTANT",
+            "by": "Fictional assistant",
+            "at": "<timestamp>"
+          },
+          {
+            "seq": 2,
+            "status": "RECEIVED",
+            "reason": null,
+            "byRole": "ASSISTANT",
+            "by": "Fictional assistant",
+            "at": "<timestamp>"
+          },
+          {
+            "seq": 3,
+            "status": "REMAKE_REQUESTED",
+            "reason": "Fictional: shade mismatch",
+            "byRole": "DENTIST",
+            "by": "Fictional dentist",
+            "at": "<timestamp>"
+          }
+        ],
+        "careLinks": [],
+        "remakes": [
+          "<id-49>"
+        ]
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Owner records the lab invoice (clinic expense)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/lab/invoices",
+      "path": "/api/v1/lab/invoices",
+      "request": {
+        "supplierId": "<id-48>",
+        "invoiceNumber": "FF-001",
+        "invoiceDate": "2026-10-29",
+        "amountMillimes": 120000,
+        "caseIds": [
+          "<id-47>"
+        ]
+      },
+      "status": 201,
+      "response": {
+        "invoice": {
+          "id": "<id-50>",
+          "supplierId": "<id-48>",
+          "invoiceNumber": "FF-001",
+          "invoiceDate": "2026-10-29",
+          "amountMillimes": 120000,
+          "caseIds": [
+            "<id-47>"
+          ],
+          "kind": "CLINIC_EXPENSE"
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Lab invoices",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/lab/invoices",
+      "path": "/api/v1/lab/invoices",
+      "request": null,
+      "status": 200,
+      "response": {
+        "invoices": [
+          {
+            "id": "<id-50>",
+            "supplier": "Laboratoire Fictif Sousse",
+            "invoiceNumber": "FF-001",
+            "invoiceDate": "2026-10-29",
+            "amountMillimes": 120000,
+            "caseIds": [
+              "<id-47>"
+            ],
+            "kind": "CLINIC_EXPENSE"
+          }
+        ]
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Create a stock item",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/stock/items",
+      "path": "/api/v1/stock/items",
+      "request": {
+        "name": "Gants nitrile (fictifs)",
+        "unit": "box",
+        "reorderLevel": 2
+      },
+      "status": 201,
+      "response": {
+        "item": {
+          "id": "<id-51>",
+          "name": "Gants nitrile (fictifs)",
+          "unit": "box",
+          "reorderLevel": 2,
+          "onHand": 0
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Goods received (lot and expiry optional)",
+      "role": "ASSISTANT",
+      "method": "POST",
+      "route": "/api/v1/stock/items/:id/movements",
+      "path": "/api/v1/stock/items/<id-51>/movements",
+      "request": {
+        "kind": "RECEIVED",
+        "quantity": 10,
+        "lot": "L-FICT-9",
+        "expiresOn": "2027-03-31"
+      },
+      "status": 201,
+      "response": {
+        "movement": {
+          "id": "<id-52>",
+          "itemId": "<id-51>",
+          "seq": 1,
+          "kind": "RECEIVED",
+          "quantity": 10,
+          "onHandAfter": 10,
+          "at": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Goods used",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/stock/items/:id/movements",
+      "path": "/api/v1/stock/items/<id-51>/movements",
+      "request": {
+        "kind": "USED",
+        "quantity": 3
+      },
+      "status": 201,
+      "response": {
+        "movement": {
+          "id": "<id-53>",
+          "itemId": "<id-51>",
+          "seq": 2,
+          "kind": "USED",
+          "quantity": -3,
+          "onHandAfter": 7,
+          "at": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Owner count correction (reason required)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/stock/items/:id/adjustments",
+      "path": "/api/v1/stock/items/<id-51>/adjustments",
+      "request": {
+        "kind": "ADJUSTED",
+        "quantity": -1,
+        "reason": "Fictional physical count"
+      },
+      "status": 201,
+      "response": {
+        "movement": {
+          "id": "<id-54>",
+          "itemId": "<id-51>",
+          "seq": 3,
+          "kind": "ADJUSTED",
+          "quantity": -1,
+          "onHandAfter": 6,
+          "at": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Stock list (on hand, reorder flag, expiring received lots)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/stock/items",
+      "path": "/api/v1/stock/items",
+      "request": null,
+      "status": 200,
+      "response": {
+        "clinicToday": "2026-10-29",
+        "items": [
+          {
+            "id": "<id-51>",
+            "name": "Gants nitrile (fictifs)",
+            "unit": "box",
+            "reorderLevel": 2,
+            "onHand": 6,
+            "belowReorderLevel": false,
+            "receivedLotsExpiringSoon": []
+          }
+        ],
+        "note": "Expiry list = lots RECEIVED with an expiry within 30 days; consumption per lot is not tracked, so a listed lot may already be used up."
+      }
+    },
+    {
+      "file": "documents-lab-stock",
+      "title": "Movements of an item",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/stock/items/:id/movements",
+      "path": "/api/v1/stock/items/<id-51>/movements",
+      "request": null,
+      "status": 200,
+      "response": {
+        "item": {
+          "id": "<id-51>",
+          "name": "Gants nitrile (fictifs)",
+          "unit": "box",
+          "reorder_level": 2
+        },
+        "movements": [
+          {
+            "id": "<id-54>",
+            "seq": 3,
+            "kind": "ADJUSTED",
+            "quantity": -1,
+            "lot": null,
+            "expiresOn": null,
+            "reason": "Fictional physical count",
+            "onHandAfter": 6,
+            "by": "Fictional owner",
+            "at": "<timestamp>"
+          },
+          {
+            "id": "<id-53>",
+            "seq": 2,
+            "kind": "USED",
+            "quantity": -3,
+            "lot": null,
+            "expiresOn": null,
+            "reason": null,
+            "onHandAfter": 7,
+            "by": "Fictional dentist",
+            "at": "<timestamp>"
+          },
+          {
+            "id": "<id-52>",
+            "seq": 1,
+            "kind": "RECEIVED",
+            "quantity": 10,
+            "lot": "L-FICT-9",
+            "expiresOn": "2027-03-31",
+            "reason": null,
+            "onHandAfter": 10,
+            "by": "Fictional assistant",
+            "at": "<timestamp>"
+          }
+        ]
+      }
+    }
+  ]
+}
