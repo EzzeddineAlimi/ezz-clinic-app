@@ -71,8 +71,11 @@ export async function issueReceipt(tx: Tx, actor: Actor, kind: 'PAYMENT' | 'REFU
   const r = await tx.one<{ id: string }>(`INSERT INTO receipts (clinic_id, series, number, kind, payment_id, adjustment_id, issued_by, snapshot, snapshot_sha256)
       VALUES ($1, 'R', $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
     [actor.clinicId, number, kind, ref.paymentId ?? null, ref.adjustmentId ?? null, actor.staffId, snapshot, sha256(canonicalJson(snapshot))]);
-  return { id: r.id, number, label: receiptLabel('R', number), snapshot };
+  return { id: r.id, number, label: receiptLabel('R', number), snapshot, sha256: sha256(canonicalJson(snapshot)) };
 }
+
+/** R73-H: free text is anchored in audit payloads by hash only (no free-text disclosure decision is made here). */
+const textSha256 = (s: string | null) => (s === null ? null : sha256(s));
 
 export function evidenceFor(tender: 'CASH' | 'CARD', source: 'DESK' | 'PAPER_OUTAGE') {
   if (tender === 'CARD') return { tier: 'DESK_CLAIM', label: { fr: 'Carte — déclaration accueil uniquement (non vérifiée)', ar: 'بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)' }, verifiedBy: null };
@@ -115,7 +118,7 @@ export async function recordPayment(tx: Tx, actor: Actor, input: RecordPaymentIn
   await tx.query('INSERT INTO payment_allocations (clinic_id, payment_id, visit_id, amount_millimes) VALUES ($1,$2,$3,$4)', [actor.clinicId, p.id, v.id, input.amountMillimes]);
   const after = bal.balanceMillimes - input.amountMillimes;
   const evidence = evidenceFor(input.tender, input.source);
-  let receipt: { id: string; number: number; label: string; snapshot: unknown } | null = null;
+  let receipt: { id: string; number: number; label: string; snapshot: unknown; sha256: string } | null = null;
   if (input.issueReceipt) {
     receipt = await issueReceipt(tx, actor, 'PAYMENT', { paymentId: p.id }, v.id, {
       amountMillimes: input.amountMillimes, amountText: formatMillimes(input.amountMillimes), tender: input.tender,
@@ -124,6 +127,7 @@ export async function recordPayment(tx: Tx, actor: Actor, input: RecordPaymentIn
   }
   await appendAudit(tx, actor, 'payment.recorded', 'payment', p.id, {
     visitId: v.id, amountMillimes: input.amountMillimes, tender: input.tender, source: input.source, receiptNumber: receipt?.number ?? null, cashPeriodId, balanceAfterMillimes: after,
+    recordedAt: p.recorded_at, receiptSha256: receipt?.sha256 ?? null, // R73-H: anchors the cash-window timestamp and the full receipt snapshot
   });
   return {
     payment: { id: p.id, visitId: v.id, patientId: v.patient_id, amountMillimes: input.amountMillimes, tender: input.tender, source: input.source, recordedAt: p.recorded_at, recordedBy: actor.staffId, cashPeriodId, evidence },
@@ -212,9 +216,9 @@ export const billingRoutes: Route[] = [
       const bal = await visitBalance(tx, v.id);
       if (amount > bal.balanceMillimes) fail('AMOUNT_EXCEEDS_BALANCE', 'Adjustment exceeds the open balance', { balanceMillimes: bal.balanceMillimes });
       const role = primaryRole(actor!, ['DENTIST', 'OWNER']);
-      const a = await tx.one<{ id: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, authorized_by, authorized_role)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`, [actor!.clinicId, v.id, v.patient_id, kind, amount, reasonCode, reasonNote, actor!.staffId, role]);
-      await appendAudit(tx, actor!, 'adjustment.created', 'adjustment', a.id, { visitId: v.id, kind, amountMillimes: amount, reasonCode, authorizedRole: role });
+      const a = await tx.one<{ id: string; created_at: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, authorized_by, authorized_role)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, created_at`, [actor!.clinicId, v.id, v.patient_id, kind, amount, reasonCode, reasonNote, actor!.staffId, role]);
+      await appendAudit(tx, actor!, 'adjustment.created', 'adjustment', a.id, { visitId: v.id, kind, amountMillimes: amount, reasonCode, authorizedRole: role, createdAt: a.created_at, reasonNoteSha256: textSha256(reasonNote) });
       return { status: 201, body: { adjustment: { id: a.id, kind, amountMillimes: amount, reasonCode, authorizedBy: actor!.staffId, authorizedRole: role }, balance: await visitBalance(tx, v.id) } };
     },
   },
@@ -232,10 +236,11 @@ export const billingRoutes: Route[] = [
       const bal = await visitBalance(tx, p.visit_id);
       if (bal.balanceMillimes + amount > 0) fail('CONFLICT', 'No patient credit to refund: the dentist must first correct the fee or approve a discount', { balanceMillimes: bal.balanceMillimes });
       const cashPeriodId = await cashPeriodFor(tx, actor!, p.tender);
-      const a = await tx.one<{ id: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, payment_id, tender, cash_period_id, authorized_by, authorized_role, created_at)
-          VALUES ($1,$2,$3,'REFUND',$4,$5,$6,$7,$8,$9,$10,'OWNER', clock_timestamp()) RETURNING id`, [actor!.clinicId, p.visit_id, p.patient_id, amount, reasonCode, reasonNote, p.id, p.tender, cashPeriodId, actor!.staffId]);
+      const a = await tx.one<{ id: string; created_at: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, payment_id, tender, cash_period_id, authorized_by, authorized_role, created_at)
+          VALUES ($1,$2,$3,'REFUND',$4,$5,$6,$7,$8,$9,$10,'OWNER', clock_timestamp()) RETURNING id, created_at`, [actor!.clinicId, p.visit_id, p.patient_id, amount, reasonCode, reasonNote, p.id, p.tender, cashPeriodId, actor!.staffId]);
       const receipt = await issueReceipt(tx, actor!, 'REFUND', { adjustmentId: a.id }, p.visit_id, { amountMillimes: amount, amountText: formatMillimes(amount), tender: p.tender, originalPaymentId: p.id, reasonCode });
-      await appendAudit(tx, actor!, 'payment.refunded', 'adjustment', a.id, { paymentId: p.id, amountMillimes: amount, tender: p.tender, reasonCode, receiptNumber: receipt.number, cashPeriodId });
+      await appendAudit(tx, actor!, 'payment.refunded', 'adjustment', a.id, { paymentId: p.id, amountMillimes: amount, tender: p.tender, reasonCode, receiptNumber: receipt.number, cashPeriodId,
+        visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: textSha256(reasonNote) });
       return { status: 201, body: { refund: { id: a.id, paymentId: p.id, amountMillimes: amount, tender: p.tender }, receipt: { id: receipt.id, number: receipt.number, label: receipt.label }, balance: await visitBalance(tx, p.visit_id) } };
     },
   },
@@ -250,11 +255,12 @@ export const billingRoutes: Route[] = [
       if (done.voided > 0) fail('ALREADY_VOIDED', 'Payment is already voided');
       if (done.refunded > 0) fail('CONFLICT', 'Payment has refunds; it cannot also be voided');
       const cashPeriodId = await cashPeriodFor(tx, actor!, p.tender);
-      const a = await tx.one<{ id: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, payment_id, tender, cash_period_id, authorized_by, authorized_role, created_at)
-          VALUES ($1,$2,$3,'PAYMENT_VOID',$4,$5,$6,$7,$8,$9,$10,'OWNER', clock_timestamp()) RETURNING id`, [actor!.clinicId, p.visit_id, p.patient_id, p.amount_millimes, reasonCode, reasonNote, p.id, p.tender, cashPeriodId, actor!.staffId]);
+      const a = await tx.one<{ id: string; created_at: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, payment_id, tender, cash_period_id, authorized_by, authorized_role, created_at)
+          VALUES ($1,$2,$3,'PAYMENT_VOID',$4,$5,$6,$7,$8,$9,$10,'OWNER', clock_timestamp()) RETURNING id, created_at`, [actor!.clinicId, p.visit_id, p.patient_id, p.amount_millimes, reasonCode, reasonNote, p.id, p.tender, cashPeriodId, actor!.staffId]);
       const orig = await tx.one<{ number: number }>('SELECT number FROM receipts WHERE payment_id = $1', [p.id]).catch(() => ({ number: 0 }));
       const receipt = await issueReceipt(tx, actor!, 'VOID', { adjustmentId: a.id }, p.visit_id, { voidsReceiptNumber: orig.number || null, amountMillimes: p.amount_millimes, tender: p.tender, reasonCode });
-      await appendAudit(tx, actor!, 'payment.voided', 'adjustment', a.id, { paymentId: p.id, amountMillimes: p.amount_millimes, reasonCode, receiptNumber: receipt.number, voidsReceiptNumber: orig.number || null });
+      await appendAudit(tx, actor!, 'payment.voided', 'adjustment', a.id, { paymentId: p.id, amountMillimes: p.amount_millimes, reasonCode, receiptNumber: receipt.number, voidsReceiptNumber: orig.number || null,
+        visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: textSha256(reasonNote) });
       return { status: 201, body: { void: { id: a.id, paymentId: p.id, amountMillimes: p.amount_millimes }, receipt: { id: receipt.id, number: receipt.number, label: receipt.label }, balance: await visitBalance(tx, p.visit_id) } };
     },
   },

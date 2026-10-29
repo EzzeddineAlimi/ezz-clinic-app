@@ -244,7 +244,8 @@ test('T-INT-LIMIT-1 honest limit: an edit that also rewrites the audit chain is 
     let prev = (await a.query<{ hash: string }>('SELECT hash FROM audit_events WHERE clinic_id = $1 AND seq = $2', [s.clinic.id, start - 1])).rows[0]!.hash;
     for (const e of evs.filter(x => x.seq >= start)) {
       const doc = JSON.parse(e.canonical);
-      if (e.seq === start) doc.payload = { ...doc.payload, amountMillimes: 7000 };
+      // R73-H anchors the receipt snapshot hash in the payment event: a consistent attacker must rewrite that anchor too.
+      if (e.seq === start) doc.payload = { ...doc.payload, amountMillimes: 7000, ...('receiptSha256' in doc.payload ? { receiptSha256: sha256(canonicalJson(snap)) } : {}) };
       doc.prevHash = prev;
       const canonical = canonicalJson(doc);
       const hash = sha256(prev + '\n' + canonical);

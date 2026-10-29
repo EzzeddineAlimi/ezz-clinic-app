@@ -23,16 +23,16 @@ async function tableExists(tx: Tx, name: string) {
 
 export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[] = []) {
   const findings: IntegrityFinding[] = [];
-  const nums = (await tx.query<{ number: number }>("SELECT number FROM receipts WHERE series = 'R' ORDER BY number")).rows.map(r => r.number);
+  const nums = (await tx.query<{ number: number }>("SELECT number FROM receipts WHERE clinic_id = $1 AND series = 'R' ORDER BY number", [clinicId])).rows.map(r => r.number);
   const missing: number[] = [];
   let expect = 1;
   for (const n of nums) { while (expect < n) missing.push(expect++); expect = n + 1; }
   if (missing.length) findings.push({ check: 'RECEIPT_NUMBER_GAP', severity: 'HIGH', detail: `Receipt numbers missing from the series: ${missing.slice(0, 20).map(n => 'R-' + String(n).padStart(6, '0')).join(', ')}${missing.length > 20 ? '…' : ''}`, refs: { missingCount: missing.length, missing: missing.slice(0, 200) } });
-  const counter = await tx.maybeOne<{ next_number: number }>("SELECT next_number FROM receipt_counters WHERE series = 'R'");
+  const counter = await tx.maybeOne<{ next_number: number }>("SELECT next_number FROM receipt_counters WHERE clinic_id = $1 AND series = 'R'", [clinicId]);
   const max = nums.length ? nums[nums.length - 1]! : 0;
   if (counter && counter.next_number !== max + 1) findings.push({ check: 'RECEIPT_COUNTER_DRIFT', severity: 'HIGH', detail: `Counter says next is ${counter.next_number}, highest issued is ${max}` });
 
-  const noReceipt = (await tx.query<{ id: string }>("SELECT p.id FROM payments p LEFT JOIN receipts r ON r.payment_id = p.id WHERE p.source = 'DESK' AND r.id IS NULL")).rows;
+  const noReceipt = (await tx.query<{ id: string }>("SELECT p.id FROM payments p LEFT JOIN receipts r ON r.clinic_id = p.clinic_id AND r.payment_id = p.id WHERE p.clinic_id = $1 AND p.source = 'DESK' AND r.id IS NULL", [clinicId])).rows;
   if (noReceipt.length) findings.push({ check: 'PAYMENT_WITHOUT_RECEIPT', severity: 'HIGH', detail: `${noReceipt.length} desk payment(s) have no receipt`, refs: noReceipt.map(r => r.id) });
 
   const audited: [string, string, string][] = [
@@ -41,16 +41,16 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
     ['adjustments', 'adjustment', '%'],
   ];
   for (const [table, entity, actionLike] of audited) {
-    const rows = (await tx.query<{ id: string }>(`SELECT t.id FROM ${table} t WHERE NOT EXISTS (
-        SELECT 1 FROM audit_events e WHERE e.entity_type = $1 AND e.entity_id = t.id::text AND e.action LIKE $2)`, [entity, actionLike])).rows;
+    const rows = (await tx.query<{ id: string }>(`SELECT t.id FROM ${table} t WHERE t.clinic_id = $3 AND NOT EXISTS (
+        SELECT 1 FROM audit_events e WHERE e.clinic_id = $3 AND e.entity_type = $1 AND e.entity_id = t.id::text AND e.action LIKE $2)`, [entity, actionLike, clinicId])).rows;
     if (rows.length) findings.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `${rows.length} ${table} row(s) have no audit event (written around the application?)`, refs: rows.map(r => r.id) });
   }
-  const orphanEvents = (await tx.query<{ entity_id: string }>(`SELECT e.entity_id FROM audit_events e WHERE e.action = 'payment.recorded'
-      AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.id::text = e.entity_id)`)).rows;
+  const orphanEvents = (await tx.query<{ entity_id: string }>(`SELECT e.entity_id FROM audit_events e WHERE e.clinic_id = $1 AND e.action = 'payment.recorded'
+      AND NOT EXISTS (SELECT 1 FROM payments p WHERE p.clinic_id = $1 AND p.id::text = e.entity_id)`, [clinicId])).rows;
   if (orphanEvents.length) findings.push({ check: 'AUDITED_PAYMENT_MISSING', severity: 'HIGH', detail: `${orphanEvents.length} audited payment(s) no longer exist in the payments table`, refs: orphanEvents.map(r => r.entity_id) });
 
   if (await tableExists(tx, 'cash_counts')) {
-    const noAudit = (await tx.query<{ id: string }>(`SELECT c.id FROM cash_counts c WHERE NOT EXISTS (SELECT 1 FROM audit_events e WHERE e.entity_type = 'cash_count' AND e.entity_id = c.id::text)`)).rows;
+    const noAudit = (await tx.query<{ id: string }>(`SELECT c.id FROM cash_counts c WHERE c.clinic_id = $1 AND NOT EXISTS (SELECT 1 FROM audit_events e WHERE e.clinic_id = $1 AND e.entity_type = 'cash_count' AND e.entity_id = c.id::text)`, [clinicId])).rows;
     if (noAudit.length) findings.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `${noAudit.length} cash count(s) have no audit event`, refs: noAudit.map(r => r.id) });
   }
 
@@ -100,19 +100,27 @@ export const integrityRoutes: Route[] = [
  */
 const NEUTRAL = 'The recorded value differs from the value captured in its audit event when it was entered. This is a data-consistency finding: it does not by itself show who changed it, why, or that money was lost.';
 
-type Ev = { action: string; payload: Record<string, unknown>; actor: string | null };
+/**
+ * R73-H (M-267, CH-033/CH-034): events written before R73-H carry no exact row timestamps; for them a row timestamp
+ * is compared with the hashed occurredAt of its audit event within this tolerance. New events carry the exact value.
+ */
+export const LEGACY_TIME_TOLERANCE_MS = 120_000;
+
+type Ev = { action: string; payload: Record<string, unknown>; actor: string | null; at?: string };
 const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null);
+const textSha = (s: string | null) => (s === null ? null : sha256(s));
 
 export async function businessValueFindings(tx: Tx, clinicId: string, withCash = true): Promise<IntegrityFinding[]> {
   const out: IntegrityFinding[] = [];
-  const evRows = (await tx.query<{ action: string; entity_type: string; entity_id: string; payload: Record<string, unknown>; actor_staff_id: string | null }>(
-    `SELECT action, entity_type, entity_id, payload, actor_staff_id FROM audit_events WHERE clinic_id = $1 AND action IN
-      ('payment.recorded','payment.refunded','payment.voided','adjustment.created','care.confirmed','care.corrected','cash.count_submitted','cash.movement_recorded')
+  const evRows = (await tx.query<{ action: string; entity_type: string; entity_id: string; payload: Record<string, unknown>; actor_staff_id: string | null; occurred_at: string }>(
+    `SELECT action, entity_type, entity_id, payload, actor_staff_id, occurred_at FROM audit_events WHERE clinic_id = $1 AND action IN
+      ('payment.recorded','payment.refunded','payment.voided','adjustment.created','care.confirmed','care.corrected','cash.count_submitted','cash.movement_recorded',
+       'cash.period_opened','cash.period_closed')
      ORDER BY seq`, [clinicId])).rows;
   const events = new Map<string, Ev[]>();
   for (const e of evRows) {
     const k = `${e.entity_type}:${e.entity_id}`;
-    (events.get(k) ?? events.set(k, []).get(k)!).push({ action: e.action, payload: e.payload, actor: e.actor_staff_id });
+    (events.get(k) ?? events.set(k, []).get(k)!).push({ action: e.action, payload: e.payload, actor: e.actor_staff_id, at: e.occurred_at });
   }
   const one = (entity: string, id: string, actions: string[]) => (events.get(`${entity}:${id}`) ?? []).filter(e => actions.includes(e.action));
   const mismatch = (check: string, table: string, id: string, field: string, recorded: unknown, audited: unknown) =>
@@ -122,11 +130,25 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
   const compare = (check: string, table: string, id: string, pairs: Array<[string, unknown, unknown]>) => {
     for (const [field, recorded, audited] of pairs) if (!same(recorded, audited)) mismatch(check, table, id, field, recorded, audited);
   };
+  /** Exact when the event anchored the value (R73-H), else within LEGACY_TIME_TOLERANCE_MS of the event's own time. */
+  const compareTime = (check: string, table: string, id: string, field: string, recorded: string, e: Ev) => {
+    const anchored = e.payload[field];
+    if (typeof anchored === 'string') { if (Date.parse(anchored) !== Date.parse(recorded)) mismatch(check, table, id, field, recorded, anchored); return; }
+    if (e.at && Math.abs(Date.parse(recorded) - Date.parse(e.at)) > LEGACY_TIME_TOLERANCE_MS) mismatch(check, table, id, field, recorded, `around ${e.at} (event time; pre-R73-H event)`);
+  };
+  /** A hash is compared only when the event carried it (events before R73-H did not). Free text never appears in findings. */
+  const compareHash = (check: string, table: string, id: string, field: string, recordedHash: string | null, e: Ev) => {
+    if (field in e.payload && !same(recordedHash, e.payload[field])) out.push({ check, severity: 'HIGH',
+      detail: `${table} ${id}: ${field} differs from the value anchored in its audit event (content not shown). ${NEUTRAL}`, refs: { table, id, field } });
+  };
+  const missingRow = (table: string, id: string, what: string) =>
+    out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records ${what} ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table, id } });
 
-  // V1 payments
-  const payments = (await tx.query<{ id: string; amount_millimes: number; tender: string; source: string; visit_id: string; cash_period_id: string | null; recorded_by: string }>(
-    'SELECT id, amount_millimes, tender, source, visit_id, cash_period_id, recorded_by FROM payments WHERE clinic_id = $1', [clinicId])).rows;
+  // V1 payments (R73-H: recorded_at decides which count window a cash payment falls in, so it is compared too)
+  const payments = (await tx.query<{ id: string; amount_millimes: number; tender: string; source: string; visit_id: string; cash_period_id: string | null; recorded_by: string; recorded_at: string }>(
+    'SELECT id, amount_millimes, tender, source, visit_id, cash_period_id, recorded_by, recorded_at FROM payments WHERE clinic_id = $1', [clinicId])).rows;
   const auditedPayment = new Map<string, Record<string, unknown>>();
+  const paymentVisit = new Map(payments.map(p => [p.id, p.visit_id]));
   for (const p of payments) {
     const ev = one('payment', p.id, ['payment.recorded']);
     if (ev.length > 1) duplicate('payments', p.id, ev.length);
@@ -137,6 +159,7 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
       ['amountMillimes', p.amount_millimes, a.amountMillimes], ['tender', p.tender, a.tender], ['source', p.source, a.source],
       ['visitId', p.visit_id, a.visitId], ['cashPeriodId', p.cash_period_id, a.cashPeriodId], ['recordedBy', p.recorded_by, ev[0]!.actor],
     ]);
+    compareTime('PAYMENT_AUDIT_VALUE_MISMATCH', 'payments', p.id, 'recordedAt', p.recorded_at, ev[0]!);
   }
 
   // V2 allocations: in v0.2 a payment is allocated in full to its own visit (no deposits/credit, R55). If
@@ -154,9 +177,9 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     }
   }
 
-  // V5 adjustments (kind <-> action, amount, references)
-  const adjustments = (await tx.query<{ id: string; kind: string; amount_millimes: number; reason_code: string; visit_id: string; payment_id: string | null; tender: string | null; authorized_by: string }>(
-    'SELECT id, kind, amount_millimes, reason_code, visit_id, payment_id, tender, authorized_by FROM adjustments WHERE clinic_id = $1', [clinicId])).rows;
+  // V5 adjustments (kind <-> action, amount, references; R73-H: time, refund/void visit, note by hash)
+  const adjustments = (await tx.query<{ id: string; kind: string; amount_millimes: number; reason_code: string; reason_note: string | null; visit_id: string; payment_id: string | null; tender: string | null; authorized_by: string; created_at: string }>(
+    'SELECT id, kind, amount_millimes, reason_code, reason_note, visit_id, payment_id, tender, authorized_by, created_at FROM adjustments WHERE clinic_id = $1', [clinicId])).rows;
   const auditedAdjustment = new Map<string, Record<string, unknown>>();
   for (const j of adjustments) {
     const ev = one('adjustment', j.id, ['adjustment.created', 'payment.refunded', 'payment.voided']);
@@ -167,12 +190,19 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     const auditedKind = e.action === 'adjustment.created' ? a.kind : e.action === 'payment.refunded' ? 'REFUND' : 'PAYMENT_VOID';
     const pairs: Array<[string, unknown, unknown]> = [['kind', j.kind, auditedKind], ['amountMillimes', j.amount_millimes, a.amountMillimes], ['reasonCode', j.reason_code, a.reasonCode], ['authorizedBy', j.authorized_by, e.actor]];
     if (e.action === 'adjustment.created') pairs.push(['visitId', j.visit_id, a.visitId]);
-    else pairs.push(['paymentId', j.payment_id, a.paymentId]);
+    else {
+      pairs.push(['paymentId', j.payment_id, a.paymentId]);
+      // A refund/void belongs to its payment's visit; compared with the anchored value, or with the payment row before R73-H.
+      pairs.push(['visitId', j.visit_id, 'visitId' in a ? a.visitId : (j.payment_id ? paymentVisit.get(j.payment_id) ?? null : null)]);
+    }
     if (e.action === 'payment.refunded') pairs.push(['tender', j.tender, a.tender]);
     compare('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, pairs);
+    compareTime('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'createdAt', j.created_at, e);
+    compareHash('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'reasonNoteSha256', textSha(j.reason_note), e);
   }
 
-  // V3/V4 receipts: snapshot integrity, then snapshot and number vs the audited operation
+  // V3/V4 receipts: snapshot integrity, then snapshot and number vs the audited operation; R73-H: the whole snapshot
+  // is anchored by its hash in the operation's audit event, so editing ANY field and recomputing the hash is visible.
   const receipts = (await tx.query<{ id: string; number: number; series: string; kind: string; payment_id: string | null; adjustment_id: string | null; snapshot: Record<string, unknown>; snapshot_sha256: string }>(
     'SELECT id, number, series, kind, payment_id, adjustment_id, snapshot, snapshot_sha256 FROM receipts WHERE clinic_id = $1', [clinicId])).rows;
   for (const r of receipts) {
@@ -183,10 +213,11 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     compare('RECEIPT_VALUE_MISMATCH', 'receipts', r.id, [
       ['number', r.number, r.snapshot.number], ['kind', r.kind, r.snapshot.kind], ['series', r.series, r.snapshot.series],
       ...(audited ? [['number', r.number, audited.receiptNumber] as [string, unknown, unknown], ['amountMillimes', r.snapshot.amountMillimes, audited.amountMillimes] as [string, unknown, unknown]] : []),
+      ...(audited && typeof audited.receiptSha256 === 'string' ? [['snapshotSha256', r.snapshot_sha256, audited.receiptSha256] as [string, unknown, unknown]] : []),
     ]);
   }
 
-  // V6 care fees and corrections
+  // V6 care fees and corrections (R73-H: correction procedure/site and the care reason by hash)
   const care = (await tx.query<{ id: string; kind: string; visit_id: string; corrects_id: string | null; procedure_code: string; tooth_fdi: number | null; surfaces: string | null; fee_millimes: number; reason: string | null }>(
     'SELECT id, kind, visit_id, corrects_id, procedure_code, tooth_fdi, surfaces, fee_millimes, reason FROM care_items WHERE clinic_id = $1', [clinicId])).rows;
   for (const c of care) {
@@ -197,47 +228,74 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     if (e.action === 'care.confirmed') {
       compare('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, [['kind', c.kind, 'CARE'], ['feeMillimes', c.fee_millimes, a.feeMillimes], ['visitId', c.visit_id, a.visitId],
         ['procedureCode', c.procedure_code, a.procedureCode], ['toothFdi', c.tooth_fdi, a.toothFdi], ['surfaces', c.surfaces, a.surfaces]]);
+      compareHash('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, 'reasonSha256', textSha(c.reason), e);
     } else {
-      compare('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, [['kind', c.kind, 'CORRECTION'], ['feeMillimes', c.fee_millimes, a.deltaMillimes], ['correctsId', c.corrects_id, a.correctsId], ['reason', c.reason, a.reason]]);
+      compare('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, [['kind', c.kind, 'CORRECTION'], ['feeMillimes', c.fee_millimes, a.deltaMillimes], ['correctsId', c.corrects_id, a.correctsId], ['reason', c.reason, a.reason],
+        ...('procedureCode' in a ? [['procedureCode', c.procedure_code, a.procedureCode], ['toothFdi', c.tooth_fdi, a.toothFdi], ['surfaces', c.surfaces, a.surfaces]] as Array<[string, unknown, unknown]> : [])]);
     }
   }
 
-  // V7 cash: counted figure and movements vs audit; stored expected cash vs a recomputation from the
-  // append-only records at the same cut-off (a lowered "expected" would hide a shortfall).
+  // V7 cash: periods, counts and movements vs audit; stored expected cash vs a recomputation from the append-only
+  // records at the same cut-off. R73-H (M-267 1, CH-034): every INPUT of that recomputation (period float and start,
+  // count time, payment/movement/refund times) is itself compared, so editing inputs and expected together is visible.
+  const present = new Set([...adjustments.map(r => `adjustment:${r.id}`), ...care.map(r => `care_item:${r.id}`)]);
   if (withCash) {
-    const counts = (await tx.query<{ id: string; period_id: string; attempt_no: number; counted_millimes: number; expected_millimes: number; submitted_at: string }>(
-      'SELECT id, period_id, attempt_no, counted_millimes, expected_millimes, submitted_at FROM cash_counts WHERE clinic_id = $1', [clinicId])).rows;
+    const periods = (await tx.query<{ id: string; period_no: number; opened_at: string; opening_float_millimes: number; opening_basis: string; previous_period_id: string | null; status: string; cutoff_at: string | null; drawer_id: string }>(
+      'SELECT id, period_no, opened_at, opening_float_millimes, opening_basis, previous_period_id, status, cutoff_at, drawer_id FROM cash_periods WHERE clinic_id = $1', [clinicId])).rows;
+    const periodById = new Map(periods.map(p => [p.id, p]));
+    for (const p of periods) {
+      present.add(`cash_period:${p.id}`);
+      if (p.opening_basis === 'OWNER_DECLARED') {
+        const ev = one('cash_period', p.id, ['cash.period_opened']);
+        if (!ev.length) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `cash_periods ${p.id} has no opening audit event`, refs: { table: 'cash_periods', id: p.id } }); continue; }
+        compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, [['openingFloatMillimes', p.opening_float_millimes, ev[0]!.payload.openingFloatMillimes], ['periodNo', p.period_no, ev[0]!.payload.periodNo]]);
+        compareTime('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, ev[0]!);
+      } else {
+        // Carry-forward: there is no opening event; the float and start come from the previous period's close event.
+        const closed = p.previous_period_id ? one('cash_period', p.previous_period_id, ['cash.period_closed']).find(e => e.payload.nextPeriodId === p.id) : undefined;
+        if (!closed) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `cash_periods ${p.id} (carried forward) has no matching close event of its previous period`, refs: { table: 'cash_periods', id: p.id } }); continue; }
+        compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, [['openingFloatMillimes', p.opening_float_millimes, closed.payload.nextOpeningFloatMillimes]]);
+        if (typeof closed.payload.nextOpenedAt === 'string' && Date.parse(closed.payload.nextOpenedAt) !== Date.parse(p.opened_at))
+          mismatch('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, closed.payload.nextOpenedAt);
+      }
+    }
+    const counts = (await tx.query<{ id: string; period_id: string; attempt_no: number; counted_millimes: number; expected_millimes: number; submitted_at: string; denominations: Record<string, number> | null }>(
+      'SELECT id, period_id, attempt_no, counted_millimes, expected_millimes, submitted_at, denominations FROM cash_counts WHERE clinic_id = $1', [clinicId])).rows;
     for (const c of counts) {
       const ev = one('cash_count', c.id, ['cash.count_submitted']);
-      if (ev.length) compare('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, [['countedMillimes', c.counted_millimes, ev[0]!.payload.countedMillimes], ['periodId', c.period_id, ev[0]!.payload.periodId], ['attemptNo', c.attempt_no, ev[0]!.payload.attemptNo]]);
-      const period = await tx.one<{ id: string; opened_at: string; opening_float_millimes: number; opening_basis: string; period_no: number; status: string; cutoff_at: string | null; drawer_id: string }>(
-        'SELECT id, opened_at, opening_float_millimes, opening_basis, period_no, status, cutoff_at, drawer_id FROM cash_periods WHERE clinic_id = $1 AND id = $2', [clinicId, c.period_id]);
+      if (ev.length) {
+        compare('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, [['countedMillimes', c.counted_millimes, ev[0]!.payload.countedMillimes], ['periodId', c.period_id, ev[0]!.payload.periodId], ['attemptNo', c.attempt_no, ev[0]!.payload.attemptNo]]);
+        compareTime('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, 'submittedAt', c.submitted_at, ev[0]!);
+        compareHash('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, 'denominationsSha256', c.denominations === null ? null : sha256(canonicalJson(c.denominations)), ev[0]!);
+      }
+      // M-267 6: a deleted period is a finding, never an aborted check.
+      const period = periodById.get(c.period_id);
+      if (!period) { if (!out.some(f => f.check === 'AUDITED_ROW_MISSING' && (f.refs as { id?: string } | undefined)?.id === c.period_id)) missingRow('cash_periods', c.period_id, 'cash period'); continue; }
       const recomputed = (await expectedCash(tx, period as never, c.submitted_at)).expectedMillimes;
       if (recomputed !== c.expected_millimes) {
         out.push({ check: 'CASH_COUNT_EXPECTED_RECOMPUTE_MISMATCH', severity: 'HIGH',
           detail: `Cash count ${c.id}: the stored expected cash (${c.expected_millimes}) differs from a recomputation from recorded payments, movements and refunds up to the same cut-off (${recomputed}). ${NEUTRAL}`,
           refs: { table: 'cash_counts', id: c.id, storedExpected: c.expected_millimes, recomputedExpected: recomputed } });
       }
+      present.add(`cash_count:${c.id}`);
     }
-    const moves = (await tx.query<{ id: string; period_id: string; kind: string; amount_millimes: number; voucher_ref: string | null }>(
-      'SELECT id, period_id, kind, amount_millimes, voucher_ref FROM cash_movements WHERE clinic_id = $1', [clinicId])).rows;
+    const moves = (await tx.query<{ id: string; period_id: string; kind: string; amount_millimes: number; voucher_ref: string | null; recorded_at: string }>(
+      'SELECT id, period_id, kind, amount_millimes, voucher_ref, recorded_at FROM cash_movements WHERE clinic_id = $1', [clinicId])).rows;
     for (const m of moves) {
+      present.add(`cash_movement:${m.id}`);
       const ev = one('cash_movement', m.id, ['cash.movement_recorded']);
-      if (ev.length) compare('CASH_MOVEMENT_AUDIT_VALUE_MISMATCH', 'cash_movements', m.id, [['amountMillimes', m.amount_millimes, ev[0]!.payload.amountMillimes], ['kind', m.kind, ev[0]!.payload.kind], ['periodId', m.period_id, ev[0]!.payload.periodId], ['voucherRef', m.voucher_ref, ev[0]!.payload.voucherRef]]);
+      if (!ev.length) continue;
+      compare('CASH_MOVEMENT_AUDIT_VALUE_MISMATCH', 'cash_movements', m.id, [['amountMillimes', m.amount_millimes, ev[0]!.payload.amountMillimes], ['kind', m.kind, ev[0]!.payload.kind], ['periodId', m.period_id, ev[0]!.payload.periodId], ['voucherRef', m.voucher_ref, ev[0]!.payload.voucherRef]]);
+      compareTime('CASH_MOVEMENT_AUDIT_VALUE_MISMATCH', 'cash_movements', m.id, 'recordedAt', m.recorded_at, ev[0]!);
     }
   }
 
   // Audited rows that no longer exist (payments keep their original AUDITED_PAYMENT_MISSING check).
-  const present = new Set([...adjustments.map(r => `adjustment:${r.id}`), ...care.map(r => `care_item:${r.id}`)]);
-  if (withCash) {
-    for (const r of (await tx.query<{ id: string }>('SELECT id FROM cash_counts WHERE clinic_id = $1', [clinicId])).rows) present.add(`cash_count:${r.id}`);
-    for (const r of (await tx.query<{ id: string }>('SELECT id FROM cash_movements WHERE clinic_id = $1', [clinicId])).rows) present.add(`cash_movement:${r.id}`);
-  }
-  const TABLE: Record<string, string> = { adjustment: 'adjustments', care_item: 'care_items', cash_count: 'cash_counts', cash_movement: 'cash_movements' };
+  const TABLE: Record<string, string> = { adjustment: 'adjustments', care_item: 'care_items', cash_count: 'cash_counts', cash_movement: 'cash_movements', cash_period: 'cash_periods' };
   for (const k of events.keys()) {
     const [entity, id] = k.split(':') as [string, string];
     if (!TABLE[entity] || (!withCash && entity.startsWith('cash_'))) continue;
-    if (!present.has(k)) out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records ${entity} ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table: TABLE[entity], id } });
+    if (!present.has(k) && !out.some(f => f.check === 'AUDITED_ROW_MISSING' && (f.refs as { id?: string } | undefined)?.id === id)) missingRow(TABLE[entity]!, id, entity.replace('_', ' '));
   }
   return out;
 }

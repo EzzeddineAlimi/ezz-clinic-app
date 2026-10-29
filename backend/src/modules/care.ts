@@ -19,6 +19,7 @@ import type { Actor, Route } from '../platform/http.ts';
 import { AppError, fail } from '../platform/errors.ts';
 import { asBody, str, optStr, millimes, uuid, bool, oneOf, isUuid } from '../platform/validate.ts';
 import { readDentalSite, sameSite, type DentalSite } from '../contracts/clinical.ts';
+import { sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 import { getVisitForUpdate, getVisit } from './patients.ts';
 import { requireAlertsAcknowledged, readAlertSetHash, requireDentistAuthor, dentistAuthored } from './medical.ts';
@@ -86,7 +87,8 @@ export async function confirmCareItem(tx: Tx, actor: Actor, v: { id: string; pat
   if (v.status !== 'COMPLETED') {
     await tx.query("UPDATE visits SET status = 'COMPLETED', status_changed_at = now(), status_changed_by = $2 WHERE id = $1", [v.id, actor.staffId]);
   }
-  await appendAudit(tx, actor, 'care.confirmed', 'care_item', c.id, { visitId: v.id, procedureCode: input.procedureCode, toothFdi: input.site.toothFdi, surfaces: input.site.surfaces, feeMillimes: input.feeMillimes, freeCare: input.feeMillimes === 0 });
+  await appendAudit(tx, actor, 'care.confirmed', 'care_item', c.id, { visitId: v.id, procedureCode: input.procedureCode, toothFdi: input.site.toothFdi, surfaces: input.site.surfaces, feeMillimes: input.feeMillimes, freeCare: input.feeMillimes === 0,
+    reasonSha256: input.reason ? sha256(input.reason) : null }); // R73-H: the reason is anchored by hash only
   return {
     careItem: { id: c.id, visitId: v.id, kind: 'CARE', procedureCode: input.procedureCode, procedureLabel: input.procedureLabel, toothFdi: input.site.toothFdi, surfaces: input.site.surfaces, feeMillimes: input.feeMillimes, confirmedBy: actor.staffId, confirmedAt: c.confirmed_at },
     visitTotalMillimes: await visitCareTotal(tx, v.id),
@@ -126,7 +128,8 @@ export const careRoutes: Route[] = dentistAuthored([
       const c = await tx.one<{ id: string }>(`INSERT INTO care_items (clinic_id, visit_id, patient_id, kind, corrects_id, procedure_code, procedure_label, tooth_fdi, surfaces, fee_millimes, reason, confirmed_by, confirmed_by_role)
           VALUES ($1,$2,$3,'CORRECTION',$4,$5,$6,$7,$8,$9,$10,$11,'DENTIST') RETURNING id`,
         [actor!.clinicId, orig!.visit_id, orig!.patient_id, orig!.id, orig!.procedure_code, orig!.procedure_label, site.tooth_fdi, site.surfaces, delta, reason, actor!.staffId]);
-      await appendAudit(tx, actor!, 'care.corrected', 'care_item', c.id, { correctsId: orig!.id, deltaMillimes: delta, reason });
+      await appendAudit(tx, actor!, 'care.corrected', 'care_item', c.id, { correctsId: orig!.id, deltaMillimes: delta, reason,
+        procedureCode: orig!.procedure_code, toothFdi: site.tooth_fdi, surfaces: site.surfaces }); // R73-H (M-267 3)
       return { status: 201, body: { correction: { id: c.id, correctsId: orig!.id, deltaMillimes: delta, reason, itemFeeAfterMillimes: itemTotal.t + delta }, visitTotalMillimes: await visitCareTotal(tx, orig!.visit_id) } };
     },
   },

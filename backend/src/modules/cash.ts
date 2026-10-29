@@ -19,6 +19,7 @@ import type { Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, millimes, oneOf, optStr, str, uuid, isUuid } from '../platform/validate.ts';
+import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 import { setCashPeriodResolver } from './billing.ts';
 
@@ -47,19 +48,20 @@ async function getPeriod(tx: Tx, id: string, lock: '' | 'FOR UPDATE' = ''): Prom
   return p!;
 }
 
-/** Expected cash in (opened_at, cutoff]. Single drawer per clinic in v0.2, so time windows identify the drawer. */
+/** Expected cash in (opened_at, cutoff]. Single drawer per clinic in v0.2, so time windows identify the drawer.
+ *  R73-H (M-267 7): every source is filtered by the period's clinic explicitly, not only by row-level security. */
 export async function expectedCash(tx: Tx, period: PeriodRow, cutoff: string) {
   const r = await tx.one<{ cash_in: number; top_up: number; withdrawals: number; deposits: number; expenses: number; refunds: number; voids: number; n_payments: number }>(`
     SELECT
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM payments WHERE tender = 'CASH' AND recorded_at > $1 AND recorded_at <= $2) AS cash_in,
-      (SELECT count(*)::int FROM payments WHERE tender = 'CASH' AND recorded_at > $1 AND recorded_at <= $2) AS n_payments,
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE kind = 'FLOAT_TOP_UP' AND recorded_at > $1 AND recorded_at <= $2) AS top_up,
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE kind = 'OWNER_WITHDRAWAL' AND recorded_at > $1 AND recorded_at <= $2) AS withdrawals,
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE kind = 'BANK_DEPOSIT' AND recorded_at > $1 AND recorded_at <= $2) AS deposits,
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE kind = 'PETTY_EXPENSE' AND recorded_at > $1 AND recorded_at <= $2) AS expenses,
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM adjustments WHERE kind = 'REFUND' AND tender = 'CASH' AND created_at > $1 AND created_at <= $2) AS refunds,
-      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM adjustments WHERE kind = 'PAYMENT_VOID' AND tender = 'CASH' AND created_at > $1 AND created_at <= $2) AS voids`,
-    [period.opened_at, cutoff]);
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM payments WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND tender = 'CASH' AND recorded_at > $1 AND recorded_at <= $2) AS cash_in,
+      (SELECT count(*)::int FROM payments WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND tender = 'CASH' AND recorded_at > $1 AND recorded_at <= $2) AS n_payments,
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND kind = 'FLOAT_TOP_UP' AND recorded_at > $1 AND recorded_at <= $2) AS top_up,
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND kind = 'OWNER_WITHDRAWAL' AND recorded_at > $1 AND recorded_at <= $2) AS withdrawals,
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND kind = 'BANK_DEPOSIT' AND recorded_at > $1 AND recorded_at <= $2) AS deposits,
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM cash_movements WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND kind = 'PETTY_EXPENSE' AND recorded_at > $1 AND recorded_at <= $2) AS expenses,
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM adjustments WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND kind = 'REFUND' AND tender = 'CASH' AND created_at > $1 AND created_at <= $2) AS refunds,
+      (SELECT coalesce(sum(amount_millimes),0)::bigint FROM adjustments WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3) AND kind = 'PAYMENT_VOID' AND tender = 'CASH' AND created_at > $1 AND created_at <= $2) AS voids`,
+    [period.opened_at, cutoff, period.id]);
   const expected = period.opening_float_millimes + r.cash_in + r.top_up - r.withdrawals - r.deposits - r.expenses - r.refunds - r.voids;
   return {
     expectedMillimes: expected,
@@ -89,7 +91,7 @@ export const cashRoutes: Route[] = [
       if (any) fail('CONFLICT', 'A cash period already exists; periods open automatically when the owner closes the previous one');
       const p = await tx.one<{ id: string; opened_at: string }>(`INSERT INTO cash_periods (clinic_id, drawer_id, period_no, opened_at, opened_by, opening_float_millimes, opening_basis)
           VALUES ($1, $2, 1, clock_timestamp(), $3, $4, 'OWNER_DECLARED') RETURNING id, opened_at`, [actor!.clinicId, d, actor!.staffId, float]);
-      await appendAudit(tx, actor!, 'cash.period_opened', 'cash_period', p.id, { periodNo: 1, openingFloatMillimes: float, basis: 'OWNER_DECLARED' });
+      await appendAudit(tx, actor!, 'cash.period_opened', 'cash_period', p.id, { periodNo: 1, openingFloatMillimes: float, basis: 'OWNER_DECLARED', openedAt: p.opened_at });
       return { status: 201, body: { period: { id: p.id, periodNo: 1, openedAt: p.opened_at, status: 'OPEN' } } };
     },
   },
@@ -115,7 +117,7 @@ export const cashRoutes: Route[] = [
       if (openId !== params.id) fail('CASH_PERIOD_CLOSED', 'Movements can only be recorded in the open period');
       const m = await tx.one<{ id: string; recorded_at: string }>(`INSERT INTO cash_movements (clinic_id, period_id, kind, amount_millimes, reason, voucher_ref, authorized_by, recorded_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7, clock_timestamp()) RETURNING id, recorded_at`, [actor!.clinicId, openId, kind, amount, reason, voucherRef, actor!.staffId]);
-      await appendAudit(tx, actor!, 'cash.movement_recorded', 'cash_movement', m.id, { periodId: openId, kind, amountMillimes: amount, voucherRef, outflow: (OUTFLOWS as readonly string[]).includes(kind) });
+      await appendAudit(tx, actor!, 'cash.movement_recorded', 'cash_movement', m.id, { periodId: openId, kind, amountMillimes: amount, voucherRef, outflow: (OUTFLOWS as readonly string[]).includes(kind), recordedAt: m.recorded_at });
       return { status: 201, body: { movement: { id: m.id, kind, amountMillimes: amount, recordedAt: m.recorded_at } } };
     },
   },
@@ -153,7 +155,8 @@ export const cashRoutes: Route[] = [
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
         [actor!.clinicId, p.id, attempt, actor!.staffId, [...actor!.roles].sort().join(','), counted, denominations, recountReason, now, exp.expectedMillimes, counted - exp.expectedMillimes, independent, notes.join('; ')]);
       // The audit payload is owner-visible evidence; it holds the counted figure but not the expected one.
-      await appendAudit(tx, actor!, 'cash.count_submitted', 'cash_count', c.id, { periodId: p.id, attemptNo: attempt, countedMillimes: counted, recountReason, counterIndependent: independent });
+      await appendAudit(tx, actor!, 'cash.count_submitted', 'cash_count', c.id, { periodId: p.id, attemptNo: attempt, countedMillimes: counted, recountReason, counterIndependent: independent,
+        submittedAt: now, denominationsSha256: denominations === null ? null : sha256(canonicalJson(denominations)) }); // R73-H: cut-off and breakdown anchored
       // BLIND: no expected, no difference, no breakdown in this response (T-CASH-1 / T-CASH-2).
       return { status: 201, body: { count: { id: c.id, periodId: p.id, attemptNo: attempt, submittedAt: now }, status: 'RECORDED_PENDING_OWNER_REVIEW' } };
     },
@@ -202,7 +205,7 @@ export const cashRoutes: Route[] = [
       const next = await tx.one<{ id: string }>(`INSERT INTO cash_periods (clinic_id, drawer_id, period_no, opened_at, opened_by, opening_float_millimes, opening_basis, previous_period_id)
           VALUES ($1,$2,$3,$4,$5,$6,'COUNTED_CARRY_FORWARD',$7) RETURNING id`,
         [actor!.clinicId, p.drawer_id, p.period_no + 1, latest!.submitted_at, actor!.staffId, latest!.counted_millimes - handover, p.id]);
-      await appendAudit(tx, actor!, 'cash.period_closed', 'cash_period', p.id, { acceptedCountId: latest!.id, differenceMillimes: latest!.difference_millimes, handoverMillimes: handover, nextPeriodId: next.id, nextOpeningFloatMillimes: latest!.counted_millimes - handover });
+      await appendAudit(tx, actor!, 'cash.period_closed', 'cash_period', p.id, { acceptedCountId: latest!.id, differenceMillimes: latest!.difference_millimes, handoverMillimes: handover, nextPeriodId: next.id, nextOpeningFloatMillimes: latest!.counted_millimes - handover, nextOpenedAt: latest!.submitted_at });
       return { status: 200, body: { closed: { id: p.id, cutoffAt: latest!.submitted_at, differenceMillimes: latest!.difference_millimes, handoverMillimes: handover }, nextPeriod: { id: next.id, periodNo: p.period_no + 1, openingFloatMillimes: latest!.counted_millimes - handover, openingBasis: 'COUNTED_CARRY_FORWARD' } } };
     },
   },
