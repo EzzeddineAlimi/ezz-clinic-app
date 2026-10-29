@@ -34,6 +34,9 @@ const text = {
     original: "Intention originale, non modifiable",
     creator: "Créée par",
     alreadyRecorded: "Enregistrement confirmé côté serveur. Le reçu reste accessible dans l’historique.",
+    recordDenied: "L’enregistrement a été refusé. N’essayez pas de confirmer de nouveau cette intention. Vérifiez les paiements, puis annulez uniquement cette intention non enregistrée avec un motif. Pour un second versement réel, préparez ensuite une NOUVELLE intention et confirmez qu’il est distinct.",
+    pendingAnomaly: "Anomalie : plusieurs intentions de paiement en attente. Aucune nouvelle opération autorisée. Faites intervenir le responsable.",
+    pendingList: "Intentions en attente visibles pour vérification",
     historyMismatch: "L’historique ne correspond pas à l’état du serveur. Actualisez avant toute action.",
     uncertain: "Réponse incertaine. Ne créez pas un nouveau paiement. Relisez l’état serveur avant de continuer.",
     cancel: "Annuler cette intention (aucun remboursement)",
@@ -73,6 +76,9 @@ const text = {
     original: "العملية الأصلية غير قابلة للتعديل",
     creator: "أُنشئت من طرف",
     alreadyRecorded: "تم تسجيل الدفعة على الخادم؛ يمكن الوصول للإيصال من السجل.",
+    recordDenied: "رُفض تسجيل الدفعة. لا تعاود تأكيد العملية نفسها. راجع سجل الدفعات ثم ألغِ العملية المعلقة التي لم تُسجل، مع ذكر السبب. إذا كانت هناك دفعة ثانية فعلية فحضّر عملية جديدة مستقلة بعد التحقق.",
+    pendingAnomaly: "خلل: عدة عمليات دفع معلقة. جميع عمليات الدفع موقوفة ويجب الرجوع للمسؤول.",
+    pendingList: "العمليات المعلقة المعروضة للمراجعة",
     historyMismatch: "السجل لا يطابق حالة الخادم. يجب التحديث قبل أي إجراء.",
     uncertain: "النتيجة غير مؤكدة. لا تنشئ دفعة جديدة. راجع حالة الخادم أولاً.",
     cancel: "إلغاء العملية المعلقة (ليس استردادًا)",
@@ -278,7 +284,8 @@ export function Checkout({
       try {
         result = await api.recordPaymentIntent(intent.id, crypto.randomUUID());
       } catch (cause) {
-        if (cause instanceof ApiError && cause.code === "POSSIBLE_DUPLICATE_PAYMENT") {
+        if (cause instanceof ApiError &&
+          ["POSSIBLE_DUPLICATE_PAYMENT", "PAYMENT_RECOVERY_STALE"].includes(cause.code)) {
           // The intention payload is immutable. Reconcile/cancel the pending
           // intention, then prepare a genuinely distinct payment with an override.
           setDuplicateDenied(true);
@@ -300,6 +307,8 @@ export function Checkout({
     await guarded(async () => {
       await api.cancelPaymentIntent(intent.id, cancelReason.trim(), crypto.randomUUID());
       setPrepared(undefined);
+      setDuplicateDenied(false);
+      setDuplicateApproved(false);
       setNotReceived(false);
       setCancelReason("");
       setReviewed(false);
@@ -332,6 +341,8 @@ export function Checkout({
   const recovered = data.data?.recovery;
   const serverPending = recovered?.intentions.find((i: DurableIntent) => i.status === "PENDING");
   const activeIntent = serverPending ?? prepared;
+  const pendingIntents = recovered?.intentions.filter(i => i.status === "PENDING") ?? [];
+  const pendingAnomaly = !!recovered?.pendingAnomaly;
   let matchingPrior = false;
   try {
     const millimes = tndToMillimes(value);
@@ -339,7 +350,7 @@ export function Checkout({
       p => p.amountMillimes === millimes && p.tender === tender,
     );
   } catch { /* Invalid amount cannot match a prior payment. */ }
-  const blocked = pending || data.loading || !!data.error || !data.data?.consistent || needsRecovery;
+  const blocked = pending || data.loading || !!data.error || !data.data?.consistent || needsRecovery || pendingAnomaly;
   return (
     <Modal title={t.title} w={w} busy={pending} close={close}>
       <div className="patient-context">
@@ -375,29 +386,42 @@ export function Checkout({
           </ul>
           {!recovered!.balance.careConfirmed && <p role="alert">{t.gate}</p>}
           {!data.data.cashOpen && <p role="alert">{t.closed}</p>}
-          {activeIntent && (
+          {pendingAnomaly && (
+            <section role="alert" data-testid="pending-anomaly">
+              <p>{t.pendingAnomaly}</p>
+              <strong>{t.pendingList} ({pendingIntents.length})</strong>
+              <ul>
+                {pendingIntents.map(i => <li key={i.id}>
+                  <bdi>{i.id} · {amount(i.payload.amountMillimes)} · {i.payload.tender}
+                    · {i.createdAt} · {i.createdBy}</bdi>
+                </li>)}
+              </ul>
+            </section>
+          )}
+          {activeIntent && !pendingAnomaly && (
             <section aria-label={t.pending} role="group">
               <p role="alert">{t.pending}</p>
               <p><strong>{t.original}:</strong> {amount(activeIntent.payload.amountMillimes)} · {activeIntent.payload.tender === "CASH" ? t.cash : t.card}</p>
               {"createdBy" in activeIntent && <p>{t.creator}: <bdi>{activeIntent.createdBy}</bdi></p>}
-              <p>{t.uncertain}</p>
+              {duplicateDenied ? <p role="alert" data-testid="record-denied-guidance">{t.recordDenied}</p>
+                : <p>{t.uncertain}</p>}
             </section>
           )}
-          {(!!activeIntent || (recovered!.balance.careConfirmed && recovered!.balance.balanceMillimes > 0)) && (
+          {!pendingAnomaly && (!!activeIntent || (recovered!.balance.careConfirmed && recovered!.balance.balanceMillimes > 0)) && (
             <label>
               <input type="checkbox" checked={reviewed} disabled={blocked}
                 onChange={e => setReviewed(e.target.checked)} />
               {t.reviewHistory}
             </label>
           )}
-          {activeIntent ? (
+          {pendingAnomaly ? null : activeIntent ? (
             <>
               <label>
                 <input type="checkbox" checked={received} disabled={blocked || !reviewed || notReceived}
                   onChange={e => setReceived(e.target.checked)} />
                 {t.received}
               </label>
-              <button className="primary" disabled={blocked || !reviewed || !received}
+              <button className="primary" disabled={blocked || !reviewed || !received || duplicateDenied}
                 onClick={() => void recordPayment(activeIntent)}>{pending ? w.saving : t.record}</button>
               <div className="form-grid">
                 <label>
