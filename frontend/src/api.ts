@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { recoverySchema, preparedIntentSchema, recordedIntentSchema, cancelledIntentSchema } from "./recovery.ts";
 import {
   balanceSchema,
   historySchema,
@@ -169,6 +170,27 @@ export class Api {
   cashPeriod(signal?: AbortSignal) {
     return this.call("/cash/periods/current", periodSchema, { signal });
   }
+  paymentRecovery(id: string, signal?: AbortSignal) {
+    return this.call(`/visits/${id}/payment-recovery`, recoverySchema, { signal });
+  }
+  preparePayment(id: string, body: {
+    amountMillimes: number;
+    tender: "CASH" | "CARD";
+    recoveryVersion: string;
+    acknowledgedPaymentIds: string[];
+    confirmDuplicate?: boolean;
+  }, key: string) {
+    return this.call(`/visits/${id}/payment-intents`, preparedIntentSchema, { body, key });
+  }
+  recordPaymentIntent(id: string, key: string) {
+    return this.call(`/payment-intents/${id}/record`, recordedIntentSchema, { body: {}, key });
+  }
+  cancelPaymentIntent(id: string, reason: string, key: string) {
+    return this.call(`/payment-intents/${id}/cancel`, cancelledIntentSchema, {
+      body: { reason }, key,
+    });
+  }
+  /** Legacy payment endpoint retained only for API compatibility, never used by Checkout. */
   payment(id: string, body: unknown, key: string) {
     return this.call(`/visits/${id}/payments`, paymentSchema, { body, key });
   }
