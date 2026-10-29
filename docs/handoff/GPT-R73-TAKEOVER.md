@@ -15,7 +15,8 @@ production-ready. Muse remains the independent reviewer; Astra owns the frontend
 | #25 | `r73/d-patient-documents` | #24 | `fddae0e` | D: patient documents and imaging attachments (+ `7518a40` T-PRT-3 fix) | 281 / 280 / 0 / 1 (both) |
 | #26 | `r73/e-lab-stock` | #25 | `0848839` | E: lab cases (MF19) and basic stock | 291 / 290 / 0 / 1 (both) |
 | #27 | `r73/f-benchmarks` | #26 | `f5526dc` | F: benchmarks + readiness 503 fix + PostgreSQL crash test | 292 / 291 / 0 / 1 (both, on `a28d785`; `f5526dc` renames a test ID only) |
-| #28 | `r73/g-api-contracts` | #27 | the commit adding this file | G: OpenAPI, recorded examples, contract tests, frontend security states, this handoff | local 297 / 296 / 0 / 1 (both); CI pending at writing |
+| #28 | `r73/g-api-contracts` | #27 | `6253027` | G: OpenAPI, recorded examples, contract tests, frontend security states, this handoff | local 297 / 296 / 0 / 1 (both) |
+| #29 | `r73/h-b06-hardening` | #28 | the commit adding this row | H: B06 integrity hardening for Muse M-267 (1–7) and CH-034 | local 308 / 307 / 0 / 1 (both) |
 
 - The skipped test everywhere is the pre-existing manual T-TLS-5. It is superseded by T-TLS-REAL-1..4, which run in CI.
 - All CI runs are GitHub Actions `backend-ci.yml` (PostgreSQL 16 service, Node 22). They include `npm run test:dist` and the migration ledger check added in B.
@@ -70,6 +71,17 @@ production-ready. Muse remains the independent reviewer; Astra owns the frontend
 - `frontend-security-states.md`.
 - T-API-1..5: the role matrix is checked live for all 384 role/route pairs.
 
+**H — B06 hardening (Muse M-267 1–7, CH-034)**
+- Audit payloads anchor exact row timestamps, the full receipt snapshot hash, the denominations hash, and correction procedure/site.
+- Free text is anchored by hash only.
+- The integrity check compares:
+  - cash period float and start (first and carry-forward periods);
+  - every expected-cash input time;
+  - the refund/void visit;
+  - the receipt snapshot hash.
+- A deleted period is a finding, not a crash. Explicit `clinic_id` filters.
+- Docs: the R73-H section in `docs/security/integrity-value-checks.md`.
+
 ## 3. Defects confirmed and corrected in R73 (RED test before the fix)
 
 | Defect | Test (RED → GREEN) | Fixed in |
@@ -84,6 +96,14 @@ production-ready. Muse remains the independent reviewer; Astra owns the frontend
 | `paper.ts` timezone literal (R72 D-7) | covered by T-SET-* and the paper tests | #24 |
 | **T-PRT-3 hard-coded `28/10/2026`**: fails on any later day | T-PRT-3 (failed at 2026-10-29T01:15Z) | #25 `7518a40`. **Still present on #20 and #21**: port before any re-run there |
 | Readiness answered 500 instead of 503 when PostgreSQL was down | T-CRASH-1 | #27 |
+| M-267 (1): expected-cash inputs (float, start, count time) unchecked | T-INT-CASH-A, T-INT-CASH-B | #29 |
+| CH-034: payment, movement or refund moved across the cut-off | T-INT-CASH-C, T-INT-CASH-D | #29 |
+| M-267 (6): deleted cash period aborted the check (500) | T-INT-CASH-E | #29 |
+| M-267 (5): denominations rewrite unchecked (the difference was already DB-enforced) | T-INT-CASH-F | #29 |
+| M-267 (2): receipt snapshot fields unchecked | T-INT-RCPT-1 | #29 |
+| M-267 (3): correction site/procedure and care reason unchecked | T-INT-CORR-1 | #29 |
+| M-267 (4): refund visit and adjustment note unchecked | T-INT-ADJ-1 | #29 |
+| M-267 (7): check crashed without RLS (another clinic's counter) | T-INT-SCOPE-1 | #29 |
 
 From R72's table:
 - **Closed:** D-1 and D-7.
@@ -163,7 +183,7 @@ New in R73 (each also listed in its package doc):
 
 ## 9. Next prioritised coding tasks for GPT
 
-1. **Get Muse's review of #22–#28** in stack order. Address findings on a new commit per PR; never force-push.
+1. **Get Muse's review of #22–#29** in stack order (#29 answers M-267 directly). Address findings on a new commit per PR; never force-push.
 2. **Port `7518a40` (the T-PRT-3 date fix)** to #20, and to #21 via the integration process (`prs.txt` and `rebuild.sh`), when those heads next move.
 3. **O-2 (scaling):** incremental integrity verification from the latest owner checkpoint. Re-verify the chain only after the anchor; recompute value checks only for rows newer than it. Keep a full mode for the owner on demand. Measure with `npm run bench` at 10×300 and a larger run.
 4. **Close the remaining small residuals:**
