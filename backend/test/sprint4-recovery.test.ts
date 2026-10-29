@@ -99,6 +99,9 @@ test('S4 real SIGKILL after commit with discarded response recovers through new 
 test('S4 inconsistent multiple pending intentions fail closed instead of choosing one',async()=>{
  const f=await fixture(),p=await prepare(f),id=p.body.intent.id,c=await adminConn(db.name);
  try{await c.query('INSERT INTO payment_intents(clinic_id,visit_id,created_by,ledger_hash,payload) SELECT clinic_id,visit_id,created_by,ledger_hash,payload FROM payment_intents WHERE id=$1',[id]);}finally{await c.end();}
- const r=await api.call('GET',`/api/v1/visits/${f.visitId}/payment-recovery`,{token:f.desk});assert.equal(r.body.error.code,'PAYMENT_INTENT_UNRESOLVED');
+ const r=await api.call('GET',`/api/v1/visits/${f.visitId}/payment-recovery`,{token:f.desk});
+ assert.equal(r.status,200);assert.equal(r.body.pendingAnomaly,true);
+ assert.equal(r.body.intentions.filter((i:{status:string})=>i.status==='PENDING').length,2);
+ assert.equal((await prepare(f)).body.error.code,'PAYMENT_INTENT_UNRESOLVED');
  assert.equal((await record(f,id)).body.error.code,'PAYMENT_INTENT_UNRESOLVED');
 });
