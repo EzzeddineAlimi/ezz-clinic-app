@@ -456,3 +456,36 @@ for (const method of ["GET", "POST"] as const)
     ).not.toBeVisible();
     await expect(page.locator(".patient-row,.visit-row,dialog")).toHaveCount(0);
   });
+
+test("Dentist confirms fictional care through real API; receptionist remains denied", async ({ page }) => {
+  const desk = await login(page, "desk");
+  await expect(page.getByRole("button", { name: "Confirmer le soin" })).toHaveCount(0);
+  await login(page, "dentist");
+  const visit = page.locator(".visit-row").filter({ hasText: "Amira Ben Salem" });
+  await visit.getByRole("button", { name: "Confirmer le soin" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Amira Ben Salem");
+  await dialog.getByLabel("Code de l’acte *").fill("EXAM");
+  await dialog.getByLabel("Description de l’acte *").fill("Examen fictif");
+  await dialog.getByLabel("Honoraires (TND) *").fill("100.000");
+  const saved = page.waitForResponse((response) =>
+    response.url().endsWith("/care") &&
+    response.request().method() === "POST" &&
+    response.status() === 201,
+  );
+  await dialog.getByRole("button", { name: "Confirmer le soin" }).click();
+  const response = await saved;
+  expect(response.request().postDataJSON().feeMillimes).toBe(100000);
+  const care = (await response.json()) as { careItem: { visitId: string }, visitTotalMillimes: number };
+  expect(care.visitTotalMillimes).toBe(100000);
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByText("Soin enregistré par le dentiste.")).toBeVisible();
+  const denied = await page.request.post(`/api/v1/visits/${care.careItem.visitId}/care`, {
+    headers: {
+      Authorization: "Bearer " + desk.token,
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    data: { procedureCode: "TEST", procedureLabel: "Refused", feeMillimes: 1000 },
+  });
+  expect(denied.status()).toBe(403);
+});
