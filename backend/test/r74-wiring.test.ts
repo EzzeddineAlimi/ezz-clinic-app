@@ -40,3 +40,26 @@ test('T-WIRE-3 isUniqueViolation matches only a PostgreSQL unique violation', ()
   assert.equal(isUniqueViolation(Object.assign(new Error('x'), { code: '23505' })), false);
   assert.equal(isUniqueViolation(null), false);
 });
+
+// R75-D (Muse M-269 #32 residual a): the resolver is process-global. Once wired it must not be silently replaced, and
+// returning to "unwired" (fail closed) must be possible without relying on import order.
+test('T-WIRE-4 a second, different cash-period resolver is refused; re-wiring the same one is harmless', async () => {
+  const { buildRoutes } = await import('../src/app.ts');
+  const { Db } = await import('../src/platform/db.ts');
+  const billing = await import('../src/modules/billing.ts');
+  const db = new Db('postgres://fictional:fictional@127.0.0.1:1/never-connected', 1);
+  try {
+    buildRoutes(db);
+    buildRoutes(db); // a second app in the same process wires the same resolver
+    const stub = async () => '00000000-0000-4000-8000-0000000000ff';
+    assert.throws(() => billing.setCashPeriodResolver(stub), /already wired/);
+    await assert.rejects(cashPeriodFor(noOpenPeriodTx, actor, 'CASH'), (e: unknown) => e instanceof AppError && e.code === 'NO_OPEN_CASH_PERIOD', 'still the cash module resolver');
+  } finally { await db.close(); }
+});
+
+test('T-WIRE-5 resetting the resolver returns to fail-closed even after the app was built in this process', async () => {
+  const billing = await import('../src/modules/billing.ts');
+  billing.resetCashPeriodResolver();
+  await assert.rejects(cashPeriodFor(noOpenPeriodTx, actor, 'CASH'), /cash-period resolver is not wired/);
+  assert.equal(await cashPeriodFor(noOpenPeriodTx, actor, 'CARD'), null);
+});
