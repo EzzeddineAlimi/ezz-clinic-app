@@ -176,7 +176,7 @@ test("Record-time duplicate denial explains pending recovery, cancel and explici
   const denied = page.waitForResponse(r => r.url().endsWith("/record") && r.status() === 409);
   await d.getByRole("button", {name:"Confirmer l’encaissement"}).click();
   expect((await (await denied).json()).error.code).toBe("POSSIBLE_DUPLICATE_PAYMENT");
-  await expect(d.getByTestId("record-denied-guidance")).toContainText("nouvelle intention");
+  await expect(d.getByTestId("record-denied-guidance")).toContainText(/nouvelle intention/i);
   await expect(d.getByRole("button", {name:"Confirmer l’encaissement"})).toBeDisabled();
   await review(d);
   await d.getByRole("checkbox", {name:/cette intention n’a enregistré aucun paiement/}).check();
