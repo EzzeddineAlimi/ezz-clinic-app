@@ -57,6 +57,7 @@ export function DayBoard({
               key={v.id}
               visit={v}
               w={w}
+              lang={lang}
               writable={writable}
               api={api}
               refreshed={refreshed}
