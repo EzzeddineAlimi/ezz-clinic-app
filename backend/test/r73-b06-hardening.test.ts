@@ -202,7 +202,9 @@ test('T-INT-SCOPE-1 (M-267 7) called without row-level security, the check still
   const a = await clinic(); const b = await clinic();
   await confirmCare(api, a.dentist, a.visitId, 100_000); await pay(a, a.visitId, 20_000);
   await confirmCare(api, b.dentist, b.visitId, 100_000); await pay(b, b.visitId, 20_000); await pay(b, b.visitId, 30_000);
-  const su = new Db(process.env.EZZ_TEST_ADMIN_URL!.replace(/\/postgres$/, '/' + db.name)); // superuser: RLS does not apply
+  const adminUrl = new URL(process.env.EZZ_TEST_ADMIN_URL!);
+  adminUrl.pathname = '/' + db.name; // preserve TLS/host query parameters
+  const su = new Db(adminUrl.toString()); // superuser: RLS does not apply
   try {
     const r = await su.tx(a.clinic.id, tx => integrityCheck(tx, a.clinic.id));
     assert.deepEqual(r.findings.map(x => x.check), []);
