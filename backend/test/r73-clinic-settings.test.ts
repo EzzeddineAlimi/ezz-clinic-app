@@ -24,7 +24,8 @@ async function change(owner: string, body: Record<string, unknown>) {
   return api.call('POST', '/api/v1/clinic/settings', { token: owner, body });
 }
 /** A timezone whose local date differs from the UTC date right now. */
-const offsetTz = () => new Date().getUTCHours() >= 12 ? 'Pacific/Kiritimati' : 'Pacific/Pago_Pago';
+// A zone whose date differs from the UTC date right now (the old hour >= 12 switch picked a same-date zone 11:00-11:59 UTC).
+const offsetTz = () => ['Pacific/Kiritimati', 'Pacific/Pago_Pago'].find(z => localDate(z) !== new Date().toISOString().slice(0, 10))!;
 
 test('T-SET-1 defaults are readable by every role; only the owner (with password re-entry) can change them', async () => {
   const f = await fixture();

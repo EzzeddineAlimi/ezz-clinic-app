@@ -6,6 +6,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, startApi, standardFixture, confirmCare, newVisit, reauth, adminConn, type Api, type TestDb } from './helpers.ts';
+import { localDate } from '../src/modules/settings.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
@@ -184,8 +185,9 @@ test('T-OWN-8 unresolved integrity findings are counted (receipt row deleted aro
 
 test('T-OWN-9 (integration R72) the window uses clinic-local days: a discount made "today" locally is in today\'s local window even when the UTC date differs', async () => {
   // Pick a timezone whose local date differs from the UTC date right now, so a UTC-sliced window would miss it.
-  const tz = new Date().getUTCHours() >= 12 ? 'Pacific/Kiritimati' : 'Pacific/Pago_Pago';
-  const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  // (UTC+14 differs from 10:00 UTC on, UTC-11 until 10:59 UTC; the old hour >= 12 switch picked a same-date zone 11:00-11:59 UTC.)
+  const tz = ['Pacific/Kiritimati', 'Pacific/Pago_Pago'].find(z => localDate(z) !== new Date().toISOString().slice(0, 10))!;
+  const localToday = localDate(tz);
   assert.notEqual(localToday, new Date().toISOString().slice(0, 10));
   const f = await standardFixture(api, db, `b11-${++n}`);
   const a = await adminConn(db.name);
