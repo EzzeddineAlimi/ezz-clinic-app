@@ -2,6 +2,7 @@
 services:
   app:
     image: mcr.microsoft.com/devcontainers/javascript-node:22-bookworm
+    working_dir: /workspaces/ezz-clinic-app
     command: sleep infinity
     init: true
     volumes:
