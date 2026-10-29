@@ -122,7 +122,14 @@ const labExceptions: ExceptionSource = async ({ tx, asOfStart, settings: { labUn
 const integrityExceptions: ExceptionSource = async ({ tx, clinicId, asOfStart, settings: { checkpointDueDays } }) => {
   const out: OwnerException[] = [];
   const integ = await integrityCheck(tx, clinicId, []);
-  for (const f of integ.findings) out.push({ key: `integrity:${f.check.toLowerCase()}:finding`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: 'HIGH', wording: f.detail, known: 'Detected by recomputation', unknown: 'Who changed the data outside the app', nextStep: 'Stop and compare with the latest owner checkpoint and backup' });
+  for (const f of integ.findings) {
+    // CH-035: inconclusive legacy history is not a detected change; it is shown as such, at its own severity.
+    const inconclusive = (f.refs as { verdict?: string } | undefined)?.verdict === 'INCONCLUSIVE';
+    out.push({ key: `integrity:${f.check.toLowerCase()}:finding`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: inconclusive ? 'MEDIUM' : 'HIGH', wording: f.detail,
+      known: inconclusive ? 'Old history: the exact time was not recorded, so this could not be verified' : 'Detected by recomputation',
+      unknown: inconclusive ? 'Whether anything was changed' : 'Who changed the data outside the app',
+      nextStep: inconclusive ? 'Compare with the paper count sheet of that period' : 'Stop and compare with the latest owner checkpoint and backup' });
+  }
   const cp = await tx.maybeOne<{ at: string }>('SELECT max(created_at) AS at FROM audit_checkpoints');
   if (!cp?.at || new Date(cp.at).getTime() < asOfStart - checkpointDueDays * 86400_000) {
     out.push({ key: 'audit:checkpoint:due', kind: 'AUDIT_CHECKPOINT_DUE', evidence: 'SYSTEM_CHECK', severity: 'MEDIUM', wording: `No owner checkpoint in the last ${checkpointDueDays} days`, known: `Last checkpoint: ${cp?.at ?? 'never'}`,
