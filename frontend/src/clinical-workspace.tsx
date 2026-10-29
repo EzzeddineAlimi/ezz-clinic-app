@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Visit } from "./api.ts";
 import type { Lang, Words } from "./i18n.ts";
-import { encounterSchema, nonemptyNote } from "./clinical-contracts.ts";
+import { nonemptyNote } from "./clinical-contracts.ts";
 import { clinicalText } from "./clinical-text.ts";
 import { ErrorBox, Loading, Modal, useResource } from "./ui.tsx";
 import { nameOf } from "./forms.tsx";
