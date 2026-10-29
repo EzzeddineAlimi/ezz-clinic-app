@@ -239,7 +239,7 @@ export function Checkout({
         !data.data.recovery.balance.careConfirmed ||
         millimes > data.data.recovery.balance.balanceMillimes ||
         (tender === "CASH" && !data.data.cashOpen) ||
-        (duplicateDenied && !duplicateApproved)
+        ((duplicateDenied || matchingPrior) && !duplicateApproved)
       ) throw new Error("INVALID");
     } catch {
       setValidation(t.invalid);
@@ -252,7 +252,7 @@ export function Checkout({
           tender: tender as "CASH" | "CARD",
           recoveryVersion: data.data!.recovery.recoveryVersion,
           acknowledgedPaymentIds: [...data.data!.recovery.paymentIds],
-          ...(duplicateDenied && duplicateApproved ? { confirmDuplicate: true } : {}),
+          ...((duplicateDenied || matchingPrior) && duplicateApproved ? { confirmDuplicate: true } : {}),
         }, crypto.randomUUID());
         setPrepared(result.intent);
         setReviewed(false);
@@ -426,7 +426,7 @@ export function Checkout({
                     </select>
                   </label>
                 </fieldset>
-                {duplicateDenied && (
+                {(duplicateDenied || matchingPrior) && (
                   <div role="group" aria-label={t.duplicate}>
                     <p role="alert">{t.duplicate}</p>
                     <label><input type="checkbox" checked={duplicateApproved} disabled={blocked}
@@ -436,7 +436,7 @@ export function Checkout({
                 <footer className="form-footer">
                   <button className="primary" disabled={blocked || !reviewed || !tender ||
                     (tender === "CASH" && !data.data.cashOpen) ||
-                    (duplicateDenied && !duplicateApproved)}>
+                    ((duplicateDenied || matchingPrior) && !duplicateApproved)}>
                     {pending ? w.saving : t.prepare}
                   </button>
                 </footer>
