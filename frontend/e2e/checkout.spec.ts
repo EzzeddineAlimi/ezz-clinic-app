@@ -84,7 +84,7 @@ test("Durable preparation and lost committed record survive page reload without 
     const response = await route.fetch();
     expect(response.status()).toBe(201);
     committed = await response.json();
-    await route.abort("failed");
+    await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: { code: "INTERNAL" } }) });
   });
   await record(d);
   await expect(d.getByText(/Réponse incertaine/)).toBeVisible();
