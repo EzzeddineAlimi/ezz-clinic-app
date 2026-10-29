@@ -199,6 +199,8 @@ export function Checkout({
       setPrintDoc(undefined);
       setPrepared(undefined);
       setNeedsRecovery(true);
+      // A role or clinic denial invalidates the cached visit snapshot too.
+      data.refresh();
     }
   }
 
