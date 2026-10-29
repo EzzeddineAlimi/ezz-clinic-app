@@ -275,7 +275,13 @@ export function Checkout({
                       dir="ltr"
                       required
                       value={value}
-                      onChange={(e) => setValue(e.target.value)}
+                      onChange={(e) => {
+                        setValue(e.target.value);
+                        // The last server denial is for the PREVIOUS amount+tender only.
+                        // A different candidate is a new request, still checked by the server.
+                        setDuplicateDenied(false);
+                        setDuplicateApproved(false);
+                      }}
                     />
                   </label>
                   <label>
@@ -283,9 +289,11 @@ export function Checkout({
                     <select
                       required
                       value={tender}
-                      onChange={(e) =>
-                        setTender(e.target.value as typeof tender)
-                      }
+                      onChange={(e) => {
+                        setTender(e.target.value as typeof tender);
+                        setDuplicateDenied(false);
+                        setDuplicateApproved(false);
+                      }}
                     >
                       <option value="">{t.choose}</option>
                       <option value="CASH">{t.cash}</option>
