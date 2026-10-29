@@ -30,6 +30,64 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
   const [mode, setMode] = useState<"notes" | "findings" | "plans">("notes");
+  async function runClinicalWrite(
+    action: ClinicalMutation, form?: HTMLFormElement,
+  ): Promise<void> {
+    if (lock.current || chart.loading || chart.error || !chart.data ||
+        intent.uncertain || (unresolved && unresolved.key !== action.key)) return;
+    lock.current = true;
+    setSaving(true);
+    setError(undefined);
+    setNotice("");
+    try {
+      if (action.kind === "finding") {
+        await api.recordChartFinding(action.targetId, action.body, action.key);
+      } else if (action.kind === "plan") {
+        await api.addTreatmentPlanItem(action.targetId, action.body, action.key);
+      } else {
+        const body = action.body as {
+          status: "ACCEPTED" | "DECLINED" | "CANCELLED";
+          reason?: string;
+        };
+        await api.transitionTreatmentPlanItem(action.targetId, body, action.key);
+      }
+      setUnresolved(null);
+      if (form?.isConnected) form.reset();
+      setNotice(lang === "fr" ? "Écriture clinique enregistrée." : "تم تسجيل التغيير السريري.");
+      chart.refresh();
+    } catch (cause) {
+      setError(cause);
+      // Unknown transport/server response is NOT failure evidence.
+      // Freeze payload and idempotency key, never silently create another event.
+      if (cause instanceof ApiError &&
+          (cause.code === "NETWORK" || cause.code === "INVALID_RESPONSE" ||
+            cause.status >= 500)) {
+        setUnresolved(action);
+      } else {
+        setUnresolved(null);
+        if (cause instanceof ApiError && cause.status === 409) chart.refresh();
+      }
+    } finally {
+      setSaving(false);
+      lock.current = false;
+    }
+  }
+
+  function fromForm(
+    event: FormEvent<HTMLFormElement>, kind: ClinicalMutation["kind"],
+    targetId: string, makeBody: (fields: FormData) => Record<string, unknown>,
+  ) {
+    event.preventDefault();
+    if (lock.current || saving || unresolved || intent.uncertain ||
+        !chart.data || chart.error || chart.loading) return;
+    const form = event.currentTarget;
+    let body: Record<string, unknown>;
+    try { body = makeBody(new FormData(form)); }
+    catch (cause) { setError(cause); return; }
+    const action: ClinicalMutation = { kind, targetId, body, key: crypto.randomUUID() };
+    void runClinicalWrite(action, form);
+  }
+
   async function sign(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (saving || chart.loading || !chart.data || chart.error) return;
