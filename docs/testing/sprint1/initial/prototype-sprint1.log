@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: payment requires independently confirmed treatment
+ok 1 - payment requires independently confirmed treatment
+  ---
+  duration_ms: 1.083549
+  type: 'test'
+  ...
+# Subtest: partial payment leaves precise remaining credit
+ok 2 - partial payment leaves precise remaining credit
+  ---
+  duration_ms: 0.208545
+  type: 'test'
+  ...
+# Subtest: receipt numbers are sequential and preserved
+ok 3 - receipt numbers are sequential and preserved
+  ---
+  duration_ms: 0.138419
+  type: 'test'
+  ...
+# Subtest: overpayment cannot be accepted
+ok 4 - overpayment cannot be accepted
+  ---
+  duration_ms: 0.121443
+  type: 'test'
+  ...
+# Subtest: cash discrepancy found independent of card payments
+ok 5 - cash discrepancy found independent of card payments
+  ---
+  duration_ms: 0.392183
+  type: 'test'
+  ...
+# Subtest: cannot edit care confirmation twice
+ok 6 - cannot edit care confirmation twice
+  ---
+  duration_ms: 0.129656
+  type: 'test'
+  ...
+# Subtest: invalid payment amount rejected
+ok 7 - invalid payment amount rejected
+  ---
+  duration_ms: 0.162736
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 23.183315

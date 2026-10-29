@@ -1,0 +1,70 @@
+{
+  "app": "EZZ Clinic v0.2 fictional only",
+  "mode": "local temporary PostgreSQL, no patients or live payments",
+  "result": [
+    {
+      "stage": "Scheduled",
+      "status": "SCHEDULED",
+      "nextAction": "CHECK_IN",
+      "patientFileNo": 1,
+      "dentist": true,
+      "careItems": 0,
+      "payments": 0,
+      "chargedTND": "0",
+      "recordedPaidTND": "0",
+      "remainingTND": "0",
+      "receiptLabels": [],
+      "reminder": "Recorded cash must still be independently counted."
+    },
+    {
+      "stage": "Receptionist checked in patient",
+      "status": "IN_CHAIR",
+      "nextAction": "WAIT_FOR_DENTIST_CONFIRMATION",
+      "patientFileNo": 1,
+      "dentist": true,
+      "careItems": 0,
+      "payments": 0,
+      "chargedTND": "0",
+      "recordedPaidTND": "0",
+      "remainingTND": "0",
+      "receiptLabels": [],
+      "reminder": "Recorded cash must still be independently counted."
+    },
+    {
+      "stage": "Dentist confirmed 100 DT treatment",
+      "status": "COMPLETED",
+      "nextAction": "RECORD_OR_FOLLOW_UP_PAYMENT",
+      "patientFileNo": 1,
+      "dentist": true,
+      "careItems": 1,
+      "payments": 0,
+      "chargedTND": "100",
+      "recordedPaidTND": "0",
+      "remainingTND": "100",
+      "receiptLabels": [],
+      "reminder": "Recorded cash must still be independently counted."
+    },
+    {
+      "stage": "Receptionist recorded 70 DT cash, owner can review 30 DT outstanding",
+      "status": "COMPLETED",
+      "nextAction": "RECORD_OR_FOLLOW_UP_PAYMENT",
+      "patientFileNo": 1,
+      "dentist": true,
+      "careItems": 1,
+      "payments": 1,
+      "chargedTND": "100",
+      "recordedPaidTND": "70",
+      "remainingTND": "30",
+      "receiptLabels": [
+        "R-000001"
+      ],
+      "reminder": "Recorded cash must still be independently counted."
+    }
+  ],
+  "notVerified": [
+    "physical cash",
+    "patient actually paid",
+    "independent owner count",
+    "production fiscal receipt"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "name": "NODE_VERSION",
+      "ok": true,
+      "detail": "running v22.22.0, .nvmrc wants 22.23.4 (same major required)"
+    },
+    {
+      "name": "POSTGRESQL_VERSION",
+      "ok": true,
+      "detail": "server_version_num 160015 (16.x required)"
+    }
+  ]
+}

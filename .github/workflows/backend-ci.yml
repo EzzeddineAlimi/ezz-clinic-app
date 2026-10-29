@@ -1,0 +1,109 @@
+name: Backend v0.2 fictional-data checks
+
+# Synthetic data only. No secrets are configured or needed. No deployment step exists.
+on:
+  pull_request:
+    paths: ['backend/**', '.github/workflows/backend-ci.yml']
+  push:
+    branches: ['opus55/**']
+    paths: ['backend/**', '.github/workflows/backend-ci.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        timezone: ['UTC', 'Africa/Tunis', 'America/Toronto']
+    services:
+      postgres:
+        # TODO(ENG-03): pin by digest once verified from a trusted machine.
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fictional-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TZ: ${{ matrix.timezone }}
+      EZZ_TEST_ADMIN_URL: postgres://postgres:fictional-ci-only@localhost:5432/postgres
+      PGPASSWORD: fictional-ci-only
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      # Actions pinned to full commit SHAs (tags resolved via the GitHub API on 2026-10-28; re-verify before trusting).
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: backend/.nvmrc
+      - name: Install pinned dev tools (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Privacy guard — no data files outside fixtures
+        run: |
+          if git -C .. ls-files | grep -Ei '\.(sqlite|db|dump|dcm|csv|xlsx|pdf)$' | grep -v '^backend/test/fixtures/synthetic/'; then
+            echo "Data-like file committed outside backend/test/fixtures/synthetic/"; exit 1; fi
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests (real PostgreSQL; fictional data)
+        run: npm test
+      - name: Fictional clinic-day journey (throwaway PostgreSQL database)
+        run: node scripts/demo-visit-journey.ts
+      - name: Fictional dentist encounter walkthrough (throwaway PostgreSQL database)
+        run: node scripts/demo-dentist-encounter.ts > /dev/null
+      - name: Compiled build smoke
+        run: npm run build
+      - name: Compiled test run (same suite from dist/, R73-B)
+        run: npm run test:dist
+      - name: Migration ledger check on a fresh database (R73-B)
+        run: |
+          node --input-type=module -e "import pg from 'pg'; const c = new pg.Client(process.env.EZZ_TEST_ADMIN_URL); await c.connect(); await c.query('DROP DATABASE IF EXISTS ezz_ci_migcheck'); await c.query('CREATE DATABASE ezz_ci_migcheck'); await c.end();"
+          MIGRATION_DATABASE_URL=postgres://postgres:fictional-ci-only@localhost:5432/ezz_ci_migcheck node scripts/migrate.ts
+          MIGRATION_DATABASE_URL=postgres://postgres:fictional-ci-only@localhost:5432/ezz_ci_migcheck node scripts/migrate.ts --check
+          EZZ_TEST_ADMIN_URL=$EZZ_TEST_ADMIN_URL node scripts/doctor.ts
+
+  # R73-I: forward-compatibility evidence for the next Node LTS lines (Node 22 reaches end of life in April 2027;
+  # Gemini GEM-REV-006 / GPT asked for this). The supported runtime stays .nvmrc (22.x) until a recorded decision.
+  forward-node:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['24', '26']
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fictional-ci-only
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      EZZ_TEST_ADMIN_URL: postgres://postgres:fictional-ci-only@localhost:5432/postgres
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install pinned dev tools (no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Tests on Node ${{ matrix.node }} (TAP output, same suite)
+        run: node --test --test-reporter=tap --test-concurrency=1 --test-timeout=60000 test/*.test.ts

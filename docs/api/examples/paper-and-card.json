@@ -1,0 +1,1153 @@
+{
+  "title": "Card statements and paper-outage slip books",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "paper-and-card",
+      "title": "Card settings (account last 4, settlement lag)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/card/settings",
+      "path": "/api/v1/card/settings",
+      "request": {
+        "accountLast4": "4321",
+        "settlementLagDays": 2
+      },
+      "status": 200,
+      "response": {
+        "settings": {
+          "accountLast4": "4321",
+          "settlementLagDays": 2,
+          "matchWindowDays": 7,
+          "importStaleAfterDays": 7
+        }
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Another visit",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits",
+      "path": "/api/v1/visits",
+      "request": {
+        "patientId": "<id-9>",
+        "scheduledAt": "<timestamp>"
+      },
+      "status": 201,
+      "response": {
+        "visit": {
+          "id": "<id-36>",
+          "patientId": "<id-9>",
+          "scheduledAt": "<timestamp>",
+          "dentistId": null,
+          "durationMin": 30,
+          "status": "SCHEDULED"
+        }
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Card payment to be matched",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-36>/payments",
+      "request": {
+        "amountMillimes": 40000,
+        "tender": "CARD"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-37>",
+          "visitId": "<id-36>",
+          "patientId": "<id-9>",
+          "amountMillimes": 40000,
+          "tender": "CARD",
+          "source": "DESK",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-3>",
+          "cashPeriodId": null,
+          "evidence": {
+            "tier": "DESK_CLAIM",
+            "label": {
+              "fr": "Carte — déclaration accueil uniquement (non vérifiée)",
+              "ar": "بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "<id-38>",
+          "number": 5,
+          "label": "R-000005"
+        },
+        "balanceAfterMillimes": 0
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Import a (fictional) bank statement CSV",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/card/statement-imports",
+      "path": "/api/v1/card/statement-imports",
+      "request": {
+        "fileName": "fictional-statement.csv",
+        "csv": "date,amount_tnd,type,terminal_ref,card_last4,description\n2026-10-29,40.000,CARD,,,Fictional card sale",
+        "accountLast4": "4321",
+        "periodStart": "2026-10-29",
+        "periodEnd": "2026-10-29",
+        "totalSource": "NOT_PROVIDED"
+      },
+      "status": 201,
+      "response": {
+        "import": {
+          "id": "<id-39>",
+          "status": "ACCEPTED_NO_TOTAL",
+          "fileSha256": "<sha256>",
+          "cardLines": 1,
+          "linesNew": 1,
+          "linesAlreadyKnown": 0,
+          "discardedNonCard": 0,
+          "missingFromThisFile": []
+        },
+        "evidenceTierReachable": "OWNER_REVIEWED_STATEMENT",
+        "warning": "No batch total: source not verified"
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Card reconciliation (claims vs statement lines)",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/card/reconciliation",
+      "path": "/api/v1/card/reconciliation",
+      "request": null,
+      "status": 200,
+      "response": {
+        "asOf": "2026-10-29",
+        "tiers": {
+          "DESK_CLAIM": "unverified desk record",
+          "OWNER_REVIEWED_STATEMENT": "owner linked an imported statement line; file origin not verified",
+          "PROVIDER_VERIFIED": "UNREACHABLE in v0.2: no authenticated provider source"
+        },
+        "claims": [
+          {
+            "paymentId": "<id-37>",
+            "amountMillimes": 40000,
+            "date": "2026-10-29",
+            "tier": "DESK_CLAIM",
+            "status": "CANDIDATE_OWNER_CONFIRMS",
+            "exception": true,
+            "ageDays": 0,
+            "wording": "Possible statement line — owner confirms",
+            "candidates": [
+              {
+                "statementLineId": "<id-40>",
+                "date": "2026-10-29",
+                "amountMillimes": 40000,
+                "strength": "AMOUNT_DATE_ONLY",
+                "competingClaims": [],
+                "sourceWarning": "statement imported without an independent total: source not verified"
+              }
+            ]
+          }
+        ],
+        "statementLines": [],
+        "importHealth": {
+          "statementImportedThrough": "2026-10-29",
+          "daysBehind": 0,
+          "banner": null
+        },
+        "exceptionCount": 1,
+        "scope": "Compares desk card records with owner-imported statements. A card taken on a personal terminal, or cash taken while a coincidental line matches, cannot be detected."
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Owner matches a card payment to a statement line",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/card/matches",
+      "path": "/api/v1/card/matches",
+      "request": {
+        "paymentId": "<id-37>",
+        "statementLineId": "<id-40>",
+        "ambiguityAcknowledged": true,
+        "note": "Fictional: checked the slip"
+      },
+      "status": 201,
+      "response": {
+        "match": {
+          "id": "<id-41>",
+          "paymentId": "<id-37>",
+          "statementLineId": "<id-40>",
+          "evidenceTier": "OWNER_REVIEWED_STATEMENT",
+          "basis": "AMOUNT_DATE_ONLY"
+        }
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Issue a numbered paper slip book for outages",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/paper-books",
+      "path": "/api/v1/paper-books",
+      "request": {
+        "firstNo": 301,
+        "lastNo": 305,
+        "custodianStaffId": "<id-2>"
+      },
+      "status": 201,
+      "response": {
+        "book": {
+          "id": "<id-42>",
+          "range": "P-301..P-305",
+          "custodianStaffId": "<id-2>"
+        }
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Print the paper slips (FR/AR)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/paper-books/:id/print",
+      "path": "/api/v1/paper-books/<id-42>/print",
+      "request": {
+        "lang": "both"
+      },
+      "status": 200,
+      "response": {
+        "book": {
+          "id": "<id-42>",
+          "range": "P-301..P-305"
+        },
+        "printNo": 1,
+        "form": {
+          "title": {
+            "fr": "Reçu provisoire (panne)",
+            "ar": "وصل مؤقت (عطل)"
+          },
+          "parts": [
+            {
+              "fr": "Copie patient",
+              "ar": "نسخة المريض"
+            },
+            {
+              "fr": "Souche cabinet",
+              "ar": "أرومة العيادة"
+            }
+          ],
+          "fields": [
+            {
+              "key": "slipNo",
+              "apiField": "slipNo",
+              "kind": "preprinted",
+              "required": true,
+              "label": {
+                "fr": "N° de reçu provisoire",
+                "ar": "رقم الوصل المؤقت"
+              }
+            },
+            {
+              "key": "writtenOn",
+              "apiField": "writtenOn",
+              "kind": "date",
+              "required": true,
+              "label": {
+                "fr": "Date",
+                "ar": "التاريخ"
+              }
+            },
+            {
+              "key": "patientFileNo",
+              "apiField": "patientFileNo",
+              "kind": "number",
+              "required": true,
+              "label": {
+                "fr": "N° de dossier du patient",
+                "ar": "رقم ملف المريض"
+              },
+              "hint": {
+                "fr": "Recopier depuis la carte ou le dossier du patient.",
+                "ar": "يُنقل من بطاقة المريض أو ملفه."
+              }
+            },
+            {
+              "key": "patientName",
+              "kind": "text",
+              "required": true,
+              "label": {
+                "fr": "Nom et prénom du patient",
+                "ar": "اسم المريض ولقبه"
+              }
+            },
+            {
+              "key": "amount",
+              "apiField": "amountMillimes",
+              "kind": "number",
+              "required": true,
+              "label": {
+                "fr": "Montant (DT, millimes)",
+                "ar": "المبلغ (د.ت، مليم)"
+              }
+            },
+            {
+              "key": "tender",
+              "apiField": "tender",
+              "kind": "choice",
+              "required": true,
+              "label": {
+                "fr": "Mode de paiement",
+                "ar": "طريقة الدفع"
+              },
+              "choices": [
+                {
+                  "value": "CASH",
+                  "label": {
+                    "fr": "Espèces",
+                    "ar": "نقدًا"
+                  }
+                },
+                {
+                  "value": "CARD",
+                  "label": {
+                    "fr": "Carte",
+                    "ar": "بطاقة"
+                  }
+                }
+              ]
+            },
+            {
+              "key": "receivedBy",
+              "kind": "signature",
+              "required": true,
+              "label": {
+                "fr": "Reçu par (signature)",
+                "ar": "استلمه (الإمضاء)"
+              }
+            }
+          ],
+          "reentry": {
+            "fr": "Après le retour du système : saisir N°, date, n° de dossier, montant et mode ; un reçu annulé est saisi « annulé » avec un motif.",
+            "ar": "بعد عودة النظام: يُدخل الرقم والتاريخ ورقم الملف والمبلغ وطريقة الدفع؛ الوصل الملغى يُدخل «ملغى» مع ذكر السبب."
+          }
+        },
+        "slips": [
+          {
+            "documentType": "FORM_OUTAGE_SLIP",
+            "reference": "P-301",
+            "size": "normal",
+            "fontPt": 12,
+            "sections": [
+              {
+                "lang": "fr",
+                "dir": "ltr",
+                "title": "Reçu provisoire (panne)",
+                "mark": null,
+                "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "Copie patient / Souche cabinet",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "N° de reçu provisoire",
+                    "value": "P-301",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "Date",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "N° de dossier du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "Nom et prénom du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "Montant (DT, millimes)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "Mode de paiement : ☐ Espèces   ☐ Carte",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "Reçu par (signature)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "Après le retour du système : saisir N°, date, n° de dossier, montant et mode ; un reçu annulé est saisi « annulé » avec un motif.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              },
+              {
+                "lang": "ar",
+                "dir": "rtl",
+                "title": "وصل مؤقت (عطل)",
+                "mark": null,
+                "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "نسخة المريض / أرومة العيادة",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "رقم الوصل المؤقت",
+                    "value": "P-301",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "التاريخ",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "رقم ملف المريض",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "اسم المريض ولقبه",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "المبلغ (د.ت، مليم)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "طريقة الدفع : ☐ نقدًا   ☐ بطاقة",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "استلمه (الإمضاء)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "بعد عودة النظام: يُدخل الرقم والتاريخ ورقم الملف والمبلغ وطريقة الدفع؛ الوصل الملغى يُدخل «ملغى» مع ذكر السبب.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "documentType": "FORM_OUTAGE_SLIP",
+            "reference": "P-302",
+            "size": "normal",
+            "fontPt": 12,
+            "sections": [
+              {
+                "lang": "fr",
+                "dir": "ltr",
+                "title": "Reçu provisoire (panne)",
+                "mark": null,
+                "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "Copie patient / Souche cabinet",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "N° de reçu provisoire",
+                    "value": "P-302",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "Date",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "N° de dossier du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "Nom et prénom du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "Montant (DT, millimes)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "Mode de paiement : ☐ Espèces   ☐ Carte",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "Reçu par (signature)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "Après le retour du système : saisir N°, date, n° de dossier, montant et mode ; un reçu annulé est saisi « annulé » avec un motif.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              },
+              {
+                "lang": "ar",
+                "dir": "rtl",
+                "title": "وصل مؤقت (عطل)",
+                "mark": null,
+                "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "نسخة المريض / أرومة العيادة",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "رقم الوصل المؤقت",
+                    "value": "P-302",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "التاريخ",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "رقم ملف المريض",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "اسم المريض ولقبه",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "المبلغ (د.ت، مليم)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "طريقة الدفع : ☐ نقدًا   ☐ بطاقة",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "استلمه (الإمضاء)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "بعد عودة النظام: يُدخل الرقم والتاريخ ورقم الملف والمبلغ وطريقة الدفع؛ الوصل الملغى يُدخل «ملغى» مع ذكر السبب.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "documentType": "FORM_OUTAGE_SLIP",
+            "reference": "P-303",
+            "size": "normal",
+            "fontPt": 12,
+            "sections": [
+              {
+                "lang": "fr",
+                "dir": "ltr",
+                "title": "Reçu provisoire (panne)",
+                "mark": null,
+                "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "Copie patient / Souche cabinet",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "N° de reçu provisoire",
+                    "value": "P-303",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "Date",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "N° de dossier du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "Nom et prénom du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "Montant (DT, millimes)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "Mode de paiement : ☐ Espèces   ☐ Carte",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "Reçu par (signature)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "Après le retour du système : saisir N°, date, n° de dossier, montant et mode ; un reçu annulé est saisi « annulé » avec un motif.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              },
+              {
+                "lang": "ar",
+                "dir": "rtl",
+                "title": "وصل مؤقت (عطل)",
+                "mark": null,
+                "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "نسخة المريض / أرومة العيادة",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "رقم الوصل المؤقت",
+                    "value": "P-303",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "التاريخ",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "رقم ملف المريض",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "اسم المريض ولقبه",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "المبلغ (د.ت، مليم)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "طريقة الدفع : ☐ نقدًا   ☐ بطاقة",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "استلمه (الإمضاء)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "بعد عودة النظام: يُدخل الرقم والتاريخ ورقم الملف والمبلغ وطريقة الدفع؛ الوصل الملغى يُدخل «ملغى» مع ذكر السبب.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "documentType": "FORM_OUTAGE_SLIP",
+            "reference": "P-304",
+            "size": "normal",
+            "fontPt": 12,
+            "sections": [
+              {
+                "lang": "fr",
+                "dir": "ltr",
+                "title": "Reçu provisoire (panne)",
+                "mark": null,
+                "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "Copie patient / Souche cabinet",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "N° de reçu provisoire",
+                    "value": "P-304",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "Date",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "N° de dossier du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "Nom et prénom du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "Montant (DT, millimes)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "Mode de paiement : ☐ Espèces   ☐ Carte",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "Reçu par (signature)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "Après le retour du système : saisir N°, date, n° de dossier, montant et mode ; un reçu annulé est saisi « annulé » avec un motif.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              },
+              {
+                "lang": "ar",
+                "dir": "rtl",
+                "title": "وصل مؤقت (عطل)",
+                "mark": null,
+                "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "نسخة المريض / أرومة العيادة",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "رقم الوصل المؤقت",
+                    "value": "P-304",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "التاريخ",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "رقم ملف المريض",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "اسم المريض ولقبه",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "المبلغ (د.ت، مليم)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "طريقة الدفع : ☐ نقدًا   ☐ بطاقة",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "استلمه (الإمضاء)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "بعد عودة النظام: يُدخل الرقم والتاريخ ورقم الملف والمبلغ وطريقة الدفع؛ الوصل الملغى يُدخل «ملغى» مع ذكر السبب.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "documentType": "FORM_OUTAGE_SLIP",
+            "reference": "P-305",
+            "size": "normal",
+            "fontPt": 12,
+            "sections": [
+              {
+                "lang": "fr",
+                "dir": "ltr",
+                "title": "Reçu provisoire (panne)",
+                "mark": null,
+                "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "Copie patient / Souche cabinet",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "N° de reçu provisoire",
+                    "value": "P-305",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "Date",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "N° de dossier du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "Nom et prénom du patient",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "Montant (DT, millimes)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "Mode de paiement : ☐ Espèces   ☐ Carte",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "Reçu par (signature)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "Après le retour du système : saisir N°, date, n° de dossier, montant et mode ; un reçu annulé est saisi « annulé » avec un motif.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              },
+              {
+                "lang": "ar",
+                "dir": "rtl",
+                "title": "وصل مؤقت (عطل)",
+                "mark": null,
+                "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها.",
+                "lines": [
+                  {
+                    "key": "parts",
+                    "label": "نسخة المريض / أرومة العيادة",
+                    "value": "",
+                    "isolate": false
+                  },
+                  {
+                    "key": "slipNo",
+                    "label": "رقم الوصل المؤقت",
+                    "value": "P-305",
+                    "isolate": true
+                  },
+                  {
+                    "key": "writtenOn",
+                    "label": "التاريخ",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientFileNo",
+                    "label": "رقم ملف المريض",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "patientName",
+                    "label": "اسم المريض ولقبه",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "amount",
+                    "label": "المبلغ (د.ت، مليم)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "tender",
+                    "label": "طريقة الدفع : ☐ نقدًا   ☐ بطاقة",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "receivedBy",
+                    "label": "استلمه (الإمضاء)",
+                    "value": "",
+                    "isolate": true
+                  },
+                  {
+                    "key": "reentry",
+                    "label": "بعد عودة النظام: يُدخل الرقم والتاريخ ورقم الملف والمبلغ وطريقة الدفع؛ الوصل الملغى يُدخل «ملغى» مع ذكر السبب.",
+                    "value": "",
+                    "isolate": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Enter slips written during an outage",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/paper-books/:id/entries",
+      "path": "/api/v1/paper-books/<id-42>/entries",
+      "request": {
+        "slips": [
+          {
+            "slipNo": 301,
+            "kind": "USED",
+            "amountMillimes": 25000,
+            "tender": "CASH",
+            "visitId": "<id-43>",
+            "writtenOn": "2026-10-28",
+            "patientFileNo": 1
+          },
+          {
+            "slipNo": 302,
+            "kind": "VOID",
+            "note": "Fictional spoiled slip"
+          }
+        ]
+      },
+      "status": 200,
+      "response": {
+        "results": [
+          {
+            "slip": "P-301",
+            "outcome": "POSTED",
+            "paymentId": "<id-44>",
+            "paymentsCreated": 1
+          },
+          {
+            "slip": "P-302",
+            "outcome": "VOID_RECORDED",
+            "paymentId": null,
+            "paymentsCreated": 0
+          }
+        ],
+        "summary": {
+          "posted": 1,
+          "flagged": 0,
+          "rejected": 0
+        },
+        "note": "Paper slips are their own numbered series (P-nnn); no electronic receipt number was used."
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Custodian declares unused slips",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/paper-books/:id/declare-unused",
+      "path": "/api/v1/paper-books/<id-42>/declare-unused",
+      "request": {
+        "slipNos": [
+          303,
+          304
+        ]
+      },
+      "status": 200,
+      "response": {
+        "declaredUnused": [
+          "P-303",
+          "P-304"
+        ],
+        "alreadyAccountedFor": []
+      }
+    },
+    {
+      "file": "paper-and-card",
+      "title": "Paper book reconciliation (unaccounted slips, care without slips)",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/paper-books/:id/reconciliation",
+      "path": "/api/v1/paper-books/<id-42>/reconciliation",
+      "request": null,
+      "status": 200,
+      "response": {
+        "book": {
+          "id": "<id-42>",
+          "range": "P-301..P-305",
+          "custodianStaffId": "<id-2>"
+        },
+        "used": [
+          "P-301"
+        ],
+        "void": [
+          "P-302"
+        ],
+        "unusedDeclared": [
+          "P-303",
+          "P-304"
+        ],
+        "unaccounted": [
+          "P-305"
+        ],
+        "postedTotalMillimes": 25000,
+        "reviewItems": [
+          {
+            "slip": "P-305",
+            "kind": "NOT_ACCOUNTED_FOR",
+            "wording": "Slip P-305 not accounted for"
+          }
+        ],
+        "careVsSlips": {
+          "slips": [
+            {
+              "slip": "P-301",
+              "visitId": "<id-43>",
+              "fileNo": 1,
+              "slipPatientFileNo": 1,
+              "writtenOn": "2026-10-28",
+              "visitLocalDate": "2026-10-28",
+              "chargedMillimes": 25000,
+              "paidBySlipMillimes": 25000,
+              "paidOtherwiseMillimes": 0,
+              "balanceMillimes": 0
+            }
+          ],
+          "totals": {
+            "slips": 1,
+            "visits": 1,
+            "slipTotalMillimes": 25000,
+            "chargedMillimes": 25000,
+            "paidOtherwiseMillimes": 0,
+            "balanceMillimes": 0
+          },
+          "wording": "Slip amounts next to the care charged on the same visit. A partial payment or a later desk payment is normal; the patient copy is the reference."
+        },
+        "careWithoutPayment": null,
+        "scope": "Checks entered slips only. A payment never written on a slip cannot be detected. The paper slip and the patient copy remain the reference."
+      }
+    }
+  ]
+}

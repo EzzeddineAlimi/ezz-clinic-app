@@ -1,0 +1,625 @@
+{
+  "title": "Dentist extras: plan items, alert acknowledgement, perform, site amendment, addenda, findings in error, clinical record",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "clinical-extras",
+      "title": "Treatment plan item (proposed)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/treatment-plan-items",
+      "path": "/api/v1/patients/<id-9>/treatment-plan-items",
+      "request": {
+        "procedureCode": "RESTO",
+        "procedureLabel": "Fictional composite",
+        "toothFdi": 36,
+        "surfaces": "MO",
+        "estimatedFeeMillimes": 80000,
+        "visitId": "<id-10>"
+      },
+      "status": 201,
+      "response": {
+        "planItem": {
+          "id": "<id-12>",
+          "patientId": "<id-9>",
+          "createdInVisitId": "<id-10>",
+          "procedureCode": "RESTO",
+          "procedureLabel": "Fictional composite",
+          "toothFdi": 36,
+          "surfaces": "MO",
+          "phaseNo": 2,
+          "estimatedFeeMillimes": 80000,
+          "note": null,
+          "createdByName": "Fictional dentist",
+          "createdAt": "<timestamp>",
+          "status": "PROPOSED",
+          "lastSeq": 0,
+          "careItemId": null,
+          "events": []
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "A second plan item",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/treatment-plan-items",
+      "path": "/api/v1/patients/<id-9>/treatment-plan-items",
+      "request": {
+        "procedureCode": "SCALE",
+        "procedureLabel": "Fictional scaling",
+        "estimatedFeeMillimes": 50000,
+        "visitId": "<id-10>"
+      },
+      "status": 201,
+      "response": {
+        "planItem": {
+          "id": "<id-13>",
+          "patientId": "<id-9>",
+          "createdInVisitId": "<id-10>",
+          "procedureCode": "SCALE",
+          "procedureLabel": "Fictional scaling",
+          "toothFdi": null,
+          "surfaces": null,
+          "phaseNo": 2,
+          "estimatedFeeMillimes": 50000,
+          "note": null,
+          "createdByName": "Fictional dentist",
+          "createdAt": "<timestamp>",
+          "status": "PROPOSED",
+          "lastSeq": 0,
+          "careItemId": null,
+          "events": []
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Patient accepts the plan item (recorded by the dentist)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/treatment-plan-items/:id/status",
+      "path": "/api/v1/treatment-plan-items/<id-13>/status",
+      "request": {
+        "status": "ACCEPTED"
+      },
+      "status": 201,
+      "response": {
+        "planItem": {
+          "id": "<id-13>",
+          "patientId": "<id-9>",
+          "createdInVisitId": "<id-10>",
+          "procedureCode": "SCALE",
+          "procedureLabel": "Fictional scaling",
+          "toothFdi": null,
+          "surfaces": null,
+          "phaseNo": 2,
+          "estimatedFeeMillimes": 50000,
+          "note": null,
+          "createdByName": "Fictional dentist",
+          "createdAt": "<timestamp>",
+          "status": "ACCEPTED",
+          "lastSeq": 1,
+          "careItemId": null,
+          "events": [
+            {
+              "at": "<timestamp>",
+              "seq": 1,
+              "byName": "Fictional dentist",
+              "reason": null,
+              "status": "ACCEPTED",
+              "careItemId": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Treatment plan",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id/treatment-plan",
+      "path": "/api/v1/patients/<id-9>/treatment-plan",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patientId": "<id-9>",
+        "items": [
+          {
+            "id": "<id-12>",
+            "patientId": "<id-9>",
+            "createdInVisitId": "<id-10>",
+            "procedureCode": "RESTO",
+            "procedureLabel": "Fictional composite",
+            "toothFdi": 36,
+            "surfaces": "MO",
+            "phaseNo": 2,
+            "estimatedFeeMillimes": 80000,
+            "note": null,
+            "createdByName": "Fictional dentist",
+            "createdAt": "<timestamp>",
+            "status": "PROPOSED",
+            "lastSeq": 0,
+            "careItemId": null,
+            "events": []
+          },
+          {
+            "id": "<id-13>",
+            "patientId": "<id-9>",
+            "createdInVisitId": "<id-10>",
+            "procedureCode": "SCALE",
+            "procedureLabel": "Fictional scaling",
+            "toothFdi": null,
+            "surfaces": null,
+            "phaseNo": 2,
+            "estimatedFeeMillimes": 50000,
+            "note": null,
+            "createdByName": "Fictional dentist",
+            "createdAt": "<timestamp>",
+            "status": "ACCEPTED",
+            "lastSeq": 1,
+            "careItemId": null,
+            "events": [
+              {
+                "at": "<timestamp>",
+                "seq": 1,
+                "byName": "Fictional dentist",
+                "reason": null,
+                "status": "ACCEPTED",
+                "careItemId": null
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Acknowledge the current alert set for this visit",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/alert-acknowledgements",
+      "path": "/api/v1/visits/<id-10>/alert-acknowledgements",
+      "request": {
+        "alertSetHash": "<sha256>"
+      },
+      "status": 201,
+      "response": {
+        "acknowledgement": {
+          "id": "<id-14>",
+          "visitId": "<id-10>",
+          "alertSetHash": "<sha256>",
+          "activeAlertCount": 0,
+          "acknowledgedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Perform an accepted plan item (creates the billable care item)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/treatment-plan-items/:id/perform",
+      "path": "/api/v1/treatment-plan-items/<id-13>/perform",
+      "request": {
+        "visitId": "<id-10>",
+        "alertSetHash": "<sha256>"
+      },
+      "status": 201,
+      "response": {
+        "careItem": {
+          "id": "<id-15>",
+          "visitId": "<id-10>",
+          "kind": "CARE",
+          "procedureCode": "SCALE",
+          "procedureLabel": "Fictional scaling",
+          "toothFdi": null,
+          "surfaces": null,
+          "feeMillimes": 50000,
+          "confirmedBy": "<id-2>",
+          "confirmedAt": "<timestamp>"
+        },
+        "visitTotalMillimes": 50000,
+        "planItem": {
+          "id": "<id-13>",
+          "patientId": "<id-9>",
+          "createdInVisitId": "<id-10>",
+          "procedureCode": "SCALE",
+          "procedureLabel": "Fictional scaling",
+          "toothFdi": null,
+          "surfaces": null,
+          "phaseNo": 2,
+          "estimatedFeeMillimes": 50000,
+          "note": null,
+          "createdByName": "Fictional dentist",
+          "createdAt": "<timestamp>",
+          "status": "COMPLETED",
+          "lastSeq": 2,
+          "careItemId": "<id-15>",
+          "events": [
+            {
+              "at": "<timestamp>",
+              "seq": 1,
+              "byName": "Fictional dentist",
+              "reason": null,
+              "status": "ACCEPTED",
+              "careItemId": null
+            },
+            {
+              "at": "<timestamp>",
+              "seq": 2,
+              "byName": "Fictional dentist",
+              "reason": null,
+              "status": "COMPLETED",
+              "careItemId": "<id-15>"
+            }
+          ]
+        },
+        "quoteVsCharged": {
+          "estimatedFeeMillimes": 50000,
+          "chargedFeeMillimes": 50000,
+          "differenceMillimes": 0
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Correct the recorded site (fee-neutral, dentist-signed)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/care-items/:id/site-amendments",
+      "path": "/api/v1/care-items/<id-15>/site-amendments",
+      "request": {
+        "toothFdi": 46,
+        "reasonCode": "TRANSCRIPTION",
+        "expectedSupersedesId": null
+      },
+      "status": 201,
+      "response": {
+        "siteAmendment": {
+          "id": "<id-16>",
+          "careItemId": "<id-15>",
+          "supersedesId": null,
+          "previousSite": {
+            "toothFdi": null,
+            "surfaces": null
+          },
+          "newSite": {
+            "toothFdi": 46,
+            "surfaces": null
+          },
+          "reasonCode": "TRANSCRIPTION",
+          "reasonNote": null,
+          "amendedBy": "<id-2>",
+          "amendedByName": "Fictional dentist",
+          "amendedAt": "<timestamp>"
+        },
+        "effectiveSite": {
+          "toothFdi": 46,
+          "surfaces": null
+        },
+        "visitTotalMillimes": 50000
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Clinical note",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/clinical-notes",
+      "path": "/api/v1/visits/<id-10>/clinical-notes",
+      "request": {
+        "objective": "Fictional: plaque",
+        "plan": "Fictional: scaling done"
+      },
+      "status": 201,
+      "response": {
+        "note": {
+          "id": "<id-17>",
+          "visitId": "<id-10>",
+          "kind": "NOTE",
+          "subjective": null,
+          "objective": "Fictional: plaque",
+          "assessment": null,
+          "plan": "Fictional: scaling done",
+          "effectiveAt": "<timestamp>",
+          "reason": null,
+          "contentSha256": "<sha256>",
+          "signedBy": "<id-2>",
+          "signedByName": "Fictional dentist",
+          "signedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Addendum to a signed note (the original is never edited)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/clinical-notes/:id/addenda",
+      "path": "/api/v1/clinical-notes/<id-17>/addenda",
+      "request": {
+        "kind": "ADDENDUM",
+        "plan": "Fictional: review in 2 weeks"
+      },
+      "status": 201,
+      "response": {
+        "note": {
+          "id": "<id-18>",
+          "kind": "ADDENDUM",
+          "parentNoteId": "<id-17>",
+          "visitId": "<id-10>",
+          "subjective": null,
+          "objective": null,
+          "assessment": null,
+          "plan": "Fictional: review in 2 weeks",
+          "reason": null,
+          "contentSha256": "<sha256>",
+          "signedByName": "Fictional dentist",
+          "signedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Chart finding",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/chart-findings",
+      "path": "/api/v1/visits/<id-10>/chart-findings",
+      "request": {
+        "kind": "FINDING",
+        "toothFdi": 21,
+        "conditionCode": "CARIES"
+      },
+      "status": 201,
+      "response": {
+        "finding": {
+          "id": "<id-19>",
+          "visitId": "<id-10>",
+          "kind": "FINDING",
+          "toothFdi": 21,
+          "areaCode": null,
+          "surfaces": null,
+          "conditionCode": "CARIES",
+          "note": null,
+          "recordedByName": "Fictional dentist",
+          "recordedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Mark a finding entered in error (reason required; stays in history)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/chart-findings/:id/entered-in-error",
+      "path": "/api/v1/chart-findings/<id-19>/entered-in-error",
+      "request": {
+        "reason": "Fictional: wrong tooth"
+      },
+      "status": 201,
+      "response": {
+        "struck": {
+          "id": "<id-20>",
+          "findingId": "<id-19>",
+          "reason": "Fictional: wrong tooth"
+        }
+      }
+    },
+    {
+      "file": "clinical-extras",
+      "title": "Clinical record of the patient",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id/clinical-record",
+      "path": "/api/v1/patients/<id-9>/clinical-record",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patient": {
+          "id": "<id-9>",
+          "fileNo": 1,
+          "familyName": "Ben Fictif",
+          "givenName": "Hedi",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "preferredLanguage": "fr"
+        },
+        "medical": {
+          "activeAlerts": [],
+          "alertSetHash": "<sha256>",
+          "reviewStatus": "NEVER_REVIEWED",
+          "allergyStatus": "NOT_RECORDED",
+          "lastReview": null,
+          "alerts": [],
+          "reviews": []
+        },
+        "treatmentPlan": [
+          {
+            "id": "<id-12>",
+            "patientId": "<id-9>",
+            "createdInVisitId": "<id-10>",
+            "procedureCode": "RESTO",
+            "procedureLabel": "Fictional composite",
+            "toothFdi": 36,
+            "surfaces": "MO",
+            "phaseNo": 2,
+            "estimatedFeeMillimes": 80000,
+            "note": null,
+            "createdByName": "Fictional dentist",
+            "createdAt": "<timestamp>",
+            "status": "PROPOSED",
+            "lastSeq": 0,
+            "careItemId": null,
+            "events": []
+          },
+          {
+            "id": "<id-13>",
+            "patientId": "<id-9>",
+            "createdInVisitId": "<id-10>",
+            "procedureCode": "SCALE",
+            "procedureLabel": "Fictional scaling",
+            "toothFdi": null,
+            "surfaces": null,
+            "phaseNo": 2,
+            "estimatedFeeMillimes": 50000,
+            "note": null,
+            "createdByName": "Fictional dentist",
+            "createdAt": "<timestamp>",
+            "status": "COMPLETED",
+            "lastSeq": 2,
+            "careItemId": "<id-15>",
+            "events": [
+              {
+                "at": "<timestamp>",
+                "seq": 1,
+                "byName": "Fictional dentist",
+                "reason": null,
+                "status": "ACCEPTED",
+                "careItemId": null
+              },
+              {
+                "at": "<timestamp>",
+                "seq": 2,
+                "byName": "Fictional dentist",
+                "reason": null,
+                "status": "COMPLETED",
+                "careItemId": "<id-15>"
+              }
+            ]
+          }
+        ],
+        "teeth": {
+          "36": [
+            {
+              "type": "PLANNED",
+              "planItemId": "<id-12>",
+              "procedureCode": "RESTO",
+              "surfaces": "MO",
+              "status": "PROPOSED",
+              "at": "<timestamp>"
+            }
+          ],
+          "46": [
+            {
+              "type": "CARE",
+              "careItemId": "<id-15>",
+              "visitId": "<id-10>",
+              "procedureCode": "SCALE",
+              "procedureLabel": "Fictional scaling",
+              "surfaces": null,
+              "siteAmended": true,
+              "at": "<timestamp>"
+            }
+          ]
+        },
+        "timeline": [
+          {
+            "id": "<id-10>",
+            "status": "COMPLETED",
+            "scheduledAt": "<timestamp>",
+            "dentistName": "Fictional dentist",
+            "care": [
+              {
+                "id": "<id-15>",
+                "kind": "CARE",
+                "correctsId": null,
+                "procedureCode": "SCALE",
+                "procedureLabel": "Fictional scaling",
+                "toothFdi": null,
+                "surfaces": null,
+                "effectiveToothFdi": 46,
+                "effectiveSurfaces": null,
+                "amendmentCount": 1,
+                "feeMillimes": 50000,
+                "reason": null,
+                "confirmedByName": "Fictional dentist",
+                "confirmedAt": "<timestamp>"
+              }
+            ],
+            "notes": [
+              {
+                "id": "<id-17>",
+                "patientId": "<id-9>",
+                "visitId": "<id-10>",
+                "kind": "NOTE",
+                "parentNoteId": null,
+                "subjective": null,
+                "objective": "Fictional: plaque",
+                "assessment": null,
+                "plan": "Fictional: scaling done",
+                "effectiveAt": "<timestamp>",
+                "reason": null,
+                "contentSha256": "<sha256>",
+                "signedBy": "<id-2>",
+                "signedByName": "Fictional dentist",
+                "signedAt": "<timestamp>",
+                "integrity": "OK",
+                "enteredInError": null,
+                "addendumIds": [
+                  "<id-18>"
+                ]
+              },
+              {
+                "id": "<id-18>",
+                "patientId": "<id-9>",
+                "visitId": "<id-10>",
+                "kind": "ADDENDUM",
+                "parentNoteId": "<id-17>",
+                "subjective": null,
+                "objective": null,
+                "assessment": null,
+                "plan": "Fictional: review in 2 weeks",
+                "effectiveAt": "<timestamp>",
+                "reason": null,
+                "contentSha256": "<sha256>",
+                "signedBy": "<id-2>",
+                "signedByName": "Fictional dentist",
+                "signedAt": "<timestamp>",
+                "integrity": "OK",
+                "enteredInError": null,
+                "addendumIds": []
+              }
+            ],
+            "findings": [
+              {
+                "id": "<id-19>",
+                "visitId": "<id-10>",
+                "kind": "FINDING",
+                "toothFdi": 21,
+                "areaCode": null,
+                "surfaces": null,
+                "conditionCode": "CARIES",
+                "note": null,
+                "reason": null,
+                "recordedByName": "Fictional dentist",
+                "recordedAt": "<timestamp>",
+                "enteredInError": {
+                  "by": "Fictional dentist",
+                  "at": "<timestamp>",
+                  "reason": "Fictional: wrong tooth"
+                }
+              }
+            ]
+          },
+          {
+            "id": "<id-21>",
+            "status": "SCHEDULED",
+            "scheduledAt": "<timestamp>",
+            "dentistName": null,
+            "care": [],
+            "notes": [],
+            "findings": []
+          }
+        ],
+        "syntheticDataOnly": true
+      }
+    }
+  ]
+}

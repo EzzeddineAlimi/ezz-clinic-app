@@ -1,0 +1,401 @@
+{
+  "title": "Security-sensitive states the frontend must show as returned and never infer or override",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "security-states",
+      "title": "Possible duplicate patient: the desk must look and confirm, never auto-merge",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/patients",
+      "path": "/api/v1/patients",
+      "request": {
+        "familyName": "Ben Fictif",
+        "givenName": "Amel",
+        "phone": "+216 20 000 001",
+        "isSynthetic": true
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "CONFLICT",
+          "message": "A patient with the same name and phone exists; confirm it is a different person",
+          "details": {
+            "possibleDuplicates": [
+              {
+                "id": "<id-4>",
+                "fileNo": 1
+              }
+            ],
+            "retryWith": {
+              "confirmNotDuplicate": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Double booking the same dentist slot is refused",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits",
+      "path": "/api/v1/visits",
+      "request": {
+        "patientId": "<id-4>",
+        "scheduledAt": "<timestamp>",
+        "dentistId": "<id-5>"
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "CONFLICT",
+          "message": "The dentist already has a visit in this slot",
+          "details": {
+            "overlapping": [
+              {
+                "id": "<id-6>"
+              }
+            ],
+            "retryWith": {
+              "allowOverlap": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Desk asking for medical detail is refused",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id/medical-alerts",
+      "path": "/api/v1/patients/<id-4>/medical-alerts",
+      "request": null,
+      "status": 403,
+      "response": {
+        "error": {
+          "code": "FORBIDDEN_ROLE",
+          "message": "Your role cannot perform this action",
+          "details": {
+            "permission": "clinical.read"
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Care cannot be confirmed before the dentist acknowledges the CURRENT alert set",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/care",
+      "path": "/api/v1/visits/<id-6>/care",
+      "request": {
+        "procedureCode": "RESTO",
+        "procedureLabel": "Fictional composite",
+        "toothFdi": 36,
+        "surfaces": "MO",
+        "feeMillimes": 80000
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "MEDICAL_ALERTS_NOT_ACKNOWLEDGED",
+          "message": "This patient has medical alerts; review them before confirming treatment",
+          "details": {
+            "alertSetHash": "<sha256>",
+            "activeAlertCount": 1,
+            "criticalAlertCount": 1
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Assistant asking for the encounter is refused: clinical detail is dentist-only in this slice",
+      "role": "ASSISTANT",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/encounter",
+      "path": "/api/v1/visits/<id-6>/encounter",
+      "request": null,
+      "status": 403,
+      "response": {
+        "error": {
+          "code": "FORBIDDEN_ROLE",
+          "message": "Your role cannot perform this action",
+          "details": {
+            "permission": "clinical.read"
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Same amount again moments later: the desk must confirm it is a second payment",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 30000,
+        "tender": "CASH"
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "POSSIBLE_DUPLICATE_PAYMENT",
+          "message": "An identical payment was recorded moments ago; confirm this is a second payment",
+          "details": {
+            "previousPaymentId": "<id-18>",
+            "previousAt": "<timestamp>",
+            "retryWith": {
+              "confirmDuplicate": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "More than the balance is refused (no overpayment)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 60000,
+        "tender": "CASH",
+        "confirmDuplicate": true
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "AMOUNT_EXCEEDS_BALANCE",
+          "message": "Payment exceeds the open balance",
+          "details": {
+            "balanceMillimes": 50000,
+            "note": "Patient credit/deposits are not supported in v0.2 (MF10 later)"
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Retry with the SAME Idempotency-Key replays the stored answer (no second payment)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 30000,
+        "tender": "CARD"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-20>",
+          "visitId": "<id-6>",
+          "patientId": "<id-4>",
+          "amountMillimes": 30000,
+          "tender": "CARD",
+          "source": "DESK",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-1>",
+          "cashPeriodId": null,
+          "evidence": {
+            "tier": "DESK_CLAIM",
+            "label": {
+              "fr": "Carte — déclaration accueil uniquement (non vérifiée)",
+              "ar": "بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "<id-21>",
+          "number": 2,
+          "label": "R-000002"
+        },
+        "balanceAfterMillimes": 20000
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "(replay of the request above)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 30000,
+        "tender": "CARD"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-20>",
+          "source": "DESK",
+          "tender": "CARD",
+          "visitId": "<id-6>",
+          "evidence": {
+            "tier": "DESK_CLAIM",
+            "label": {
+              "ar": "بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)",
+              "fr": "Carte — déclaration accueil uniquement (non vérifiée)"
+            },
+            "verifiedBy": null
+          },
+          "patientId": "<id-4>",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-1>",
+          "cashPeriodId": null,
+          "amountMillimes": 30000
+        },
+        "receipt": {
+          "id": "<id-21>",
+          "label": "R-000002",
+          "number": 2
+        },
+        "balanceAfterMillimes": 20000,
+        "replayed": true
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Same key with a different body is refused",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 29000,
+        "tender": "CARD"
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "IDEMPOTENCY_KEY_REUSED",
+          "message": "This Idempotency-Key was already used for a different request"
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "A write without an Idempotency-Key is refused",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 1000,
+        "tender": "CASH"
+      },
+      "status": 400,
+      "response": {
+        "error": {
+          "code": "IDEMPOTENCY_KEY_REQUIRED",
+          "message": "Idempotency-Key header (16-100 chars [A-Za-z0-9_-]) is required"
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Money is integer millimes only: 12.5 is rejected, never rounded",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 12.5,
+        "tender": "CASH"
+      },
+      "status": 400,
+      "response": {
+        "error": {
+          "code": "VALIDATION_FAILED",
+          "message": "amountMillimes must be an integer number of millimes",
+          "details": {
+            "field": "amountMillimes"
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Desk cannot see the cash review (blind count rule)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/cash/periods/:id/review",
+      "path": "/api/v1/cash/periods/<id-3>/review",
+      "request": null,
+      "status": 403,
+      "response": {
+        "error": {
+          "code": "FORBIDDEN_ROLE",
+          "message": "Your role cannot perform this action",
+          "details": {
+            "permission": "cash.review"
+          }
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Sensitive owner action after the re-auth window: refused",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/clinic/settings",
+      "path": "/api/v1/clinic/settings",
+      "request": {
+        "changes": {
+          "checkpointDueDays": 14
+        },
+        "reason": "Fictional: fortnightly checkpoints"
+      },
+      "status": 401,
+      "response": {
+        "error": {
+          "code": "REAUTH_REQUIRED",
+          "message": "Re-enter your password to continue"
+        }
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Re-enter the password",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/session/reauth",
+      "path": "/api/v1/session/reauth",
+      "request": {
+        "password": "<password>"
+      },
+      "status": 200,
+      "response": {
+        "reauthenticated": true,
+        "validForSeconds": 300
+      }
+    },
+    {
+      "file": "security-states",
+      "title": "Owner without a clinical role cannot open the encounter",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/encounter",
+      "path": "/api/v1/visits/<id-6>/encounter",
+      "request": null,
+      "status": 403,
+      "response": {
+        "error": {
+          "code": "FORBIDDEN_ROLE",
+          "message": "Your role cannot perform this action",
+          "details": {
+            "permission": "clinical.read"
+          }
+        }
+      }
+    }
+  ]
+}

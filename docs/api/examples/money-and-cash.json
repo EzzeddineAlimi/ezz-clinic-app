@@ -1,0 +1,530 @@
+{
+  "title": "Money and cash: workbench, discount, payments, receipts, correction + refund, void, drawer movement, count, close, exception resolution",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "money-and-cash",
+      "title": "Open the cash period",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/cash/periods",
+      "path": "/api/v1/cash/periods",
+      "request": {
+        "openingFloatMillimes": 20000
+      },
+      "status": 201,
+      "response": {
+        "period": {
+          "id": "<id-11>",
+          "periodNo": 1,
+          "openedAt": "<timestamp>",
+          "status": "OPEN"
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Visit workbench (desk view of care, money and evidence)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/workbench",
+      "path": "/api/v1/visits/<id-10>/workbench",
+      "request": null,
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "<id-10>",
+          "status": "COMPLETED",
+          "scheduledAt": "<timestamp>",
+          "durationMin": 30,
+          "patient": {
+            "id": "<id-9>",
+            "fileNo": 1,
+            "familyName": "Ben Fictif",
+            "givenName": "Hedi",
+            "preferredLanguage": "fr",
+            "contactPreference": "BASIC_PHONE_CALL"
+          },
+          "dentist": {
+            "id": "<id-2>",
+            "name": "Fictional dentist"
+          },
+          "care": [
+            {
+              "id": "<id-15>",
+              "kind": "CARE",
+              "surfaces": null,
+              "toothFdi": null,
+              "hasReason": false,
+              "correctsId": null,
+              "confirmedAt": "<timestamp>",
+              "feeMillimes": 50000,
+              "siteAmended": true,
+              "procedureCode": "SCALE",
+              "amendmentCount": 1,
+              "procedureLabel": "Fictional scaling",
+              "confirmedByName": "Fictional dentist",
+              "effectiveSurfaces": null,
+              "effectiveToothFdi": 46
+            }
+          ],
+          "payments": [],
+          "adjustments": [],
+          "provenance": {
+            "correctionCount": 0,
+            "correctionNetMillimes": 0,
+            "adjustmentCount": 0,
+            "reducedMillimes": 0,
+            "returnedMillimes": 0,
+            "freeCareCount": 0,
+            "siteAmendmentCount": 1
+          },
+          "balance": {
+            "chargedMillimes": 50000,
+            "paidMillimes": 0,
+            "reducedMillimes": 0,
+            "returnedMillimes": 0,
+            "balanceMillimes": 50000,
+            "careConfirmed": true
+          },
+          "nextAction": "RECORD_OR_FOLLOW_UP_PAYMENT"
+        },
+        "evidenceNotice": "Cash requires independent counting; cards need separately reviewed external evidence. Recorded amounts are claims.",
+        "syntheticDataOnly": true
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Discount decided by the dentist",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/adjustments",
+      "path": "/api/v1/visits/<id-10>/adjustments",
+      "request": {
+        "kind": "DISCOUNT",
+        "amountMillimes": 5000,
+        "reasonCode": "LOYALTY"
+      },
+      "status": 201,
+      "response": {
+        "adjustment": {
+          "id": "<id-22>",
+          "kind": "DISCOUNT",
+          "amountMillimes": 5000,
+          "reasonCode": "LOYALTY",
+          "authorizedBy": "<id-2>",
+          "authorizedRole": "DENTIST"
+        },
+        "balance": {
+          "visitId": "<id-10>",
+          "chargedMillimes": 50000,
+          "paidMillimes": 0,
+          "reducedMillimes": 5000,
+          "returnedMillimes": 0,
+          "balanceMillimes": 45000,
+          "careConfirmed": true
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Cash payment",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-10>/payments",
+      "request": {
+        "amountMillimes": 30000,
+        "tender": "CASH"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-23>",
+          "visitId": "<id-10>",
+          "patientId": "<id-9>",
+          "amountMillimes": 30000,
+          "tender": "CASH",
+          "source": "DESK",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-3>",
+          "cashPeriodId": "<id-11>",
+          "evidence": {
+            "tier": "DESK_RECORD",
+            "label": {
+              "fr": "Espèces — vérifiées seulement par un comptage indépendant",
+              "ar": "نقدًا — يُتحقَّق منها فقط بعدّ مستقل"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "<id-24>",
+          "number": 1,
+          "label": "R-000001"
+        },
+        "balanceAfterMillimes": 15000
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Card payment (desk claim until a statement matches it)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-10>/payments",
+      "request": {
+        "amountMillimes": 15000,
+        "tender": "CARD"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-25>",
+          "visitId": "<id-10>",
+          "patientId": "<id-9>",
+          "amountMillimes": 15000,
+          "tender": "CARD",
+          "source": "DESK",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-3>",
+          "cashPeriodId": null,
+          "evidence": {
+            "tier": "DESK_CLAIM",
+            "label": {
+              "fr": "Carte — déclaration accueil uniquement (non vérifiée)",
+              "ar": "بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "<id-26>",
+          "number": 2,
+          "label": "R-000002"
+        },
+        "balanceAfterMillimes": 0
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Payments of a visit",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-10>/payments",
+      "request": null,
+      "status": 200,
+      "response": {
+        "visitId": "<id-10>",
+        "payments": [
+          {
+            "id": "<id-23>",
+            "amountMillimes": 30000,
+            "tender": "CASH",
+            "source": "DESK",
+            "recordedAt": "<timestamp>",
+            "recordedBy": "<id-3>",
+            "receiptNumber": 1,
+            "returnedMillimes": 0
+          },
+          {
+            "id": "<id-25>",
+            "amountMillimes": 15000,
+            "tender": "CARD",
+            "source": "DESK",
+            "recordedAt": "<timestamp>",
+            "recordedBy": "<id-3>",
+            "receiptNumber": 2,
+            "returnedMillimes": 0
+          }
+        ]
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Receipt (stored snapshot)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/receipts/:id",
+      "path": "/api/v1/receipts/<id-24>",
+      "request": null,
+      "status": 200,
+      "response": {
+        "receipt": {
+          "id": "<id-24>",
+          "series": "R",
+          "number": 1,
+          "kind": "PAYMENT",
+          "issuedAt": "<timestamp>",
+          "snapshot": {
+            "kind": "PAYMENT",
+            "label": "R-000001",
+            "payee": "Fictional dentist",
+            "clinic": {
+              "code": "astra-demo-2",
+              "name": "Fictional Clinic astra-demo-2"
+            },
+            "notice": "FICTIONAL DATA — NOT A FISCAL DOCUMENT. Tunisian fee-note / receipt legal requirements UNVERIFIED.",
+            "number": 1,
+            "series": "R",
+            "tender": "CASH",
+            "patient": {
+              "name": "Ben Fictif Hedi",
+              "fileNo": 1
+            },
+            "visitId": "<id-10>",
+            "evidence": {
+              "ar": "نقدًا — يُتحقَّق منها فقط بعدّ مستقل",
+              "fr": "Espèces — vérifiées seulement par un comptage indépendant"
+            },
+            "issuedAt": "<timestamp>",
+            "issuedBy": "Fictional desk",
+            "amountText": "30.000 TND",
+            "amountMillimes": 30000,
+            "chargedMillimes": 50000,
+            "balanceAfterText": "15.000 TND",
+            "balanceAfterMillimes": 15000
+          },
+          "snapshotSha256": "<sha256>"
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Reprint: always marked COPY",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/receipts/:id/reprint",
+      "path": "/api/v1/receipts/<id-24>/reprint",
+      "request": {},
+      "status": 200,
+      "response": {
+        "receipt": {
+          "kind": "PAYMENT",
+          "label": "R-000001",
+          "payee": "Fictional dentist",
+          "clinic": {
+            "code": "astra-demo-2",
+            "name": "Fictional Clinic astra-demo-2"
+          },
+          "notice": "FICTIONAL DATA — NOT A FISCAL DOCUMENT. Tunisian fee-note / receipt legal requirements UNVERIFIED.",
+          "number": 1,
+          "series": "R",
+          "tender": "CASH",
+          "patient": {
+            "name": "Ben Fictif Hedi",
+            "fileNo": 1
+          },
+          "visitId": "<id-10>",
+          "evidence": {
+            "ar": "نقدًا — يُتحقَّق منها فقط بعدّ مستقل",
+            "fr": "Espèces — vérifiées seulement par un comptage indépendant"
+          },
+          "issuedAt": "<timestamp>",
+          "issuedBy": "Fictional desk",
+          "amountText": "30.000 TND",
+          "amountMillimes": 30000,
+          "chargedMillimes": 50000,
+          "balanceAfterText": "15.000 TND",
+          "balanceAfterMillimes": 15000,
+          "copy": true,
+          "copyMark": "COPIE / نسخة",
+          "copyNo": 1
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Dentist lowers the fee (correction row; creates patient credit)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/care-items/:id/corrections",
+      "path": "/api/v1/care-items/<id-15>/corrections",
+      "request": {
+        "deltaMillimes": -10000,
+        "reason": "Fictional: shorter session"
+      },
+      "status": 201,
+      "response": {
+        "correction": {
+          "id": "<id-27>",
+          "correctsId": "<id-15>",
+          "deltaMillimes": -10000,
+          "reason": "Fictional: shorter session",
+          "itemFeeAfterMillimes": 40000
+        },
+        "visitTotalMillimes": 40000
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Owner refunds the credit (refund receipt)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/payments/:id/refund",
+      "path": "/api/v1/payments/<id-23>/refund",
+      "request": {
+        "amountMillimes": 10000,
+        "reasonCode": "FEE_CORRECTED"
+      },
+      "status": 201,
+      "response": {
+        "refund": {
+          "id": "<id-28>",
+          "paymentId": "<id-23>",
+          "amountMillimes": 10000,
+          "tender": "CASH"
+        },
+        "receipt": {
+          "id": "<id-29>",
+          "number": 3,
+          "label": "R-000003"
+        },
+        "balance": {
+          "visitId": "<id-10>",
+          "chargedMillimes": 40000,
+          "paidMillimes": 45000,
+          "reducedMillimes": 5000,
+          "returnedMillimes": 10000,
+          "balanceMillimes": 0,
+          "careConfirmed": true
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Owner voids a mistaken payment (void receipt)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/payments/:id/void",
+      "path": "/api/v1/payments/<id-25>/void",
+      "request": {
+        "reasonCode": "ENTERED_IN_ERROR"
+      },
+      "status": 201,
+      "response": {
+        "void": {
+          "id": "<id-30>",
+          "paymentId": "<id-25>",
+          "amountMillimes": 15000
+        },
+        "receipt": {
+          "id": "<id-31>",
+          "number": 4,
+          "label": "R-000004"
+        },
+        "balance": {
+          "visitId": "<id-10>",
+          "chargedMillimes": 40000,
+          "paidMillimes": 45000,
+          "reducedMillimes": 5000,
+          "returnedMillimes": 25000,
+          "balanceMillimes": 15000,
+          "careConfirmed": true
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Owner records a petty expense from the drawer",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/cash/periods/:id/movements",
+      "path": "/api/v1/cash/periods/<id-11>/movements",
+      "request": {
+        "kind": "PETTY_EXPENSE",
+        "amountMillimes": 2000,
+        "reason": "Fictional: cleaning supplies",
+        "voucherRef": "V-001"
+      },
+      "status": 201,
+      "response": {
+        "movement": {
+          "id": "<id-32>",
+          "kind": "PETTY_EXPENSE",
+          "amountMillimes": 2000,
+          "recordedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Blind count by the dentist",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/cash/periods/:id/counts",
+      "path": "/api/v1/cash/periods/<id-11>/counts",
+      "request": {
+        "countedMillimes": 38000,
+        "denominations": {
+          "1000": 3,
+          "5000": 1,
+          "10000": 1,
+          "20000": 1
+        }
+      },
+      "status": 201,
+      "response": {
+        "count": {
+          "id": "<id-33>",
+          "periodId": "<id-11>",
+          "attemptNo": 1,
+          "submittedAt": "<timestamp>"
+        },
+        "status": "RECORDED_PENDING_OWNER_REVIEW"
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Owner closes the period (handover; the rest carries forward)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/cash/periods/:id/close",
+      "path": "/api/v1/cash/periods/<id-11>/close",
+      "request": {
+        "acceptedCountId": "<id-33>",
+        "handoverMillimes": 18000,
+        "note": "Fictional: to bank"
+      },
+      "status": 200,
+      "response": {
+        "closed": {
+          "id": "<id-11>",
+          "cutoffAt": "<timestamp>",
+          "differenceMillimes": 0,
+          "handoverMillimes": 18000
+        },
+        "nextPeriod": {
+          "id": "<id-34>",
+          "periodNo": 2,
+          "openingFloatMillimes": 20000,
+          "openingBasis": "COUNTED_CARRY_FORWARD"
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Resolve one exception (one item, reason code; no bulk clear)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/owner/exceptions/resolve",
+      "path": "/api/v1/owner/exceptions/resolve",
+      "request": {
+        "key": "visit:<id-21>:no_dentist_record",
+        "reasonCode": "OWNER_REVIEWED",
+        "note": "Fictional: checked"
+      },
+      "status": 201,
+      "response": {
+        "resolution": {
+          "id": "<id-35>",
+          "key": "visit:<id-21>:no_dentist_record",
+          "reasonCode": "OWNER_REVIEWED"
+        }
+      }
+    }
+  ]
+}

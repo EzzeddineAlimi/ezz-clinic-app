@@ -1,0 +1,396 @@
+{
+  "title": "Receptionist (desk) workflow",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "receptionist",
+      "title": "Log in (every role uses the same call)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/session/login",
+      "path": "/api/v1/session/login",
+      "request": {
+        "clinicCode": "astra-demo",
+        "username": "desk",
+        "password": "<password>"
+      },
+      "status": 200,
+      "response": {
+        "token": "<token>",
+        "staff": {
+          "id": "<id-1>",
+          "displayName": "Fictional desk",
+          "roles": [
+            "RECEPTIONIST"
+          ]
+        },
+        "clinicId": "<id-2>",
+        "expiresInSeconds": 43200
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Who am I (roles decide which screens to show; the server still enforces every call)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/session",
+      "path": "/api/v1/session",
+      "request": null,
+      "status": 200,
+      "response": {
+        "staff": {
+          "id": "<id-1>",
+          "displayName": "Fictional desk",
+          "roles": [
+            "RECEPTIONIST"
+          ]
+        },
+        "clinicId": "<id-2>"
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Clinic settings (timezone = the clinic day)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/clinic/settings",
+      "path": "/api/v1/clinic/settings",
+      "request": null,
+      "status": 200,
+      "response": {
+        "settings": {
+          "timezone": "Africa/Tunis",
+          "checkpointDueDays": 7,
+          "notArrivedGraceMinutes": 15,
+          "labUnbilledDays": 30
+        },
+        "sources": {
+          "timezone": "default",
+          "checkpointDueDays": "default",
+          "notArrivedGraceMinutes": "default",
+          "labUnbilledDays": "default"
+        },
+        "defaults": {
+          "timezone": "Africa/Tunis",
+          "checkpointDueDays": 7,
+          "notArrivedGraceMinutes": 15,
+          "labUnbilledDays": 30
+        },
+        "limits": {
+          "checkpointDueDays": {
+            "min": 1,
+            "max": 31
+          },
+          "notArrivedGraceMinutes": {
+            "min": 5,
+            "max": 120
+          },
+          "labUnbilledDays": {
+            "min": 7,
+            "max": 180
+          }
+        },
+        "clinicToday": "2026-10-29"
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Register a new (fictional) patient",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/patients",
+      "path": "/api/v1/patients",
+      "request": {
+        "familyName": "Ben Fictif",
+        "givenName": "Amel",
+        "phone": "+216 20 000 001",
+        "contactPreference": "BASIC_PHONE_CALL",
+        "isSynthetic": true
+      },
+      "status": 201,
+      "response": {
+        "patient": {
+          "id": "<id-4>",
+          "fileNo": 1,
+          "familyName": "Ben Fictif",
+          "givenName": "Amel",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "phone": "+216 20 000 001",
+          "contactPreference": "BASIC_PHONE_CALL",
+          "preferredLanguage": "fr",
+          "createdAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Search patients",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/patients",
+      "path": "/api/v1/patients?q=Ben%20Fictif",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patients": [
+          {
+            "id": "<id-4>",
+            "fileNo": 1,
+            "familyName": "Ben Fictif",
+            "givenName": "Amel",
+            "nameAr": null,
+            "contactPreference": "BASIC_PHONE_CALL"
+          }
+        ]
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Book a visit with the dentist",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits",
+      "path": "/api/v1/visits",
+      "request": {
+        "patientId": "<id-4>",
+        "scheduledAt": "<timestamp>",
+        "dentistId": "<id-5>"
+      },
+      "status": 201,
+      "response": {
+        "visit": {
+          "id": "<id-6>",
+          "patientId": "<id-4>",
+          "scheduledAt": "<timestamp>",
+          "dentistId": "<id-5>",
+          "durationMin": 30,
+          "status": "SCHEDULED"
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Day board for the clinic day",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/day-board",
+      "path": "/api/v1/day-board?day=2026-10-28",
+      "request": null,
+      "status": 200,
+      "response": {
+        "day": "2026-10-28",
+        "timezone": "Africa/Tunis",
+        "scope": "all",
+        "dentistId": null,
+        "summary": {
+          "total": 1,
+          "byStatus": {
+            "SCHEDULED": 1
+          },
+          "notArrivedPastStart": 1
+        },
+        "visits": [
+          {
+            "id": "<id-6>",
+            "scheduledAt": "<timestamp>",
+            "localTime": "09:00",
+            "durationMin": 30,
+            "status": "SCHEDULED",
+            "statusChangedAt": "<timestamp>",
+            "waitingMinutes": null,
+            "patient": {
+              "id": "<id-4>",
+              "fileNo": 1,
+              "familyName": "Ben Fictif",
+              "givenName": "Amel",
+              "nameAr": null,
+              "preferredLanguage": "fr",
+              "contactPreference": "BASIC_PHONE_CALL",
+              "hasPhone": true,
+              "sameNameFileNos": []
+            },
+            "dentist": {
+              "id": "<id-5>",
+              "name": "Fictional dentist"
+            },
+            "careItemCount": 0,
+            "hasStatusReason": false,
+            "statusReason": null,
+            "balanceDueMillimes": 0,
+            "flags": [
+              "NOT_ARRIVED_PAST_START"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Declare a patient-reported medical alert at intake",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/medical-alerts",
+      "path": "/api/v1/patients/<id-4>/medical-alerts",
+      "request": {
+        "code": "ALLERGY_PENICILLIN",
+        "severity": "CRITICAL",
+        "detail": "Fictional: rash with penicillin"
+      },
+      "status": 201,
+      "response": {
+        "declared": true,
+        "alertId": "<id-7>",
+        "source": "PATIENT_DECLARED",
+        "recordedAt": "<timestamp>",
+        "note": "Shown to the dentist as declared, not verified."
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Alert PRESENCE only (desk never sees medical detail)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/patients/:id/medical-alerts/summary",
+      "path": "/api/v1/patients/<id-4>/medical-alerts/summary",
+      "request": null,
+      "status": 200,
+      "response": {
+        "patientId": "<id-4>",
+        "activeAlertCount": 1,
+        "criticalAlertCount": 1,
+        "unverifiedAlertCount": 1,
+        "allergyStatus": "SEE_DENTIST",
+        "reviewStatus": "NEVER_REVIEWED",
+        "instruction": "Medical alert on file: the dentist must see it before treatment."
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Patient arrived",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/status",
+      "path": "/api/v1/visits/<id-6>/status",
+      "request": {
+        "status": "ARRIVED"
+      },
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "<id-6>",
+          "status": "ARRIVED"
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Patient in the chair",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/status",
+      "path": "/api/v1/visits/<id-6>/status",
+      "request": {
+        "status": "IN_CHAIR"
+      },
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "<id-6>",
+          "status": "IN_CHAIR"
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Balance due (after the dentist confirmed care)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/balance",
+      "path": "/api/v1/visits/<id-6>/balance",
+      "request": null,
+      "status": 200,
+      "response": {
+        "balance": {
+          "visitId": "<id-6>",
+          "chargedMillimes": 80000,
+          "paidMillimes": 0,
+          "reducedMillimes": 0,
+          "returnedMillimes": 0,
+          "balanceMillimes": 80000,
+          "careConfirmed": true
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Record a cash payment: the receipt number comes from the server",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payments",
+      "path": "/api/v1/visits/<id-6>/payments",
+      "request": {
+        "amountMillimes": 30000,
+        "tender": "CASH"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-18>",
+          "visitId": "<id-6>",
+          "patientId": "<id-4>",
+          "amountMillimes": 30000,
+          "tender": "CASH",
+          "source": "DESK",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-1>",
+          "cashPeriodId": "<id-3>",
+          "evidence": {
+            "tier": "DESK_RECORD",
+            "label": {
+              "fr": "Espèces — vérifiées seulement par un comptage indépendant",
+              "ar": "نقدًا — يُتحقَّق منها فقط بعدّ مستقل"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "<id-19>",
+          "number": 1,
+          "label": "R-000001"
+        },
+        "balanceAfterMillimes": 50000
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "Lab board (status and dates only)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/lab/board",
+      "path": "/api/v1/lab/board",
+      "request": null,
+      "status": 200,
+      "response": {
+        "cases": [
+          {
+            "id": "<id-15>",
+            "patient": {
+              "id": "<id-4>",
+              "fileNo": 1,
+              "name": "Ben Fictif Amel"
+            },
+            "caseType": "CROWN",
+            "supplier": "Laboratoire Fictif Tunis",
+            "status": "CREATED",
+            "dueOn": "2026-11-10",
+            "overdue": false
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+# R72 integration order (dependency order). One line per PR: number  head-sha  branch
+# #12 already contains #9, #10 and #11; #15 contains #13; #16 is based on #11; #14 on #3; #19 on #8.
+2   2defdcafbf8b4332935f09091e52f7f17d5ab324  feat/opus55-v02-backend-review
+3   b6563eb29611684a368557fd3f952f0221d547b3  fix/opus55-audit-field-fidelity
+13  52112328e510130b52b639e3b46e6132f8865c75  claude/b05-pg-tls-pool
+15  c4921d09a51275361cc5da152e983b2d97b10452  claude/b14-backup-restore-drill
+12  da644283e81d73627d89991ab4af9d86787bc4fd  claude/b07-clinical-core
+16  e16e624e9c7310de1b90e8318903b487bb4966d9  claude/b10-cash-period-evidence
+14  660f6998db88286cd695f563a7c67a054106d36d  claude/b06-business-value-integrity
+8   38190f424befc6ea15d512fc9e47f715d0a418d6  feat/outage-20-visit-drill
+19  2b9ae5040d2dab378755bb4a923f7a734ea8b3c3  claude/b13-paper-reconciliation
+17  3e20d236d282d5b8af712e715622de604644bf14  claude/b11-owner-financial-review
+18  1b3102a4165599e41452dc8b1bba740e3bfb186b  claude/b12-day-board
+20  2817d71ab50fd9dcb3dcb0723e8dd7603539cffe  claude/b15-printable-contracts
+# Included through #12: 9 addc5a531976ed72083849ebf979664fa46e3694, 10 0fe3bf3ef7b11aefc3816c35248c0ace89d4b40a, 11 26a139c54d13dca743a65d00e570c3896ed88759

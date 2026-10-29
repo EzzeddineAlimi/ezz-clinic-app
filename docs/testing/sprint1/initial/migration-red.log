@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: T-SP1-MIG-1 concurrent runners apply a pending migration exactly once
+not ok 1 - T-SP1-MIG-1 concurrent runners apply a pending migration exactly once
+  ---
+  duration_ms: 363.460762
+  type: 'test'
+  location: '/workspace/ezz-sprint1/backend/test/sprint1-migration-concurrency.test.ts:10:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    [["0001_concurrent.sql"],"Error: Migration 0001_concurrent.sql failed: duplicate key value violates unique constraint \"pg_type_typname_nsp_index\""]
+    
+    1 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-sprint1/backend/test/sprint1-migration-concurrency.test.ts:24:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 527.780723

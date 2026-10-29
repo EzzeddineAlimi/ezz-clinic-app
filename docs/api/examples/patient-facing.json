@@ -1,0 +1,545 @@
+{
+  "title": "Patient-facing artefacts (there is no patient login; patients receive printed documents)",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "patient-facing",
+      "title": "Print the receipt the patient receives (French + Arabic)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/receipts/:id/print",
+      "path": "/api/v1/receipts/<id-19>/print",
+      "request": {
+        "lang": "both"
+      },
+      "status": 200,
+      "response": {
+        "copy": false,
+        "copyNo": 0,
+        "document": {
+          "documentType": "RECEIPT_PAYMENT",
+          "reference": "R-000001",
+          "size": "normal",
+          "fontPt": 12,
+          "sections": [
+            {
+              "lang": "fr",
+              "dir": "ltr",
+              "title": "Reçu de paiement",
+              "mark": "ORIGINAL",
+              "lines": [
+                {
+                  "key": "receiptNo",
+                  "label": "N° de reçu",
+                  "value": "R-000001",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "date",
+                  "label": "Date",
+                  "value": "29/10/2026 03:35",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "clinic",
+                  "label": "Cabinet",
+                  "value": "Fictional Clinic astra-demo",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "payee",
+                  "label": "Bénéficiaire",
+                  "value": "Fictional dentist",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "patient",
+                  "label": "Patient",
+                  "value": "Ben Fictif Amel",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "fileNo",
+                  "label": "N° de dossier",
+                  "value": "1",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "amount",
+                  "label": "Montant reçu",
+                  "value": "30,000 DT",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "tender",
+                  "label": "Mode de paiement",
+                  "value": "Espèces",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "fees",
+                  "label": "Honoraires",
+                  "value": "80,000 DT",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "balance",
+                  "label": "Reste à payer",
+                  "value": "50,000 DT",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "issuedBy",
+                  "label": "Établi par",
+                  "value": "Fictional desk",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "fingerprint",
+                  "label": "Empreinte",
+                  "value": "0ab2cd1b5cdc",
+                  "isolate": true,
+                  "emphasis": false
+                }
+              ],
+              "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES."
+            },
+            {
+              "lang": "ar",
+              "dir": "rtl",
+              "title": "إيصال دفع",
+              "mark": "أصل",
+              "lines": [
+                {
+                  "key": "receiptNo",
+                  "label": "رقم الإيصال",
+                  "value": "R-000001",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "date",
+                  "label": "التاريخ",
+                  "value": "29/10/2026 03:35",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "clinic",
+                  "label": "العيادة",
+                  "value": "Fictional Clinic astra-demo",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "payee",
+                  "label": "المستفيد",
+                  "value": "Fictional dentist",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "patient",
+                  "label": "المريض",
+                  "value": "Ben Fictif Amel",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "fileNo",
+                  "label": "رقم الملف",
+                  "value": "1",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "amount",
+                  "label": "المبلغ المقبوض",
+                  "value": "30,000 د.ت",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "tender",
+                  "label": "طريقة الدفع",
+                  "value": "نقدًا",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "fees",
+                  "label": "الأتعاب",
+                  "value": "80,000 د.ت",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "balance",
+                  "label": "المبلغ المتبقي",
+                  "value": "50,000 د.ت",
+                  "isolate": true,
+                  "emphasis": false
+                },
+                {
+                  "key": "issuedBy",
+                  "label": "حرّره",
+                  "value": "Fictional desk",
+                  "isolate": false,
+                  "emphasis": false
+                },
+                {
+                  "key": "fingerprint",
+                  "label": "البصمة",
+                  "value": "0ab2cd1b5cdc",
+                  "isolate": true,
+                  "emphasis": false
+                }
+              ],
+              "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "patient-facing",
+      "title": "Blank patient intake form (paper, for outages or the waiting room)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/print/forms/patient-intake",
+      "path": "/api/v1/print/forms/patient-intake?lang=both",
+      "request": null,
+      "status": 200,
+      "response": {
+        "form": {
+          "title": {
+            "fr": "Fiche d'inscription patient",
+            "ar": "استمارة تسجيل المريض"
+          },
+          "intro": {
+            "fr": "Aucun téléphone n'est nécessaire. Les questions médicales sont posées par le dentiste, pas sur cette fiche.",
+            "ar": "لا حاجة إلى هاتف. الأسئلة الطبية يطرحها طبيب الأسنان وليست في هذه الاستمارة."
+          },
+          "fields": [
+            {
+              "key": "familyName",
+              "apiField": "familyName",
+              "kind": "text",
+              "required": true,
+              "label": {
+                "fr": "Nom",
+                "ar": "اللقب"
+              }
+            },
+            {
+              "key": "givenName",
+              "apiField": "givenName",
+              "kind": "text",
+              "required": true,
+              "label": {
+                "fr": "Prénom",
+                "ar": "الاسم"
+              }
+            },
+            {
+              "key": "nameAr",
+              "apiField": "nameAr",
+              "kind": "text",
+              "required": false,
+              "label": {
+                "fr": "Nom en arabe",
+                "ar": "الاسم واللقب بالعربية"
+              }
+            },
+            {
+              "key": "dateOfBirth",
+              "apiField": "dateOfBirth",
+              "kind": "date",
+              "required": false,
+              "label": {
+                "fr": "Date de naissance (JJ/MM/AAAA)",
+                "ar": "تاريخ الولادة (يوم/شهر/سنة)"
+              }
+            },
+            {
+              "key": "sex",
+              "apiField": "sex",
+              "kind": "choice",
+              "required": false,
+              "label": {
+                "fr": "Sexe",
+                "ar": "الجنس"
+              },
+              "choices": [
+                {
+                  "value": "F",
+                  "label": {
+                    "fr": "Femme",
+                    "ar": "أنثى"
+                  }
+                },
+                {
+                  "value": "M",
+                  "label": {
+                    "fr": "Homme",
+                    "ar": "ذكر"
+                  }
+                },
+                {
+                  "value": "X",
+                  "label": {
+                    "fr": "Non précisé",
+                    "ar": "غير محدد"
+                  }
+                }
+              ]
+            },
+            {
+              "key": "phone",
+              "apiField": "phone",
+              "kind": "text",
+              "required": false,
+              "label": {
+                "fr": "Téléphone (facultatif)",
+                "ar": "الهاتف (اختياري)"
+              },
+              "hint": {
+                "fr": "Laisser vide s'il n'y a pas de téléphone.",
+                "ar": "اتركه فارغًا إن لم يكن هناك هاتف."
+              }
+            },
+            {
+              "key": "contactPreference",
+              "apiField": "contactPreference",
+              "kind": "choice",
+              "required": true,
+              "label": {
+                "fr": "Comment vous joindre",
+                "ar": "طريقة التواصل"
+              },
+              "choices": [
+                {
+                  "value": "IN_PERSON",
+                  "label": {
+                    "fr": "En personne au cabinet",
+                    "ar": "حضوريًا بالعيادة"
+                  }
+                },
+                {
+                  "value": "BASIC_PHONE_CALL",
+                  "label": {
+                    "fr": "Appel téléphonique",
+                    "ar": "مكالمة هاتفية"
+                  }
+                },
+                {
+                  "value": "SMS",
+                  "label": {
+                    "fr": "SMS",
+                    "ar": "رسالة قصيرة"
+                  }
+                },
+                {
+                  "value": "NONE",
+                  "label": {
+                    "fr": "Aucun",
+                    "ar": "لا شيء"
+                  }
+                }
+              ]
+            },
+            {
+              "key": "preferredLanguage",
+              "apiField": "preferredLanguage",
+              "kind": "choice",
+              "required": true,
+              "label": {
+                "fr": "Langue préférée",
+                "ar": "اللغة المفضلة"
+              },
+              "choices": [
+                {
+                  "value": "fr",
+                  "label": {
+                    "fr": "Français",
+                    "ar": "الفرنسية"
+                  }
+                },
+                {
+                  "value": "ar",
+                  "label": {
+                    "fr": "Arabe",
+                    "ar": "العربية"
+                  }
+                }
+              ]
+            }
+          ],
+          "deskBox": {
+            "fr": "Réservé au cabinet — N° de dossier attribué, saisi par, le",
+            "ar": "خاص بالعيادة — رقم الملف المسند، أدخله، بتاريخ"
+          }
+        },
+        "document": {
+          "documentType": "FORM_PATIENT_INTAKE",
+          "reference": "INTAKE",
+          "size": "normal",
+          "fontPt": 12,
+          "sections": [
+            {
+              "lang": "fr",
+              "dir": "ltr",
+              "title": "Fiche d'inscription patient",
+              "mark": null,
+              "notice": "DONNÉES FICTIVES — CE N'EST PAS UN DOCUMENT FISCAL. Exigences légales tunisiennes NON VÉRIFIÉES.",
+              "lines": [
+                {
+                  "key": "intro",
+                  "label": "Aucun téléphone n'est nécessaire. Les questions médicales sont posées par le dentiste, pas sur cette fiche.",
+                  "value": "",
+                  "isolate": false
+                },
+                {
+                  "key": "familyName",
+                  "label": "Nom",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "givenName",
+                  "label": "Prénom",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "nameAr",
+                  "label": "Nom en arabe",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "dateOfBirth",
+                  "label": "Date de naissance (JJ/MM/AAAA)",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "sex",
+                  "label": "Sexe : ☐ Femme   ☐ Homme   ☐ Non précisé",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "phone",
+                  "label": "Téléphone (facultatif)",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "contactPreference",
+                  "label": "Comment vous joindre : ☐ En personne au cabinet   ☐ Appel téléphonique   ☐ SMS   ☐ Aucun",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "preferredLanguage",
+                  "label": "Langue préférée : ☐ Français   ☐ Arabe",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "deskBox",
+                  "label": "Réservé au cabinet — N° de dossier attribué, saisi par, le",
+                  "value": "",
+                  "isolate": true
+                }
+              ]
+            },
+            {
+              "lang": "ar",
+              "dir": "rtl",
+              "title": "استمارة تسجيل المريض",
+              "mark": null,
+              "notice": "بيانات وهمية — ليست وثيقة جبائية. المتطلبات القانونية التونسية غير مُتحقَّق منها.",
+              "lines": [
+                {
+                  "key": "intro",
+                  "label": "لا حاجة إلى هاتف. الأسئلة الطبية يطرحها طبيب الأسنان وليست في هذه الاستمارة.",
+                  "value": "",
+                  "isolate": false
+                },
+                {
+                  "key": "familyName",
+                  "label": "اللقب",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "givenName",
+                  "label": "الاسم",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "nameAr",
+                  "label": "الاسم واللقب بالعربية",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "dateOfBirth",
+                  "label": "تاريخ الولادة (يوم/شهر/سنة)",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "sex",
+                  "label": "الجنس : ☐ أنثى   ☐ ذكر   ☐ غير محدد",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "phone",
+                  "label": "الهاتف (اختياري)",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "contactPreference",
+                  "label": "طريقة التواصل : ☐ حضوريًا بالعيادة   ☐ مكالمة هاتفية   ☐ رسالة قصيرة   ☐ لا شيء",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "preferredLanguage",
+                  "label": "اللغة المفضلة : ☐ الفرنسية   ☐ العربية",
+                  "value": "",
+                  "isolate": true
+                },
+                {
+                  "key": "deskBox",
+                  "label": "خاص بالعيادة — رقم الملف المسند، أدخله، بتاريخ",
+                  "value": "",
+                  "isolate": true
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
