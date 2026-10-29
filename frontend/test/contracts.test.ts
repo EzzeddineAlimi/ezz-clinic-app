@@ -87,3 +87,64 @@ test("Every first-slice endpoint exists in checked-in OpenAPI; no proposed clini
     for (const method of methods)
       assert.ok(api.paths["/api/v1" + path]?.[method], path + " " + method);
 });
+
+test("Authenticated malformed 401 always expires GET and POST sessions", async (t) => {
+  const { Api } = await import("../src/api.ts");
+  for (const body of ["<html>unauthorised</html>", "{broken"])
+    for (const method of ["GET", "POST"]) {
+      let expired = 0;
+      const mocked = t.mock.method(
+        globalThis,
+        "fetch",
+        async () => new Response(body, { status: 401 }),
+      );
+      const api = new Api("test-token", () => expired++);
+      await assert.rejects(method === "GET" ? api.session() : api.logout());
+      mocked.mock.restore();
+      assert.equal(expired, 1, method + " malformed401");
+    }
+});
+test("Parsable REAUTH_REQUIRED, 403 and non-401 parse failures do not expire sessions", async (t) => {
+  const { Api } = await import("../src/api.ts");
+  for (const [status, body, code] of [
+    [
+      401,
+      JSON.stringify({ error: { code: "REAUTH_REQUIRED" } }),
+      "REAUTH_REQUIRED",
+    ],
+    [
+      403,
+      JSON.stringify({ error: { code: "FORBIDDEN_ROLE" } }),
+      "FORBIDDEN_ROLE",
+    ],
+    [502, "<html>gateway</html>", "INVALID_RESPONSE"],
+  ] as const) {
+    let expired = 0;
+    const mocked = t.mock.method(
+      globalThis,
+      "fetch",
+      async () => new Response(body, { status }),
+    );
+    await assert.rejects(
+      new Api("test-token", () => expired++).session(),
+      (e: unknown) => e instanceof ApiError && e.code === code,
+    );
+    mocked.mock.restore();
+    assert.equal(expired, 0);
+  }
+});
+
+test("Non-401 malformed POST retains uncertain-write semantics without expiring auth", async (t) => {
+  const { Api } = await import("../src/api.ts");
+  let expired = 0;
+  t.mock.method(
+    globalThis,
+    "fetch",
+    async () => new Response("<html>gateway</html>", { status: 502 }),
+  );
+  await assert.rejects(
+    new Api("test-token", () => expired++).logout(),
+    (e: unknown) => e instanceof ApiError && e.code === "NETWORK",
+  );
+  assert.equal(expired, 0);
+});

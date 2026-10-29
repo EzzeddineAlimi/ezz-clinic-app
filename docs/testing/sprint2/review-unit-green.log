@@ -1,0 +1,56 @@
+
+> ezz-clinic-web@0.1.0 test
+> node --test test/*.test.ts
+
+TAP version 13
+# Subtest: Clinic wall time is independent of device/server zone; DST folds and gaps refused
+ok 1 - Clinic wall time is independent of device/server zone; DST folds and gaps refused
+  ---
+  duration_ms: 12.753228
+  type: 'test'
+  ...
+# Subtest: Unknown write outcome freezes body/key; confirmed rejection allows explicit correction
+ok 2 - Unknown write outcome freezes body/key; confirmed rejection allows explicit correction
+  ---
+  duration_ms: 1.843616
+  type: 'test'
+  ...
+# Subtest: Client schemas distinguish patient search projection and integer financial values
+ok 3 - Client schemas distinguish patient search projection and integer financial values
+  ---
+  duration_ms: 3.804909
+  type: 'test'
+  ...
+# Subtest: Every first-slice endpoint exists in checked-in OpenAPI; no proposed clinical endpoints
+ok 4 - Every first-slice endpoint exists in checked-in OpenAPI; no proposed clinical endpoints
+  ---
+  duration_ms: 4.309774
+  type: 'test'
+  ...
+# Subtest: Authenticated malformed 401 always expires GET and POST sessions
+ok 5 - Authenticated malformed 401 always expires GET and POST sessions
+  ---
+  duration_ms: 17.450952
+  type: 'test'
+  ...
+# Subtest: Parsable REAUTH_REQUIRED, 403 and non-401 parse failures do not expire sessions
+ok 6 - Parsable REAUTH_REQUIRED, 403 and non-401 parse failures do not expire sessions
+  ---
+  duration_ms: 2.422303
+  type: 'test'
+  ...
+# Subtest: Non-401 malformed POST retains uncertain-write semantics without expiring auth
+ok 7 - Non-401 malformed POST retains uncertain-write semantics without expiring auth
+  ---
+  duration_ms: 0.445295
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 177.443574

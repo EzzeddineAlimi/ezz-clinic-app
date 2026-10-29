@@ -109,6 +109,12 @@ export class Api {
     try {
       data = await response.json();
     } catch {
+      // A proxy may replace a 401 body with HTML/truncated JSON. Authentication
+      // still failed; only a parsable REAUTH_REQUIRED envelope may preserve it.
+      if (response.status === 401 && this.token) {
+        this.expired();
+        throw new ApiError("UNAUTHENTICATED", 401);
+      }
       throw new ApiError(
         options.body === undefined ? "INVALID_RESPONSE" : "NETWORK",
         response.status,

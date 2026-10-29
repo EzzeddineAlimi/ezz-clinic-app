@@ -131,7 +131,14 @@ test("Duplicate warning requires human decision; no automatic retry", async ({
   await expect(
     d.getByRole("button", { name: "Créer le dossier" }),
   ).toBeDisabled();
-  await d.getByRole("button", { name: "Fermer", exact: true }).click();
+  await d.getByLabel("J’ai vérifié : il s’agit d’un autre patient").check();
+  await d.getByRole("button", { name: "Créer le dossier" }).click();
+  await expect(d).not.toBeVisible();
+  await page
+    .getByPlaceholder("Nom, numéro de dossier ou téléphone")
+    .fill("Trabelsi");
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.locator(".patient-row")).toHaveCount(2);
 });
 test("Lost response after actual database commit: retry same body/key creates only one file", async ({
   page,
@@ -364,7 +371,17 @@ test("Overlapping appointment requires explicit confirmation; Arabic form remain
   await expect(
     d.getByRole("button", { name: "Enregistrer le rendez-vous" }),
   ).toBeDisabled();
-  await d.getByRole("button", { name: "Fermer", exact: true }).click();
+  await d.getByLabel("J’ai vérifié : autoriser ce chevauchement").check();
+  const accepted = page.waitForResponse(
+    (r) =>
+      r.url().endsWith("/visits") &&
+      r.request().method() === "POST" &&
+      r.status() === 201,
+  );
+  await d.getByRole("button", { name: "Enregistrer le rendez-vous" }).click();
+  const response = await accepted;
+  expect(response.request().postDataJSON().allowOverlap).toBe(true);
+  await expect(d).not.toBeVisible();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await page.getByRole("button", { name: "المرضى", exact: true }).click();
   await page.getByRole("button", { name: "مريض جديد", exact: true }).click();
@@ -388,5 +405,54 @@ test("Overlapping appointment requires explicit confirmation; Arabic form remain
     path: images + "/registration-ar-mobile.png",
     fullPage: true,
   });
-  await page.keyboard.press("Escape");
+  const mobileAxe = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+    .analyze();
+  expect(mobileAxe.violations).toEqual([]);
+  await ar.getByLabel("اللقب *", { exact: true }).fill("مريضوهمي");
+  await ar.getByLabel("الاسم *", { exact: true }).fill("اختبار");
+  const submit = ar.getByRole("button", { name: "إنشاء الملف", exact: true });
+  await submit.scrollIntoViewIfNeeded();
+  await submit.focus();
+  await expect(submit).toBeInViewport();
+  await page.keyboard.press("Enter");
+  await expect(ar).not.toBeVisible();
 });
+
+for (const method of ["GET", "POST"] as const)
+  test(`Malformed authenticated ${method}401 clears workspace and all patient DOM`, async ({
+    page,
+  }) => {
+    await login(page);
+    if (method === "POST") {
+      await page.getByRole("button", { name: "Patients", exact: true }).click();
+      await page
+        .getByRole("button", { name: "Nouveau patient", exact: true })
+        .click();
+      const d = page.getByRole("dialog");
+      await d.getByLabel("Nom *", { exact: true }).fill("UnauthorizedFictif");
+      await d.getByLabel("Prénom *", { exact: true }).fill("Test");
+    }
+    await page.route(
+      method === "GET" ? "**/api/v1/day-board*" : "**/api/v1/patients",
+      (route) =>
+        route.fulfill({
+          status: 401,
+          contentType: "text/html",
+          body: "<html>expired proxy</html>",
+        }),
+    );
+    await page
+      .getByRole("button", {
+        name: method === "GET" ? "Actualiser" : "Créer le dossier",
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Ouvrir ma session" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Amira Ben Salem", { exact: true }),
+    ).not.toBeVisible();
+    await expect(page.locator(".patient-row,.visit-row,dialog")).toHaveCount(0);
+  });

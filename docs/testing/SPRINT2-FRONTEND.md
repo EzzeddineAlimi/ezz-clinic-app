@@ -88,3 +88,30 @@ lookup, no search of the optional extra Arabic-name field, role language not sav
 per user, and the known scheduling conflict concurrency risk. No permission was
 silently expanded to hide these gaps. No clinical/checkout/owner screen is presented
 as functional in this slice. No deployment, merge or real patient data authorised.
+
+## GPT review follow-up (G-S2-001)
+
+Continued on PR43 after GPT README commit f24467d69651d87df4f98d1e41e67251120aa0a0.
+Reproduced malformed authenticated401: callback count0 instead of1 (RED log
+`sprint2/review-auth-red.log`). Minimal API fix expires authenticated sessions on
+401 JSON parse failure; parsable REAUTH_REQUIRED remains exempt. Non401 GET parse
+failures and403 preserve auth; non401 POST parse failures retain NETWORK/uncertain
+write semantics. No backend permission/source changes.
+
+Executed follow-up: **7/7 frontend regressions**, strict frontend build, and
+**13/13 real-API Chromium tests**, zero fail/skip/flaky. Browser tests load a real
+staff session/patient board before injecting malformed GET/POST401 transport
+responses; login replaces all patient rows/dialogs. Existing lost-response replay
+and real403/revocation checks remain. Duplicate and overlap warnings now proceed
+through explicit human confirmation to real successful writes (duplicate directory
+count2, overlap POST201 with explicit allowOverlap).
+
+Arabic320px registration checks retain keyboard focus, scroll the submit control
+into view, submit via Enter and verify the dialog closes after actual registration.
+Selected mobile-dialog axe rules report no violations. Native language/user
+validation remains external; no blanket accessibility approval. Updated mobile
+registration capture and screenshot hashes are committed. Raw original11-test
+evidence is historical; browser-results.json now records the13-test follow-up.
+
+CI results must be checked on the final pushed head, not inherited from cfc0d3d.
+No merge/deploy; independent final-head Muse review remains required.

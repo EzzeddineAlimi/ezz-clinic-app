@@ -79,12 +79,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 2010,
+                  "duration": 2082,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:23.430Z",
+                  "startTime": "2026-10-29T16:21:21.812Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -113,12 +113,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1431,
+                  "duration": 1446,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:25.648Z",
+                  "startTime": "2026-10-29T16:21:24.109Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -147,12 +147,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 981,
+                  "duration": 1286,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:27.087Z",
+                  "startTime": "2026-10-29T16:21:25.571Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -181,12 +181,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1150,
+                  "duration": 1212,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:28.080Z",
+                  "startTime": "2026-10-29T16:21:26.869Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -196,7 +196,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-83048e077072caba955c",
           "file": "app.spec.ts",
-          "line": 136,
+          "line": 141,
           "column": 1
         },
         {
@@ -215,12 +215,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 806,
+                  "duration": 826,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:29.241Z",
+                  "startTime": "2026-10-29T16:21:28.091Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -230,7 +230,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-e0d2b971fc32dce9383a",
           "file": "app.spec.ts",
-          "line": 173,
+          "line": 178,
           "column": 1
         },
         {
@@ -249,12 +249,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 752,
+                  "duration": 739,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:30.063Z",
+                  "startTime": "2026-10-29T16:21:28.929Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -264,7 +264,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-27a26ab955928463a965",
           "file": "app.spec.ts",
-          "line": 190,
+          "line": 195,
           "column": 1
         },
         {
@@ -283,12 +283,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1270,
+                  "duration": 1330,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:30.824Z",
+                  "startTime": "2026-10-29T16:21:29.680Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -298,7 +298,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-cb168a300afddf4d98a7",
           "file": "app.spec.ts",
-          "line": 210,
+          "line": 215,
           "column": 1
         },
         {
@@ -317,12 +317,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1022,
+                  "duration": 1063,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:32.102Z",
+                  "startTime": "2026-10-29T16:21:31.018Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -332,7 +332,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-dfe9e0c0df1c208b99ec",
           "file": "app.spec.ts",
-          "line": 250,
+          "line": 255,
           "column": 1
         },
         {
@@ -351,12 +351,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 862,
+                  "duration": 724,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:33.143Z",
+                  "startTime": "2026-10-29T16:21:32.091Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -366,7 +366,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-242f389a483c3cd875c5",
           "file": "app.spec.ts",
-          "line": 277,
+          "line": 282,
           "column": 1
         },
         {
@@ -385,12 +385,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 945,
+                  "duration": 872,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:34.018Z",
+                  "startTime": "2026-10-29T16:21:32.826Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -400,7 +400,7 @@
           ],
           "id": "c31ff144dc4fee3acd0a-bee96cf184c3c9380456",
           "file": "app.spec.ts",
-          "line": 310,
+          "line": 315,
           "column": 1
         },
         {
@@ -419,12 +419,12 @@
                   "workerIndex": 0,
                   "parallelIndex": 0,
                   "status": "passed",
-                  "duration": 1368,
+                  "duration": 2128,
                   "errors": [],
                   "stdout": [],
                   "stderr": [],
                   "retry": 0,
-                  "startTime": "2026-10-29T16:06:34.972Z",
+                  "startTime": "2026-10-29T16:21:33.713Z",
                   "annotations": [],
                   "attachments": []
                 }
@@ -434,17 +434,85 @@
           ],
           "id": "c31ff144dc4fee3acd0a-681477867dc723069825",
           "file": "app.spec.ts",
-          "line": 347,
+          "line": 352,
           "column": 1
+        },
+        {
+          "title": "Malformed authenticated GET401 clears workspace and all patient DOM",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 765,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-29T16:21:35.849Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c31ff144dc4fee3acd0a-8030f3e88c52a6eda475",
+          "file": "app.spec.ts",
+          "line": 410,
+          "column": 47
+        },
+        {
+          "title": "Malformed authenticated POST401 clears workspace and all patient DOM",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 868,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-29T16:21:36.622Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "c31ff144dc4fee3acd0a-3d1758886928c5afc1b0",
+          "file": "app.spec.ts",
+          "line": 410,
+          "column": 47
         }
       ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-10-29T16:06:17.013Z",
-    "duration": 19417.848,
-    "expected": 11,
+    "startTime": "2026-10-29T16:21:15.097Z",
+    "duration": 22480.857,
+    "expected": 13,
     "skipped": 0,
     "unexpected": 0,
     "flaky": 0
