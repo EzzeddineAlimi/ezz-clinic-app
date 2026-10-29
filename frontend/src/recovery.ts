@@ -9,6 +9,7 @@ export const recoverySchema = z.object({
   recoveryVersion: z.string().regex(/^[0-9a-f]{64}$/),
   paymentIds: z.array(z.string().uuid()),
   automaticRetry: z.literal(false),
+  pendingAnomaly: z.boolean(),
   intentions: z.array(z.object({
     id: z.string().uuid(),
     payload: z.object({
