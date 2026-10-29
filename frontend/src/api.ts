@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { ownerCashPeriodSchema, openCashPeriodSchema, submittedCashCountSchema, cashReviewSchema, closedCashPeriodSchema } from "./cash-contracts.ts";
+import { encounterSchema, noteCreatedSchema, findingCreatedSchema, planItemCreatedSchema } from "./clinical-contracts.ts";
 import { recoverySchema, preparedIntentSchema, recordedIntentSchema, cancelledIntentSchema } from "./recovery.ts";
 import {
   balanceSchema,
@@ -242,6 +244,57 @@ export class Api {
       }),
       { body, key },
     );
+  }
+  /** Owner financial controls. Server permissions remain authoritative. */
+  ownerCashPeriod(signal?: AbortSignal) {
+    return this.call("/cash/periods/current", ownerCashPeriodSchema, { signal });
+  }
+  ownerCashReview(periodId: string, signal?: AbortSignal) {
+    return this.call(`/cash/periods/${periodId}/review`, cashReviewSchema, { signal });
+  }
+  reauthenticate(password: string) {
+    return this.call("/session/reauth", z.object({
+      reauthenticated: z.literal(true), validForSeconds: z.number(),
+    }), { body: { password } });
+  }
+  openCashPeriod(openingFloatMillimes: number, key: string) {
+    return this.call("/cash/periods", openCashPeriodSchema, {
+      body: { openingFloatMillimes }, key,
+    });
+  }
+  submitCashCount(periodId: string, countedMillimes: number, recountReason: string | undefined, key: string) {
+    return this.call(`/cash/periods/${periodId}/counts`, submittedCashCountSchema, {
+      body: { countedMillimes, ...(recountReason ? { recountReason } : {}) }, key,
+    });
+  }
+  closeCashPeriod(periodId: string, acceptedCountId: string, handoverMillimes: number, note: string | undefined, key: string) {
+    return this.call(`/cash/periods/${periodId}/close`, closedCashPeriodSchema, {
+      body: { acceptedCountId, handoverMillimes, ...(note ? { note } : {}) }, key,
+    });
+  }
+  /** Clinical detail is dentist-only; the server enforces clinical.read/write independently. */
+  encounter(id: string, signal?: AbortSignal) {
+    return this.call(`/visits/${id}/encounter`, encounterSchema, { signal });
+  }
+  signClinicalNote(id: string, sections: Record<string, unknown>, key: string) {
+    return this.call(`/visits/${id}/clinical-notes`, noteCreatedSchema, {
+      body: sections, key,
+    });
+  }
+  recordChartFinding(id: string, finding: Record<string, unknown>, key: string) {
+    return this.call(`/visits/${id}/chart-findings`, findingCreatedSchema, {
+      body: finding, key,
+    });
+  }
+  addTreatmentPlanItem(patientId: string, body: Record<string, unknown>, key: string) {
+    return this.call(`/patients/${patientId}/treatment-plan-items`, planItemCreatedSchema, {
+      body, key,
+    });
+  }
+  transitionTreatmentPlanItem(id: string, body: { status: "ACCEPTED" | "DECLINED" | "CANCELLED"; reason?: string }, key: string) {
+    return this.call(`/treatment-plan-items/${id}/status`, planItemCreatedSchema, {
+      body, key,
+    });
   }
   /** Dentist-only full clinical alert set; never use the desk-safe presence summary for treatment approval. */
   medicalAlerts(patientId: string, signal?: AbortSignal) {
