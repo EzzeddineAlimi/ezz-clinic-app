@@ -25,7 +25,7 @@ async function superQuery<R>(sql: string, db = 'ezz_res'): Promise<R[]> {
 }
 const pgCtl = (args: string[]) => pgCmd(pgBin()!, 'pg_ctl', ['-D', join(pg!.dir, 'data'), ...args]);
 
-test('T-RES-1 PostgreSQL crash mid-burst: errors not hangs, self-recovery without an API restart, nothing acknowledged lost, retries never duplicate', async t => {
+test('T-CRASH-1 PostgreSQL crash mid-burst: errors not hangs, self-recovery without an API restart, nothing acknowledged lost, retries never duplicate', async t => {
   if (!pg) return t.skip('PostgreSQL server binaries (initdb/pg_ctl) not installed');
   const admin = new PgConnection(parseDatabaseUrl(pg.url('postgres')));
   await admin.connect();
