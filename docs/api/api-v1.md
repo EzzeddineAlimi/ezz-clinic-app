@@ -14,6 +14,7 @@ Status: generated from the running v0.2 code by Claude on 2026-10-28. Route tabl
 - Error envelope: `{"error":{"code":"STABLE_CODE","message":"neutral text","details":{...}}}`. Messages never contain patient data or SQL. 500 = `INTERNAL` with no detail.
 - Cross-clinic ids return **404** (no existence leak). Re-auth routes need `POST /session/reauth` within the last 5 minutes (**401 REAUTH_REQUIRED**). Login itself counts as a fresh re-auth.
 - Versioning: additive changes only inside v1; breaking changes → `/api/v2` with a deprecation window.
+- **Date-times** (`scheduledAt`, `effectiveAt`): RFC 3339 **with a UTC offset**, e.g. `2026-10-30T09:00:00+01:00` or `2026-10-30T08:00:00Z` (seconds and fractions optional). Responses return the UTC instant (`…Z`). A time **without** an offset, or an impossible date such as `2026-02-30`, is refused with **400 VALIDATION_FAILED** (`details.field`). *R75-B / CH-038 contract clarification:* `openapi.json` always declared `format: date-time` (offset required). Before R75-B the server accepted offset-less input and read it in the **server process's** timezone (09:00 became 09:00Z on a UTC host, 08:00Z on an Africa/Tunis host), and it moved `02-30` to `03-02`. No in-repo client sent such input. The frontend sends the clinic-local wall time with the clinic's offset. A separate `{localDate, localTime}` input converted in the clinic zone is a possible later product choice; it is not implemented.
 - Evidence vocabulary in responses: `DESK_CLAIM`, `DESK_RECORD`, `PAPER_SLIP_RECORD`, `OWNER_REVIEWED_STATEMENT`, `PROVIDER_VERIFIED` (unreachable in v0.2), `COUNTED_BY_NON_RECEPTIONIST (software check)`, `COUNT_NOT_INDEPENDENT`.
 
 ## Endpoints
@@ -79,7 +80,7 @@ Status: generated from the running v0.2 code by Claude on 2026-10-28. Route tabl
 |---|---|
 | `POST /session/login` | **clinicCode**, **username**, **password** → `{token, staff{id,displayName,roles}, clinicId, expiresInSeconds}` |
 | `POST /patients` | **familyName**, **givenName**, **isSynthetic: true**, nameAr, dateOfBirth (YYYY-MM-DD), sex F/M/X, phone, contactPreference IN_PERSON/BASIC_PHONE_CALL/SMS/NONE, preferredLanguage fr/ar, confirmNotDuplicate |
-| `POST /visits` | **patientId**, **scheduledAt** (ISO), durationMin, dentistId, allowOverlap |
+| `POST /visits` | **patientId**, **scheduledAt** (RFC 3339 with offset), durationMin, dentistId, allowOverlap |
 | `POST /visits/:id/status` | **status** ARRIVED/IN_CHAIR/NO_SHOW/CANCELLED, reason (required for NO_SHOW/CANCELLED); NO_SHOW is refused before the appointment time (409) |
 | `GET /visits`, `GET /day-board` (query) | day (clinic-local YYYY-MM-DD, default today in the clinic timezone); day-board also: scope mine/all (mine = own + unassigned, DENTIST only; default for dentists), dentistId |
 | `POST /visits/:id/care` | **procedureCode**, **procedureLabel**, **feeMillimes** (0 allowed with reason), toothFdi (11–48, 51–85), surfaces (MODBLIFP), reason, confirmRepeat |
