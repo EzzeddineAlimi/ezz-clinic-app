@@ -2,11 +2,12 @@ import { Login } from "./Login.tsx";
 import { DayBoard, PatientDirectory } from "./pages.tsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Api, canWrite } from "./api.ts";
-import type { Patient, Session } from "./api.ts";
+import type { Patient, Session, Visit } from "./api.ts";
 import { copy } from "./i18n.ts";
 import type { Lang, Words } from "./i18n.ts";
 import { dateLabel, shiftDay } from "./time.ts";
 import { Registration, Scheduling, nameOf } from "./forms.tsx";
+import { CareConfirmation } from "./care.tsx";
 import {
   Brand,
   ErrorBox,
@@ -104,8 +105,9 @@ function Workspace({
 }) {
   const [tab, setTab] = useState<"agenda" | "patients">("agenda"),
     [day, setDay] = useState(""),
-    [modal, setModal] = useState<"register" | "schedule" | null>(null),
+    [modal, setModal] = useState<"register" | "schedule" | "care" | null>(null),
     [selected, setSelected] = useState<Patient>(),
+    [selectedVisit, setSelectedVisit] = useState<Visit>(),
     [toast, setToast] = useState(""),
     [patientRevision, setPatientRevision] = useState(0);
   const board = useResource(
@@ -123,6 +125,10 @@ function Workspace({
   const plan = (p?: Patient) => {
     setSelected(p);
     setModal("schedule");
+  };
+  const beginCare = (visit: Visit) => {
+    setSelectedVisit(visit);
+    setModal("care");
   };
   const roles: Record<string, string> = {
     OWNER: w.roleOwner,
@@ -347,6 +353,8 @@ function Workspace({
                       api={auth.api}
                       refreshed={board.refresh}
                       notify={setToast}
+                      canConfirmCare={auth.session.staff.roles.includes("DENTIST")}
+                      confirmCare={beginCare}
                     />
                   )
                 )}
@@ -368,6 +376,20 @@ function Workspace({
           EZZ Clinic <span>•</span> {w.fictional}
         </footer>
       </div>
+      {modal === "care" && selectedVisit && (
+        <CareConfirmation
+          api={auth.api}
+          visit={selectedVisit}
+          w={w}
+          close={() => setModal(null)}
+          uncertainClose={() => setToast(w.ambiguousClosed)}
+          saved={() => {
+            setModal(null);
+            setToast(w.careSaved);
+            board.refresh();
+          }}
+        />
+      )}
       {modal === "register" && (
         <Registration
           api={auth.api}

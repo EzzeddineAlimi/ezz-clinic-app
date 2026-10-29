@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: T-WB-CASH-1 open period: cash stays "independent count required"; the period is shown as OPEN
+ok 1 - T-WB-CASH-1 open period: cash stays "independent count required"; the period is shown as OPEN
+  ---
+  duration_ms: 597.370995
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-2 owner-accepted count closes the period: wording says the PERIOD was counted, never that the payment is verified; desk sees no amounts
+ok 2 - T-WB-CASH-2 owner-accepted count closes the period: wording says the PERIOD was counted, never that the payment is verified; desk sees no amounts
+  ---
+  duration_ms: 341.563083
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-3 the owner (only) sees the accepted count independence flag and period difference
+ok 3 - T-WB-CASH-3 the owner (only) sees the accepted count independence flag and period difference
+  ---
+  duration_ms: 357.470771
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-4 cash recorded after the accepted count (but before closing) is covered by the NEXT period, not the closed one
+ok 4 - T-WB-CASH-4 cash recorded after the accepted count (but before closing) is covered by the NEXT period, not the closed one
+  ---
+  duration_ms: 773.257138
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-5 a submitted count that the owner has NOT accepted changes nothing (no premature claim)
+ok 5 - T-WB-CASH-5 a submitted count that the owner has NOT accepted changes nothing (no premature claim)
+  ---
+  duration_ms: 390.649993
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-6 card and mixed tenders: a counted drawer never upgrades card evidence; mixed visit stays pending
+ok 6 - T-WB-CASH-6 card and mixed tenders: a counted drawer never upgrades card evidence; mixed visit stays pending
+  ---
+  duration_ms: 427.993719
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-7 another clinic closing its period does not affect this clinic
+ok 7 - T-WB-CASH-7 another clinic closing its period does not affect this clinic
+  ---
+  duration_ms: 628.877277
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-8 a voided cash payment in a counted period reads VOIDED, and the visit is not called counted
+ok 8 - T-WB-CASH-8 a voided cash payment in a counted period reads VOIDED, and the visit is not called counted
+  ---
+  duration_ms: 441.982324
+  type: 'test'
+  ...
+# Subtest: T-WB-CASH-9 visit list on a new day after a long-closed period: nothing in the desk payload reveals any count figure
+ok 9 - T-WB-CASH-9 visit list on a new day after a long-closed period: nothing in the desk payload reveals any count figure
+  ---
+  duration_ms: 730.334251
+  type: 'test'
+  ...
+# Subtest: T-PRT-1 first print is the ORIGINAL, later prints are COPY 1, COPY 2; no receipt number is consumed; every print is logged
+ok 10 - T-PRT-1 first print is the ORIGINAL, later prints are COPY 1, COPY 2; no receipt number is consumed; every print is logged
+  ---
+  duration_ms: 603.902565
+  type: 'test'
+  ...
+# Subtest: T-PRT-2 privacy: the receipt prints patient name and file number only, no internal ids, no staff-only evidence label, no care detail, no reason code
+ok 11 - T-PRT-2 privacy: the receipt prints patient name and file number only, no internal ids, no staff-only evidence label, no care detail, no reason code
+  ---
+  duration_ms: 565.763326
+  type: 'test'
+  ...
+# Subtest: T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-isolated numbers in the HTML
+ok 12 - T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-isolated numbers in the HTML
+  ---
+  duration_ms: 568.072783
+  type: 'test'
+  ...
+# Subtest: T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML
+ok 13 - T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML
+  ---
+  duration_ms: 309.41655
+  type: 'test'
+  ...
+# Subtest: T-PRT-5 void documents name the receipt they cancel; refund and void each keep their own number
+ok 14 - T-PRT-5 void documents name the receipt they cancel; refund and void each keep their own number
+  ---
+  duration_ms: 356.480244
+  type: 'test'
+  ...
+# Subtest: T-PRT-6 text is HTML-escaped (a name containing markup prints as text)
+ok 15 - T-PRT-6 text is HTML-escaped (a name containing markup prints as text)
+  ---
+  duration_ms: 381.448079
+  type: 'test'
+  ...
+# Subtest: T-PRT-7 every section keeps the fictional / not-a-fiscal-document notice in its language, and a fingerprint matching the stored snapshot hash
+ok 16 - T-PRT-7 every section keeps the fictional / not-a-fiscal-document notice in its language, and a fingerprint matching the stored snapshot hash
+  ---
+  duration_ms: 596.057425
+  type: 'test'
+  ...
+# Subtest: T-PRT-8 permissions and tenancy: dentist cannot print receipts; another clinic's receipt is 404
+ok 17 - T-PRT-8 permissions and tenancy: dentist cannot print receipts; another clinic's receipt is 404
+  ---
+  duration_ms: 553.130929
+  type: 'test'
+  ...
+# Subtest: T-PRT-9 no-phone intake form: FR/AR contract, no medical questions, and a filled fictional form posts to /patients unchanged
+ok 18 - T-PRT-9 no-phone intake form: FR/AR contract, no medical questions, and a filled fictional form posts to /patients unchanged
+  ---
+  duration_ms: 269.654158
+  type: 'test'
+  ...
+# Subtest: T-PRT-10 numbered outage slips: owner prints the exact book range, a reprint is marked, desk cannot print, and the slip fields feed the re-entry API
+ok 19 - T-PRT-10 numbered outage slips: owner prints the exact book range, a reprint is marked, desk cannot print, and the slip fields feed the re-entry API
+  ---
+  duration_ms: 719.297333
+  type: 'test'
+  ...
+# Subtest: T-PRT-11 integer-only money and clinic-local time formatting
+ok 20 - T-PRT-11 integer-only money and clinic-local time formatting
+  ---
+  duration_ms: 0.644264
+  type: 'test'
+  ...
+# Subtest: T-PRT-12 six concurrent first prints produce exactly one ORIGINAL and copies 1..5
+ok 21 - T-PRT-12 six concurrent first prints produce exactly one ORIGINAL and copies 1..5
+  ---
+  duration_ms: 264.753753
+  type: 'test'
+  ...
+# Subtest: T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+ok 22 - T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+  ---
+  duration_ms: 1526.005067
+  type: 'test'
+  ...
+# Subtest: T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+ok 23 - T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+  ---
+  duration_ms: 1351.793398
+  type: 'test'
+  ...
+# Subtest: T-API-7 every route in the table has at least one recorded example
+ok 24 - T-API-7 every route in the table has at least one recorded example
+  ---
+  duration_ms: 19.160374
+  type: 'test'
+  ...
+# Subtest: T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+ok 25 - T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+  ---
+  duration_ms: 20.115898
+  type: 'test'
+  ...
+# Subtest: T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+ok 26 - T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+  ---
+  duration_ms: 112.264962
+  type: 'test'
+  ...
+# Subtest: T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+ok 27 - T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+  ---
+  duration_ms: 2434.898979
+  type: 'test'
+  ...
+# Subtest: T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+ok 28 - T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+  ---
+  duration_ms: 39.576586
+  type: 'test'
+  ...
+# Subtest: S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+ok 29 - S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+  ---
+  duration_ms: 1495.803338
+  type: 'test'
+  ...
+# Subtest: S3B no open or closed-only cash period fails closed without financial rows
+ok 30 - S3B no open or closed-only cash period fails closed without financial rows
+  ---
+  duration_ms: 449.77915
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18830.664511

@@ -1,0 +1,68 @@
+
+> ezz-clinic-web@0.1.0 test
+> node --test test/*.test.ts
+
+TAP version 13
+# Subtest: Exact payment millimes, decimal comma and invalid input without rounding
+ok 1 - Exact payment millimes, decimal comma and invalid input without rounding
+  ---
+  duration_ms: 0.965529
+  type: 'test'
+  ...
+# Subtest: Payment intent never changes body/key after first send, even after a rejection
+ok 2 - Payment intent never changes body/key after first send, even after a rejection
+  ---
+  duration_ms: 1.566958
+  type: 'test'
+  ...
+# Subtest: Clinic wall time is independent of device/server zone; DST folds and gaps refused
+ok 3 - Clinic wall time is independent of device/server zone; DST folds and gaps refused
+  ---
+  duration_ms: 12.864669
+  type: 'test'
+  ...
+# Subtest: Unknown write outcome freezes body/key; confirmed rejection allows explicit correction
+ok 4 - Unknown write outcome freezes body/key; confirmed rejection allows explicit correction
+  ---
+  duration_ms: 1.83248
+  type: 'test'
+  ...
+# Subtest: Client schemas distinguish patient search projection and integer financial values
+ok 5 - Client schemas distinguish patient search projection and integer financial values
+  ---
+  duration_ms: 3.699282
+  type: 'test'
+  ...
+# Subtest: Every first-slice endpoint exists in checked-in OpenAPI; no proposed clinical endpoints
+ok 6 - Every first-slice endpoint exists in checked-in OpenAPI; no proposed clinical endpoints
+  ---
+  duration_ms: 4.642429
+  type: 'test'
+  ...
+# Subtest: Authenticated malformed 401 always expires GET and POST sessions
+ok 7 - Authenticated malformed 401 always expires GET and POST sessions
+  ---
+  duration_ms: 18.920084
+  type: 'test'
+  ...
+# Subtest: Parsable REAUTH_REQUIRED, 403 and non-401 parse failures do not expire sessions
+ok 8 - Parsable REAUTH_REQUIRED, 403 and non-401 parse failures do not expire sessions
+  ---
+  duration_ms: 3.766284
+  type: 'test'
+  ...
+# Subtest: Non-401 malformed POST retains uncertain-write semantics without expiring auth
+ok 9 - Non-401 malformed POST retains uncertain-write semantics without expiring auth
+  ---
+  duration_ms: 0.503992
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 376.682368

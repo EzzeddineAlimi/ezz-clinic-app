@@ -1,3 +1,4 @@
+import { Checkout } from "./checkout.tsx";
 import { useState, useCallback } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
@@ -11,6 +12,8 @@ export function DayBoard({
   api,
   refreshed,
   notify,
+  canConfirmCare,
+  confirmCare,
 }: {
   board: Board;
   w: Words;
@@ -18,6 +21,8 @@ export function DayBoard({
   api: Api;
   refreshed: () => void;
   notify: (message: string) => void;
+  canConfirmCare: boolean;
+  confirmCare: (visit: Visit) => void;
 }) {
   const [filter, setFilter] = useState("all");
   const visits = board.visits.filter(
@@ -52,6 +57,8 @@ export function DayBoard({
               api={api}
               refreshed={refreshed}
               notify={notify}
+              canConfirmCare={canConfirmCare}
+              confirmCare={confirmCare}
             />
           ))}
         </div>
@@ -66,6 +73,8 @@ function VisitRow({
   api,
   refreshed,
   notify,
+  canConfirmCare,
+  confirmCare,
 }: {
   visit: Visit;
   w: Words;
@@ -73,7 +82,10 @@ function VisitRow({
   api: Api;
   refreshed: () => void;
   notify: (m: string) => void;
+  canConfirmCare: boolean;
+  confirmCare: (visit: Visit) => void;
 }) {
+  const [checkout, setCheckout] = useState(false);
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
     [intent] = useState(() => new WriteIntent());
@@ -142,7 +154,28 @@ function VisitRow({
           </p>
         )}
       </div>
+      {checkout && (
+        <Checkout
+          api={api}
+          visit={v}
+          w={w}
+          close={() => {
+            setCheckout(false);
+            refreshed();
+          }}
+        />
+      )}
       <div className="visit-actions">
+        {canConfirmCare && ["ARRIVED", "IN_CHAIR", "COMPLETED"].includes(v.status) && (
+          <button className="secondary compact" onClick={() => confirmCare(v)}>
+            {w.confirmCare}
+          </button>
+        )}
+        {writable && v.status === "COMPLETED" && (
+          <button className="primary compact" onClick={() => setCheckout(true)}>
+            {w.checkout}
+          </button>
+        )}
         <span className={`status-badge badge-${v.status}`}>
           <i />
           {w[v.status]}

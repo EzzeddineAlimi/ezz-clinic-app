@@ -17,7 +17,7 @@ export default defineConfig({
   },
   reporter: [
     ["list"],
-    ["json", { outputFile: "../docs/testing/sprint2/browser-results.json" }],
+    ["json", { outputFile: "../docs/testing/sprint3b/browser-results.json" }],
   ],
   webServer: [
     {

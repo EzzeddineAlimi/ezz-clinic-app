@@ -1,0 +1,92 @@
+TAP version 13
+# Subtest: S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+not ok 1 - S3B real payment replay, receipt identity, mismatch, duplicate, overpayment and tenant/role denial
+  ---
+  duration_ms: 521.354668
+  type: 'test'
+  location: '/workspace/ezz-sprint3b/backend/test/s3b-checkout.test.ts:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      {
+        balanceAfterMillimes: 70000,
+        payment: {
+          amountMillimes: 30000,
+          cashPeriodId: '3ce66e53-bbfd-4ef2-b813-66e8f1f60ecc',
+    ...
+        },
+    +   replayed: true
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    payment:
+      id: '118575fe-88a6-469e-a50e-8fc2fb3c9779'
+      visitId: '27c298ba-d578-4459-b11e-97b4f4281987'
+      patientId: '51869e15-9afa-4817-9cbf-475e4d84d740'
+      amountMillimes: 30000
+      tender: 'CASH'
+      source: 'DESK'
+      recordedAt: '2026-10-29T19:54:39.748Z'
+      recordedBy: 'e1c8d508-85ab-4e5a-8061-f2eb377410f7'
+      cashPeriodId: '3ce66e53-bbfd-4ef2-b813-66e8f1f60ecc'
+      evidence:
+        tier: 'DESK_RECORD'
+        label:
+          fr: 'Espèces — vérifiées seulement par un comptage indépendant'
+          ar: 'نقدًا — يُتحقَّق منها فقط بعدّ مستقل'
+        verifiedBy: ~
+    receipt:
+      id: '3d59a668-6cae-40a6-a699-2ef183ae0f83'
+      number: 1
+      label: 'R-000001'
+    balanceAfterMillimes: 70000
+  actual:
+    payment:
+      id: '118575fe-88a6-469e-a50e-8fc2fb3c9779'
+      source: 'DESK'
+      tender: 'CASH'
+      visitId: '27c298ba-d578-4459-b11e-97b4f4281987'
+      evidence:
+        tier: 'DESK_RECORD'
+        label:
+          ar: 'نقدًا — يُتحقَّق منها فقط بعدّ مستقل'
+          fr: 'Espèces — vérifiées seulement par un comptage indépendant'
+        verifiedBy: ~
+      patientId: '51869e15-9afa-4817-9cbf-475e4d84d740'
+      recordedAt: '2026-10-29T19:54:39.748Z'
+      recordedBy: 'e1c8d508-85ab-4e5a-8061-f2eb377410f7'
+      cashPeriodId: '3ce66e53-bbfd-4ef2-b813-66e8f1f60ecc'
+      amountMillimes: 30000
+    receipt:
+      id: '3d59a668-6cae-40a6-a699-2ef183ae0f83'
+      label: 'R-000001'
+      number: 1
+    balanceAfterMillimes: 70000
+    replayed: true
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-sprint3b/backend/test/s3b-checkout.test.ts:12:75)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: S3B no open or closed-only cash period fails closed without financial rows
+ok 2 - S3B no open or closed-only cash period fails closed without financial rows
+  ---
+  duration_ms: 235.521389
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 932.028267
