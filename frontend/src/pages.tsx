@@ -74,6 +74,7 @@ export function DayBoard({
 function VisitRow({
   visit: v,
   w,
+  lang,
   writable,
   api,
   refreshed,
