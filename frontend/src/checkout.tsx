@@ -31,6 +31,8 @@ const text = {
     invalid: "Montant invalide ou supérieur au solde.",
     duplicate:
       "Paiement similaire détecté. Vérifiez l’historique avant toute nouvelle intention.",
+    duplicateConfirm:
+      "Ceci est réellement un DEUXIÈME paiement distinct du premier, pour le même montant et mode. Je l’ai vérifié dans l’historique.",
     gate: "Soins non confirmés : encaissement bloqué.",
     empty: "Aucun paiement.",
     notice:
@@ -58,6 +60,8 @@ const text = {
     closed: "الصندوق غير متاح: يجب على المسؤول فتح فترة. الدفع النقدي ممنوع.",
     invalid: "المبلغ غير صحيح أو يتجاوز الرصيد.",
     duplicate: "تم رصد دفعة مماثلة. راجعوا السجل قبل عملية جديدة.",
+    duplicateConfirm:
+      "هذه دفعة ثانية مستقلة فعلاً عن الدفعة السابقة بنفس المبلغ وطريقة الدفع. راجعت السجل وأؤكدها.",
     gate: "العلاجات غير مؤكدة: الدفع ممنوع.",
     empty: "لا توجد دفعات.",
     notice:
@@ -94,6 +98,8 @@ export function Checkout({
     [tender, setTender] = useState<"" | "CASH" | "CARD">(""),
     [intent, setIntent] = useState(() => new PaymentIntent()),
     [attempted, setAttempted] = useState(false),
+    [duplicateDenied, setDuplicateDenied] = useState(false),
+    [duplicateApproved, setDuplicateApproved] = useState(false),
     [uncertain, setUncertain] = useState(false),
     [pending, setPending] = useState(false),
     [error, setError] = useState<unknown>(),
@@ -118,7 +124,12 @@ export function Checkout({
     let body;
     try {
       if (!tender) throw new Error();
-      const candidate = { amountMillimes: tndToMillimes(value), tender };
+      const candidate = {
+        amountMillimes: tndToMillimes(value),
+        tender,
+        ...(duplicateDenied && duplicateApproved ? { confirmDuplicate: true } : {}),
+      };
+      if (!uncertain && duplicateDenied && !duplicateApproved) throw new Error();
       if (
         !uncertain &&
         (!data.data?.balance.careConfirmed ||
@@ -142,6 +153,12 @@ export function Checkout({
       data.refresh();
     } catch (e) {
       report(e);
+      if (e instanceof ApiError && e.code === "POSSIBLE_DUPLICATE_PAYMENT") {
+        // A confirmed denial: never reuse its key with a changed body.
+        // A new intent may be made only after the staff explicitly reviews history.
+        setDuplicateDenied(true);
+        setDuplicateApproved(false);
+      }
       setUncertain(
         (old) =>
           old ||
@@ -198,10 +215,17 @@ export function Checkout({
       {error instanceof ApiError && error.code === "NO_OPEN_CASH_PERIOD" && (
         <p role="alert">{t.closed}</p>
       )}
-      {error instanceof ApiError &&
-        error.code === "POSSIBLE_DUPLICATE_PAYMENT" && (
+      {duplicateDenied && !receiptId && (
+        <div role="group" aria-label={t.duplicate}>
           <p role="alert">{t.duplicate}</p>
-        )}
+          <label>
+            <input type="checkbox" checked={duplicateApproved}
+              disabled={pending || uncertain || attempted}
+              onChange={e => setDuplicateApproved(e.target.checked)} />
+            {t.duplicateConfirm}
+          </label>
+        </div>
+      )}
       {validation && <p role="alert">{validation}</p>}
       {uncertain && (
         <p className="uncertain" role="alert">
@@ -251,7 +275,13 @@ export function Checkout({
                       dir="ltr"
                       required
                       value={value}
-                      onChange={(e) => setValue(e.target.value)}
+                      onChange={(e) => {
+                        setValue(e.target.value);
+                        // The last server denial is for the PREVIOUS amount+tender only.
+                        // A different candidate is a new request, still checked by the server.
+                        setDuplicateDenied(false);
+                        setDuplicateApproved(false);
+                      }}
                     />
                   </label>
                   <label>
@@ -259,9 +289,11 @@ export function Checkout({
                     <select
                       required
                       value={tender}
-                      onChange={(e) =>
-                        setTender(e.target.value as typeof tender)
-                      }
+                      onChange={(e) => {
+                        setTender(e.target.value as typeof tender);
+                        setDuplicateDenied(false);
+                        setDuplicateApproved(false);
+                      }}
                     >
                       <option value="">{t.choose}</option>
                       <option value="CASH">{t.cash}</option>
@@ -276,6 +308,7 @@ export function Checkout({
                       pending ||
                       (!uncertain &&
                         (attempted ||
+                          (duplicateDenied && !duplicateApproved) ||
                           !data.data.balance.careConfirmed ||
                           data.data.balance.balanceMillimes <= 0 ||
                           (tender === "CASH" && !data.data.cashOpen)))
@@ -292,6 +325,7 @@ export function Checkout({
                 onClick={() => {
                   setIntent(new PaymentIntent());
                   setAttempted(false);
+                  setDuplicateApproved(false);
                   setError(undefined);
                   data.refresh();
                 }}
