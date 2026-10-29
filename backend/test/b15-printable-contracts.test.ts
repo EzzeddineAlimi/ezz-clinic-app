@@ -85,7 +85,12 @@ test('T-PRT-3 French / Arabic RTL / both: direction, titles, amounts, and bidi-i
   assert.ok(ar.html.includes('<bdi dir="ltr">70,000 د.ت</bdi>'));
   const both = (await print(s.desk, s.receipt.id, { lang: 'both' })).body.document;
   assert.deepEqual(both.sections.map((x: { lang: string; dir: string }) => `${x.lang}:${x.dir}`), ['fr:ltr', 'ar:rtl']);
-  assert.equal(values(both, 0).date, '28/10/2026 ' + (values(both, 0).date ?? '').slice(11), 'clinic-local date dd/mm/yyyy');
+  // Expected value computed by PostgreSQL from the stored issue time (was a hard-coded '28/10/2026', which failed on any other day).
+  const a = await adminConn(db.name);
+  try {
+    const want = (await a.query<{ d: string }>("SELECT to_char(issued_at AT TIME ZONE 'Africa/Tunis', 'DD/MM/YYYY HH24:MI') AS d FROM receipts WHERE id = $1", [s.receipt.id] as never[])).rows[0]!.d;
+    assert.equal(values(both, 0).date, want, 'clinic-local date dd/mm/yyyy');
+  } finally { a.end(); }
 });
 
 test('T-PRT-4 large print doubles as an accessibility option: 18 pt in the contract and the HTML', async () => {
