@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: T-SP1-MIG-1 concurrent runners apply a pending migration exactly once
+ok 1 - T-SP1-MIG-1 concurrent runners apply a pending migration exactly once
+  ---
+  duration_ms: 360.920821
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 540.409438

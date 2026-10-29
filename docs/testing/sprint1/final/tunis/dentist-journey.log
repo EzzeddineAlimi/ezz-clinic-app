@@ -1,0 +1,690 @@
+{
+  "app": "EZZ Clinic v0.2 fictional only",
+  "mode": "local temporary PostgreSQL, synthetic patient, no clinical use",
+  "steps": [
+    {
+      "who": "desk",
+      "request": "POST /api/v1/patients/d764b5cc…/medical-alerts",
+      "body": {
+        "code": "ANTICOAGULANT_VKA",
+        "severity": "CRITICAL",
+        "detail": "Fictional: patient says takes a blood thinner"
+      },
+      "status": 201,
+      "response": {
+        "declared": true,
+        "alertId": "0b9183ed…",
+        "source": "PATIENT_DECLARED",
+        "recordedAt": "2026-10-29T15:02:12.778Z",
+        "note": "Shown to the dentist as declared, not verified."
+      }
+    },
+    {
+      "who": "desk",
+      "request": "GET /api/v1/patients/d764b5cc…/medical-alerts/summary",
+      "status": 200,
+      "response": {
+        "patientId": "d764b5cc…",
+        "activeAlertCount": 1,
+        "criticalAlertCount": 1,
+        "unverifiedAlertCount": 1,
+        "allergyStatus": "NOT_RECORDED",
+        "reviewStatus": "NEVER_REVIEWED",
+        "instruction": "Medical alert on file: the dentist must see it before treatment."
+      }
+    },
+    {
+      "who": "desk",
+      "request": "POST /api/v1/visits/878a1947…/status",
+      "body": {
+        "status": "ARRIVED"
+      },
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "878a1947…",
+          "status": "ARRIVED"
+        }
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "GET /api/v1/visits/878a1947…/encounter",
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "878a1947…",
+          "status": "ARRIVED",
+          "scheduledAt": "2026-10-28T09:00:00.000Z",
+          "durationMin": 30,
+          "dentistId": "f4bdec7d…",
+          "dentistName": "Fictional dentist"
+        },
+        "patient": {
+          "id": "d764b5cc…",
+          "fileNo": 1,
+          "familyName": "Fictif",
+          "givenName": "Amel",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "preferredLanguage": "fr"
+        },
+        "medical": {
+          "activeAlerts": [
+            {
+              "id": "0b9183ed…",
+              "chainId": "325473c5…",
+              "revision": 1,
+              "code": "ANTICOAGULANT_VKA",
+              "severity": "CRITICAL",
+              "detail": "Fictional: patient says takes a blood thinner",
+              "source": "PATIENT_DECLARED",
+              "status": "ACTIVE",
+              "reason": null,
+              "recordedBy": "9007c9e4…",
+              "recordedByName": "Fictional desk",
+              "recordedRole": "RECEPTIONIST",
+              "recordedAt": "2026-10-29T15:02:12.778Z",
+              "firstRecordedAt": "2026-10-29T15:02:12.778Z"
+            }
+          ],
+          "alertSetHash": "8df52c3f53e1…",
+          "reviewStatus": "NEVER_REVIEWED",
+          "allergyStatus": "NOT_RECORDED",
+          "lastReview": null,
+          "acknowledgedForVisit": false,
+          "treatmentGate": "SEND_ALERT_SET_HASH_WITH_CARE_OR_ACKNOWLEDGE"
+        },
+        "care": [],
+        "notes": [],
+        "findings": [],
+        "planItems": [],
+        "history": {
+          "completedVisitCount": 0,
+          "lastCompletedVisitAt": null
+        },
+        "syntheticDataOnly": true
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/visits/878a1947…/care",
+      "body": {
+        "procedureCode": "EXAM",
+        "procedureLabel": "Fictional exam",
+        "feeMillimes": 20000
+      },
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "MEDICAL_ALERTS_NOT_ACKNOWLEDGED",
+          "message": "This patient has medical alerts; review them before confirming treatment",
+          "details": {
+            "alertSetHash": "8df52c3f53e1…",
+            "activeAlertCount": 1,
+            "criticalAlertCount": 1
+          }
+        }
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/medical-alerts/0b9183ed…/revisions",
+      "body": {
+        "action": "VERIFY",
+        "expectedRevision": 1
+      },
+      "status": 201,
+      "response": {
+        "alert": {
+          "id": "ee9579b9…",
+          "chainId": "325473c5…",
+          "revision": 2,
+          "code": "ANTICOAGULANT_VKA",
+          "severity": "CRITICAL",
+          "detail": "Fictional: patient says takes a blood thinner",
+          "source": "DENTIST_VERIFIED",
+          "status": "ACTIVE",
+          "reason": null,
+          "recordedBy": "f4bdec7d…",
+          "recordedByName": "Fictional dentist",
+          "recordedRole": "DENTIST",
+          "recordedAt": "2026-10-29T15:02:12.830Z",
+          "firstRecordedAt": "2026-10-29T15:02:12.778Z"
+        },
+        "alertSetHash": "e4c3a79b3202…"
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/patients/d764b5cc…/medical-history-reviews",
+      "body": {
+        "method": "INTERVIEW",
+        "noKnownAllergies": true,
+        "alertSetHash": "e4c3a79b3202…",
+        "visitId": "878a1947…"
+      },
+      "status": 201,
+      "response": {
+        "review": {
+          "id": "661ae984…",
+          "reviewedAt": "2026-10-29T15:02:12.841Z",
+          "reviewedByName": "Fictional dentist",
+          "method": "INTERVIEW",
+          "noKnownAllergies": true,
+          "nextReviewDue": "2027-10-29",
+          "alertSetHash": "e4c3a79b3202…"
+        },
+        "reviewStatus": "CURRENT",
+        "allergyStatus": "NO_KNOWN_ALLERGIES",
+        "alertSetHash": "e4c3a79b3202…"
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/visits/878a1947…/chart-findings",
+      "body": {
+        "kind": "FINDING",
+        "toothFdi": 36,
+        "surfaces": "mo",
+        "conditionCode": "CARIES"
+      },
+      "status": 201,
+      "response": {
+        "finding": {
+          "id": "2db043b0…",
+          "visitId": "878a1947…",
+          "kind": "FINDING",
+          "toothFdi": 36,
+          "areaCode": null,
+          "surfaces": "MO",
+          "conditionCode": "CARIES",
+          "note": null,
+          "recordedByName": "Fictional dentist",
+          "recordedAt": "2026-10-29T15:02:12.852Z"
+        }
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/visits/878a1947…/clinical-notes",
+      "body": {
+        "subjective": "Fictional: pain when chewing",
+        "objective": "Fictional: cavity on 36",
+        "plan": "Fictional: restoration today"
+      },
+      "status": 201,
+      "response": {
+        "note": {
+          "id": "7da21214…",
+          "visitId": "878a1947…",
+          "kind": "NOTE",
+          "subjective": "Fictional: pain when chewing",
+          "objective": "Fictional: cavity on 36",
+          "assessment": null,
+          "plan": "Fictional: restoration today",
+          "effectiveAt": "2026-10-29T15:02:12.858Z",
+          "reason": null,
+          "contentSha256": "06ec00d42e38…",
+          "signedBy": "f4bdec7d…",
+          "signedByName": "Fictional dentist",
+          "signedAt": "2026-10-29T15:02:12.859Z"
+        }
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/patients/d764b5cc…/treatment-plan-items",
+      "body": {
+        "procedureCode": "RESTO",
+        "procedureLabel": "Fictional composite restoration",
+        "toothFdi": 36,
+        "surfaces": "MO",
+        "estimatedFeeMillimes": 80000,
+        "visitId": "878a1947…"
+      },
+      "status": 201,
+      "response": {
+        "planItem": {
+          "id": "ce0a6208…",
+          "patientId": "d764b5cc…",
+          "createdInVisitId": "878a1947…",
+          "procedureCode": "RESTO",
+          "procedureLabel": "Fictional composite restoration",
+          "toothFdi": 36,
+          "surfaces": "MO",
+          "phaseNo": 2,
+          "estimatedFeeMillimes": 80000,
+          "note": null,
+          "createdByName": "Fictional dentist",
+          "createdAt": "2026-10-29T15:02:12.864Z",
+          "status": "PROPOSED",
+          "lastSeq": 0,
+          "careItemId": null,
+          "events": []
+        }
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/treatment-plan-items/ce0a6208…/perform",
+      "body": {
+        "visitId": "878a1947…"
+      },
+      "status": 201,
+      "response": {
+        "careItem": {
+          "id": "1b322109…",
+          "visitId": "878a1947…",
+          "kind": "CARE",
+          "procedureCode": "RESTO",
+          "procedureLabel": "Fictional composite restoration",
+          "toothFdi": 36,
+          "surfaces": "MO",
+          "feeMillimes": 80000,
+          "confirmedBy": "f4bdec7d…",
+          "confirmedAt": "2026-10-29T15:02:12.870Z"
+        },
+        "visitTotalMillimes": 80000,
+        "planItem": {
+          "id": "ce0a6208…",
+          "patientId": "d764b5cc…",
+          "createdInVisitId": "878a1947…",
+          "procedureCode": "RESTO",
+          "procedureLabel": "Fictional composite restoration",
+          "toothFdi": 36,
+          "surfaces": "MO",
+          "phaseNo": 2,
+          "estimatedFeeMillimes": 80000,
+          "note": null,
+          "createdByName": "Fictional dentist",
+          "createdAt": "2026-10-29T15:02:12.864Z",
+          "status": "COMPLETED",
+          "lastSeq": 1,
+          "careItemId": "1b322109…",
+          "events": [
+            {
+              "at": "2026-10-29T15:02:12.877Z",
+              "seq": 1,
+              "byName": "Fictional dentist",
+              "reason": null,
+              "status": "COMPLETED",
+              "careItemId": "1b322109…"
+            }
+          ]
+        },
+        "quoteVsCharged": {
+          "estimatedFeeMillimes": 80000,
+          "chargedFeeMillimes": 80000,
+          "differenceMillimes": 0
+        }
+      }
+    },
+    {
+      "who": "desk",
+      "request": "POST /api/v1/visits/878a1947…/payments",
+      "body": {
+        "amountMillimes": 50000,
+        "tender": "CASH"
+      },
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "1f1377b1…",
+          "visitId": "878a1947…",
+          "patientId": "d764b5cc…",
+          "amountMillimes": 50000,
+          "tender": "CASH",
+          "source": "DESK",
+          "recordedAt": "2026-10-29T15:02:12.886Z",
+          "recordedBy": "9007c9e4…",
+          "cashPeriodId": "7be25d6b…",
+          "evidence": {
+            "tier": "DESK_RECORD",
+            "label": {
+              "fr": "Espèces — vérifiées seulement par un comptage indépendant",
+              "ar": "نقدًا — يُتحقَّق منها فقط بعدّ مستقل"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "55337522…",
+          "number": 1,
+          "label": "R-000001"
+        },
+        "balanceAfterMillimes": 30000
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "POST /api/v1/care-items/1b322109…/site-amendments",
+      "body": {
+        "toothFdi": 36,
+        "surfaces": "DO",
+        "reasonCode": "WRONG_SURFACE",
+        "expectedSupersedesId": null
+      },
+      "status": 201,
+      "response": {
+        "siteAmendment": {
+          "id": "9cf585aa…",
+          "careItemId": "1b322109…",
+          "supersedesId": null,
+          "previousSite": {
+            "toothFdi": 36,
+            "surfaces": "MO"
+          },
+          "newSite": {
+            "toothFdi": 36,
+            "surfaces": "OD"
+          },
+          "reasonCode": "WRONG_SURFACE",
+          "reasonNote": null,
+          "amendedBy": "f4bdec7d…",
+          "amendedByName": "Fictional dentist",
+          "amendedAt": "2026-10-29T15:02:12.898Z"
+        },
+        "effectiveSite": {
+          "toothFdi": 36,
+          "surfaces": "OD"
+        },
+        "visitTotalMillimes": 80000
+      }
+    },
+    {
+      "who": "desk",
+      "request": "GET /api/v1/visits/878a1947…/workbench",
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "878a1947…",
+          "status": "COMPLETED",
+          "scheduledAt": "2026-10-28T09:00:00.000Z",
+          "durationMin": 30,
+          "patient": {
+            "id": "d764b5cc…",
+            "fileNo": 1,
+            "familyName": "Fictif",
+            "givenName": "Amel",
+            "preferredLanguage": "fr",
+            "contactPreference": "IN_PERSON"
+          },
+          "dentist": {
+            "id": "f4bdec7d…",
+            "name": "Fictional dentist"
+          },
+          "care": [
+            {
+              "id": "1b322109…",
+              "kind": "CARE",
+              "surfaces": "MO",
+              "toothFdi": 36,
+              "hasReason": false,
+              "correctsId": null,
+              "confirmedAt": "2026-10-29T15:02:12.870365+00:00",
+              "feeMillimes": 80000,
+              "siteAmended": true,
+              "procedureCode": "RESTO",
+              "amendmentCount": 1,
+              "procedureLabel": "Fictional composite restoration",
+              "confirmedByName": "Fictional dentist",
+              "effectiveSurfaces": "OD",
+              "effectiveToothFdi": 36
+            }
+          ],
+          "payments": [
+            {
+              "id": "1f1377b1…",
+              "source": "DESK",
+              "status": "ACTIVE",
+              "tender": "CASH",
+              "receiptId": "55337522…",
+              "cashPeriod": {
+                "status": "OPEN",
+                "periodNo": 1
+              },
+              "recordedAt": "2026-10-29T15:02:12.886872+00:00",
+              "evidenceTier": null,
+              "receiptLabel": "R-000001",
+              "amountMillimes": 50000,
+              "evidenceStatus": "DESK_CASH__INDEPENDENT_COUNT_REQUIRED",
+              "returnedMillimes": 0
+            }
+          ],
+          "adjustments": [],
+          "provenance": {
+            "correctionCount": 0,
+            "correctionNetMillimes": 0,
+            "adjustmentCount": 0,
+            "reducedMillimes": 0,
+            "returnedMillimes": 0,
+            "freeCareCount": 0,
+            "siteAmendmentCount": 1
+          },
+          "balance": {
+            "chargedMillimes": 80000,
+            "paidMillimes": 50000,
+            "reducedMillimes": 0,
+            "returnedMillimes": 0,
+            "balanceMillimes": 30000,
+            "careConfirmed": true
+          },
+          "nextAction": "RECORD_OR_FOLLOW_UP_PAYMENT"
+        },
+        "evidenceNotice": "Cash requires independent counting; cards need separately reviewed external evidence. Recorded amounts are claims.",
+        "syntheticDataOnly": true
+      }
+    },
+    {
+      "who": "desk",
+      "request": "GET /api/v1/patients/d764b5cc…/clinical-record",
+      "status": 403,
+      "response": {
+        "error": {
+          "code": "FORBIDDEN_ROLE",
+          "message": "Your role cannot perform this action",
+          "details": {
+            "permission": "clinical.read"
+          }
+        }
+      }
+    },
+    {
+      "who": "dentist",
+      "request": "GET /api/v1/patients/d764b5cc…/clinical-record",
+      "status": 200,
+      "response": {
+        "patient": {
+          "id": "d764b5cc…",
+          "fileNo": 1,
+          "familyName": "Fictif",
+          "givenName": "Amel",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "preferredLanguage": "fr"
+        },
+        "medical": {
+          "activeAlerts": [
+            {
+              "id": "ee9579b9…",
+              "chainId": "325473c5…",
+              "revision": 2,
+              "code": "ANTICOAGULANT_VKA",
+              "severity": "CRITICAL",
+              "detail": "Fictional: patient says takes a blood thinner",
+              "source": "DENTIST_VERIFIED",
+              "status": "ACTIVE",
+              "reason": null,
+              "recordedBy": "f4bdec7d…",
+              "recordedByName": "Fictional dentist",
+              "recordedRole": "DENTIST",
+              "recordedAt": "2026-10-29T15:02:12.830Z",
+              "firstRecordedAt": "2026-10-29T15:02:12.778Z"
+            }
+          ],
+          "alertSetHash": "e4c3a79b3202…",
+          "reviewStatus": "CURRENT",
+          "allergyStatus": "NO_KNOWN_ALLERGIES",
+          "lastReview": {
+            "id": "661ae984…",
+            "reviewedAt": "2026-10-29T15:02:12.841Z",
+            "reviewedByName": "Fictional dentist",
+            "method": "INTERVIEW",
+            "noKnownAllergies": true,
+            "nextReviewDue": "2027-10-29",
+            "alertSetHash": "e4c3a79b3202…"
+          },
+          "alerts": [
+            {
+              "id": "ee9579b9…",
+              "chainId": "325473c5…",
+              "revision": 2,
+              "code": "ANTICOAGULANT_VKA",
+              "severity": "CRITICAL",
+              "detail": "Fictional: patient says takes a blood thinner",
+              "source": "DENTIST_VERIFIED",
+              "status": "ACTIVE",
+              "reason": null,
+              "recordedBy": "f4bdec7d…",
+              "recordedByName": "Fictional dentist",
+              "recordedRole": "DENTIST",
+              "recordedAt": "2026-10-29T15:02:12.830Z",
+              "firstRecordedAt": "2026-10-29T15:02:12.778Z"
+            }
+          ],
+          "reviews": [
+            {
+              "id": "661ae984…",
+              "visitId": "878a1947…",
+              "method": "INTERVIEW",
+              "noKnownAllergies": true,
+              "nextReviewDue": "2027-10-29",
+              "note": null,
+              "reviewedByName": "Fictional dentist",
+              "reviewedAt": "2026-10-29T15:02:12.841Z"
+            }
+          ]
+        },
+        "treatmentPlan": [
+          {
+            "id": "ce0a6208…",
+            "patientId": "d764b5cc…",
+            "createdInVisitId": "878a1947…",
+            "procedureCode": "RESTO",
+            "procedureLabel": "Fictional composite restoration",
+            "toothFdi": 36,
+            "surfaces": "MO",
+            "phaseNo": 2,
+            "estimatedFeeMillimes": 80000,
+            "note": null,
+            "createdByName": "Fictional dentist",
+            "createdAt": "2026-10-29T15:02:12.864Z",
+            "status": "COMPLETED",
+            "lastSeq": 1,
+            "careItemId": "1b322109…",
+            "events": [
+              {
+                "at": "2026-10-29T15:02:12.877Z",
+                "seq": 1,
+                "byName": "Fictional dentist",
+                "reason": null,
+                "status": "COMPLETED",
+                "careItemId": "1b322109…"
+              }
+            ]
+          }
+        ],
+        "teeth": {
+          "36": [
+            {
+              "type": "CARE",
+              "careItemId": "1b322109…",
+              "visitId": "878a1947…",
+              "procedureCode": "RESTO",
+              "procedureLabel": "Fictional composite restoration",
+              "surfaces": "OD",
+              "siteAmended": true,
+              "at": "2026-10-29T15:02:12.870Z"
+            },
+            {
+              "type": "FINDING",
+              "findingId": "2db043b0…",
+              "visitId": "878a1947…",
+              "conditionCode": "CARIES",
+              "surfaces": "MO",
+              "at": "2026-10-29T15:02:12.852Z"
+            }
+          ]
+        },
+        "timeline": [
+          {
+            "id": "878a1947…",
+            "status": "COMPLETED",
+            "scheduledAt": "2026-10-28T09:00:00.000Z",
+            "dentistName": "Fictional dentist",
+            "care": [
+              {
+                "id": "1b322109…",
+                "kind": "CARE",
+                "correctsId": null,
+                "procedureCode": "RESTO",
+                "procedureLabel": "Fictional composite restoration",
+                "toothFdi": 36,
+                "surfaces": "MO",
+                "effectiveToothFdi": 36,
+                "effectiveSurfaces": "OD",
+                "amendmentCount": 1,
+                "feeMillimes": 80000,
+                "reason": null,
+                "confirmedByName": "Fictional dentist",
+                "confirmedAt": "2026-10-29T15:02:12.870Z"
+              }
+            ],
+            "notes": [
+              {
+                "id": "7da21214…",
+                "patientId": "d764b5cc…",
+                "visitId": "878a1947…",
+                "kind": "NOTE",
+                "parentNoteId": null,
+                "subjective": "Fictional: pain when chewing",
+                "objective": "Fictional: cavity on 36",
+                "assessment": null,
+                "plan": "Fictional: restoration today",
+                "effectiveAt": "2026-10-29T15:02:12.858Z",
+                "reason": null,
+                "contentSha256": "06ec00d42e38…",
+                "signedBy": "f4bdec7d…",
+                "signedByName": "Fictional dentist",
+                "signedAt": "2026-10-29T15:02:12.859Z",
+                "integrity": "OK",
+                "enteredInError": null,
+                "addendumIds": []
+              }
+            ],
+            "findings": [
+              {
+                "id": "2db043b0…",
+                "visitId": "878a1947…",
+                "kind": "FINDING",
+                "toothFdi": 36,
+                "areaCode": null,
+                "surfaces": "MO",
+                "conditionCode": "CARIES",
+                "note": null,
+                "reason": null,
+                "recordedByName": "Fictional dentist",
+                "recordedAt": "2026-10-29T15:02:12.852Z",
+                "enteredInError": null
+              }
+            ]
+          }
+        ],
+        "syntheticDataOnly": true
+      }
+    }
+  ]
+}

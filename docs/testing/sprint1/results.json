@@ -1,0 +1,89 @@
+{
+  "executed_code_sha": "3ecc18332790f1e560f5c574f0880689a0f8cb14",
+  "node": "22.22.0",
+  "postgresql": "16.15",
+  "evidence": "Codex executed; not inherited CI",
+  "cells": [
+    {
+      "timezone": "UTC",
+      "results": {
+        "source.log": {
+          "tests": 338,
+          "pass": 338,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0
+        },
+        "compiled.log": {
+          "tests": 338,
+          "pass": 338,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0
+        }
+      },
+      "sha256": {
+        "source.log": "707117e2b8eb1872dffa34dc395eb9afeece6f4f15888caedad57d53e42ad250",
+        "compiled.log": "efe3a81c3ec556253107d005050199f498cad979b4a417962bbc50f7d2ed1c50",
+        "typecheck.log": "95d7215c76f757f5fe6099f9e052289cd1fa0a4714380d397a8d5c6c96fbf65c",
+        "versions.log": "2cd0a284cd600ca0063c5bba92c61caf5c796e6f912794a58dd92dec36bbd9dd",
+        "visit-journey.log": "7b4f0f843891cb262337020204dec9a8b96fe2fec50fbfaa49655b9f71683a65",
+        "dentist-journey.log": "b04054bf09c78286cd45b9f34e402a4e4859e672356b5a0a1794dd021bf4759a"
+      }
+    },
+    {
+      "timezone": "Africa/Tunis",
+      "results": {
+        "source.log": {
+          "tests": 338,
+          "pass": 338,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0
+        },
+        "compiled.log": {
+          "tests": 338,
+          "pass": 338,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0
+        }
+      },
+      "sha256": {
+        "source.log": "c8f55ad0c83d9b721b9c55f378c2f1b3300d01f140cd4a9a16b95d567f2a5c26",
+        "compiled.log": "dc54d0c2978ca61d9903dd418516ebd4830192ac0b786bb87df846a278f4ecdb",
+        "typecheck.log": "95d7215c76f757f5fe6099f9e052289cd1fa0a4714380d397a8d5c6c96fbf65c",
+        "versions.log": "2cd0a284cd600ca0063c5bba92c61caf5c796e6f912794a58dd92dec36bbd9dd",
+        "visit-journey.log": "7b4f0f843891cb262337020204dec9a8b96fe2fec50fbfaa49655b9f71683a65",
+        "dentist-journey.log": "4d09934c42d7c083f7035426c983c8a283cb7ca4f503169393ca48f7ccc3d229"
+      }
+    },
+    {
+      "timezone": "America/Toronto",
+      "results": {
+        "source.log": {
+          "tests": 338,
+          "pass": 338,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0
+        },
+        "compiled.log": {
+          "tests": 338,
+          "pass": 338,
+          "fail": 0,
+          "skipped": 0,
+          "cancelled": 0
+        }
+      },
+      "sha256": {
+        "source.log": "9d12328874e00f46b18c02f2b54930d951dda5500927025929d5d436637ef346",
+        "compiled.log": "2ff04a3f4c9c2bf9bcad371044c133380f75d7caa9deb87ce794d6f7df601ef2",
+        "typecheck.log": "95d7215c76f757f5fe6099f9e052289cd1fa0a4714380d397a8d5c6c96fbf65c",
+        "versions.log": "2cd0a284cd600ca0063c5bba92c61caf5c796e6f912794a58dd92dec36bbd9dd",
+        "visit-journey.log": "7b4f0f843891cb262337020204dec9a8b96fe2fec50fbfaa49655b9f71683a65",
+        "dentist-journey.log": "f4e651bf4d6491c1361963bd5f23f6e4a030ab3e9fd293166916e54860eaeb78"
+      }
+    }
+  ]
+}
