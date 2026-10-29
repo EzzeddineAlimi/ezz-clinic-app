@@ -1315,3 +1315,16 @@ dialog::backdrop {
  #receipt-print {position:absolute;inset:0;background:white;color:black}
  dialog::backdrop {background:white}
 }
+
+
+/* Dentist-only encounter. Long text wraps, notes remain visibly attributed to authors. */
+.clinical-workspace { display: grid; gap: 16px; }
+.clinical-nav { display: flex; flex-wrap: wrap; gap: 8px; }
+.clinical-nav button { padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; }
+.clinical-nav button[aria-pressed="true"] { background: #eaf1eb; color: #164b3e; font-weight: 650; }
+.clinical-entry { display: grid; gap: 7px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; margin-block: 10px; overflow-wrap: anywhere; }
+.clinical-entry small { color: var(--muted); }
+.clinical-workspace .cash-form { display: grid; gap: 15px; padding-top: 20px; }
+.clinical-workspace .cash-form fieldset { border: 0; display: grid; gap: 12px; padding: 0; }
+.clinical-workspace .cash-form label { display: grid; gap: 6px; font-size: 13px; }
+.clinical-workspace .cash-form button { justify-self: start; }
