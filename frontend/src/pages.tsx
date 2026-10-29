@@ -10,6 +10,7 @@ import { Empty, ErrorBox, Icon, Loading, useResource } from "./ui.tsx";
 export function DayBoard({
   board,
   w,
+  lang,
   writable,
   api,
   refreshed,
