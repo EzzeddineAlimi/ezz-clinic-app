@@ -1,6 +1,8 @@
 # EZZ Clinic API v1 — contracts (fictional-data build)
 
-Status: generated from the running v0.2 code by Claude Opus 5.5 on 2026-10-28. Route table and error codes are generated from `src/app.ts` / `src/platform/errors.ts`; examples below are **real responses captured from a run** against PostgreSQL 16 (ids are random UUIDs; tokens redacted). Not a production API; Astra builds the UI against these contracts.
+> **R73 note:** the endpoint table below is a 2026-10-28 snapshot and lacks later routes (owner checkpoints, settings, documents, lab, stock, readiness). The generated, test-enforced sources are [`endpoints.md`](endpoints.md) and [`openapi.json`](openapi.json), with recorded examples in [`examples/`](examples/) and the frontend rules in [`frontend-security-states.md`](frontend-security-states.md). The conventions in this file still apply.
+
+Status: generated from the running v0.2 code by Claude on 2026-10-28. Route table and error codes are generated from `src/app.ts` / `src/platform/errors.ts`; examples below are **real responses captured from a run** against PostgreSQL 16 (ids are random UUIDs; tokens redacted). Not a production API; Astra builds the UI against these contracts.
 
 ## Conventions
 

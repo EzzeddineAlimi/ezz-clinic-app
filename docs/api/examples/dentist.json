@@ -1,0 +1,449 @@
+{
+  "title": "Dentist workflow",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "dentist",
+      "title": "Open the encounter (identity, alerts with their hash, visit record, open plan)",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/encounter",
+      "path": "/api/v1/visits/<id-6>/encounter",
+      "request": null,
+      "status": 200,
+      "response": {
+        "visit": {
+          "id": "<id-6>",
+          "status": "IN_CHAIR",
+          "scheduledAt": "<timestamp>",
+          "durationMin": 30,
+          "dentistId": "<id-5>",
+          "dentistName": "Fictional dentist"
+        },
+        "patient": {
+          "id": "<id-4>",
+          "fileNo": 1,
+          "familyName": "Ben Fictif",
+          "givenName": "Amel",
+          "nameAr": null,
+          "dateOfBirth": null,
+          "sex": null,
+          "preferredLanguage": "fr"
+        },
+        "medical": {
+          "activeAlerts": [
+            {
+              "id": "<id-7>",
+              "chainId": "<id-8>",
+              "revision": 1,
+              "code": "ALLERGY_PENICILLIN",
+              "severity": "CRITICAL",
+              "detail": "Fictional: rash with penicillin",
+              "source": "PATIENT_DECLARED",
+              "status": "ACTIVE",
+              "reason": null,
+              "recordedBy": "<id-1>",
+              "recordedByName": "Fictional desk",
+              "recordedRole": "RECEPTIONIST",
+              "recordedAt": "<timestamp>",
+              "firstRecordedAt": "<timestamp>"
+            }
+          ],
+          "alertSetHash": "<sha256>",
+          "reviewStatus": "NEVER_REVIEWED",
+          "allergyStatus": "ALLERGIES_RECORDED",
+          "lastReview": null,
+          "acknowledgedForVisit": false,
+          "treatmentGate": "SEND_ALERT_SET_HASH_WITH_CARE_OR_ACKNOWLEDGE"
+        },
+        "care": [],
+        "notes": [],
+        "findings": [],
+        "planItems": [],
+        "history": {
+          "completedVisitCount": 0,
+          "lastCompletedVisitAt": null
+        },
+        "syntheticDataOnly": true
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Verify the patient-declared alert",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/medical-alerts/:id/revisions",
+      "path": "/api/v1/medical-alerts/<id-7>/revisions",
+      "request": {
+        "action": "VERIFY",
+        "expectedRevision": 1
+      },
+      "status": 201,
+      "response": {
+        "alert": {
+          "id": "<id-9>",
+          "chainId": "<id-8>",
+          "revision": 2,
+          "code": "ALLERGY_PENICILLIN",
+          "severity": "CRITICAL",
+          "detail": "Fictional: rash with penicillin",
+          "source": "DENTIST_VERIFIED",
+          "status": "ACTIVE",
+          "reason": null,
+          "recordedBy": "<id-5>",
+          "recordedByName": "Fictional dentist",
+          "recordedRole": "DENTIST",
+          "recordedAt": "<timestamp>",
+          "firstRecordedAt": "<timestamp>"
+        },
+        "alertSetHash": "<sha256>"
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Medical history review (echo the alertSetHash you were shown)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/medical-history-reviews",
+      "path": "/api/v1/patients/<id-4>/medical-history-reviews",
+      "request": {
+        "method": "INTERVIEW",
+        "noKnownAllergies": false,
+        "alertSetHash": "<sha256>",
+        "visitId": "<id-6>"
+      },
+      "status": 201,
+      "response": {
+        "review": {
+          "id": "<id-10>",
+          "reviewedAt": "<timestamp>",
+          "reviewedByName": "Fictional dentist",
+          "method": "INTERVIEW",
+          "noKnownAllergies": false,
+          "nextReviewDue": "2027-10-29",
+          "alertSetHash": "<sha256>"
+        },
+        "reviewStatus": "CURRENT",
+        "allergyStatus": "ALLERGIES_RECORDED",
+        "alertSetHash": "<sha256>"
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Chart a finding (FDI tooth + surfaces)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/chart-findings",
+      "path": "/api/v1/visits/<id-6>/chart-findings",
+      "request": {
+        "kind": "FINDING",
+        "toothFdi": 36,
+        "surfaces": "MO",
+        "conditionCode": "CARIES",
+        "note": "Fictional finding note"
+      },
+      "status": 201,
+      "response": {
+        "finding": {
+          "id": "<id-11>",
+          "visitId": "<id-6>",
+          "kind": "FINDING",
+          "toothFdi": 36,
+          "areaCode": null,
+          "surfaces": "MO",
+          "conditionCode": "CARIES",
+          "note": "Fictional finding note",
+          "recordedByName": "Fictional dentist",
+          "recordedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Clinical note (SOAP)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/clinical-notes",
+      "path": "/api/v1/visits/<id-6>/clinical-notes",
+      "request": {
+        "subjective": "Fictional: pain left side",
+        "objective": "Fictional: cavity on 36",
+        "plan": "Fictional: composite today"
+      },
+      "status": 201,
+      "response": {
+        "note": {
+          "id": "<id-12>",
+          "visitId": "<id-6>",
+          "kind": "NOTE",
+          "subjective": "Fictional: pain left side",
+          "objective": "Fictional: cavity on 36",
+          "assessment": null,
+          "plan": "Fictional: composite today",
+          "effectiveAt": "<timestamp>",
+          "reason": null,
+          "contentSha256": "<sha256>",
+          "signedBy": "<id-5>",
+          "signedByName": "Fictional dentist",
+          "signedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Confirm billable care (only a dentist; the fee is the dentist's decision)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/care",
+      "path": "/api/v1/visits/<id-6>/care",
+      "request": {
+        "procedureCode": "RESTO",
+        "procedureLabel": "Fictional composite",
+        "toothFdi": 36,
+        "surfaces": "MO",
+        "feeMillimes": 80000,
+        "alertSetHash": "<sha256>"
+      },
+      "status": 201,
+      "response": {
+        "careItem": {
+          "id": "<id-13>",
+          "visitId": "<id-6>",
+          "kind": "CARE",
+          "procedureCode": "RESTO",
+          "procedureLabel": "Fictional composite",
+          "toothFdi": 36,
+          "surfaces": "MO",
+          "feeMillimes": 80000,
+          "confirmedBy": "<id-5>",
+          "confirmedAt": "<timestamp>"
+        },
+        "visitTotalMillimes": 80000
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Visit care list",
+      "role": "DENTIST",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/care",
+      "path": "/api/v1/visits/<id-6>/care",
+      "request": null,
+      "status": 200,
+      "response": {
+        "visitId": "<id-6>",
+        "items": [
+          {
+            "id": "<id-13>",
+            "kind": "CARE",
+            "correctsId": null,
+            "procedureCode": "RESTO",
+            "procedureLabel": "Fictional composite",
+            "toothFdi": 36,
+            "surfaces": "MO",
+            "effectiveToothFdi": 36,
+            "effectiveSurfaces": "MO",
+            "amendmentCount": 0,
+            "feeMillimes": 80000,
+            "reason": null,
+            "confirmedBy": "<id-5>",
+            "confirmedByName": "Fictional dentist",
+            "confirmedAt": "<timestamp>",
+            "siteAmended": false,
+            "siteAmendments": []
+          }
+        ],
+        "visitTotalMillimes": 80000
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Add a lab supplier",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/lab/suppliers",
+      "path": "/api/v1/lab/suppliers",
+      "request": {
+        "name": "Laboratoire Fictif Tunis"
+      },
+      "status": 201,
+      "response": {
+        "supplier": {
+          "id": "<id-14>",
+          "name": "Laboratoire Fictif Tunis",
+          "contact": null
+        }
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Order lab work",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/lab-cases",
+      "path": "/api/v1/patients/<id-4>/lab-cases",
+      "request": {
+        "supplierId": "<id-14>",
+        "caseType": "CROWN",
+        "teeth": [
+          36
+        ],
+        "material": "Fictional zirconia",
+        "shade": "VITA classical A2",
+        "impression": "DIGITAL_SCAN",
+        "dueOn": "2026-11-10",
+        "visitId": "<id-6>"
+      },
+      "status": 201,
+      "response": {
+        "labCase": {
+          "id": "<id-15>",
+          "patientId": "<id-4>",
+          "visitId": "<id-6>",
+          "supplier": {
+            "id": "<id-14>",
+            "name": "Laboratoire Fictif Tunis"
+          },
+          "caseType": "CROWN",
+          "teeth": [
+            36
+          ],
+          "areaCode": null,
+          "material": "Fictional zirconia",
+          "shade": "VITA classical A2",
+          "impression": "DIGITAL_SCAN",
+          "instructions": null,
+          "dueOn": "2026-11-10",
+          "status": "CREATED",
+          "remakeOfId": null,
+          "remakeResponsibility": null,
+          "createdRole": "DENTIST",
+          "createdAt": "<timestamp>",
+          "allowedNext": [
+            "SENT",
+            "CANCELLED"
+          ]
+        }
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Link the billed care item to the lab case (MF19)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/lab-cases/:id/care-links",
+      "path": "/api/v1/lab-cases/<id-15>/care-links",
+      "request": {
+        "careItemId": "<id-13>"
+      },
+      "status": 201,
+      "response": {
+        "link": {
+          "id": "<id-16>",
+          "caseId": "<id-15>",
+          "careItemId": "<id-13>"
+        }
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Attach an image: step 1, declare metadata + SHA-256",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/patients/:id/documents",
+      "path": "/api/v1/patients/<id-4>/documents",
+      "request": {
+        "modality": "INTRAORAL_PHOTO",
+        "title": "Fictional photo",
+        "source": "IN_CLINIC_SENSOR",
+        "teeth": [
+          36
+        ],
+        "contentType": "image/png",
+        "sizeBytes": 67,
+        "sha256": "<sha256>",
+        "visitId": "<id-6>"
+      },
+      "status": 201,
+      "response": {
+        "document": {
+          "id": "<id-17>",
+          "patientId": "<id-4>",
+          "visitId": "<id-6>",
+          "modality": "INTRAORAL_PHOTO",
+          "title": "Fictional photo",
+          "teeth": [
+            36
+          ],
+          "areaCode": null,
+          "acquiredOn": null,
+          "source": "IN_CLINIC_SENSOR",
+          "status": "AWAITING_CONTENT",
+          "reassignedFromId": null,
+          "createdAt": "<timestamp>",
+          "declared": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>"
+          },
+          "content": null,
+          "downloadable": false
+        },
+        "upload": {
+          "method": "POST",
+          "path": "/api/v1/documents/<id-17>/content",
+          "contentType": "application/octet-stream",
+          "maxBytes": 20971520
+        }
+      }
+    },
+    {
+      "file": "dentist",
+      "title": "Attach an image: step 2, raw bytes (application/octet-stream, no Idempotency-Key)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/documents/:id/content",
+      "path": "/api/v1/documents/<id-17>/content",
+      "request": "<67 bytes of image/png>",
+      "status": 201,
+      "response": {
+        "document": {
+          "id": "<id-17>",
+          "patientId": "<id-4>",
+          "visitId": "<id-6>",
+          "modality": "INTRAORAL_PHOTO",
+          "title": "Fictional photo",
+          "teeth": [
+            36
+          ],
+          "areaCode": null,
+          "acquiredOn": null,
+          "source": "IN_CLINIC_SENSOR",
+          "status": "ACTIVE",
+          "reassignedFromId": null,
+          "createdAt": "<timestamp>",
+          "declared": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>"
+          },
+          "content": {
+            "type": "image/png",
+            "sizeBytes": 67,
+            "sha256": "<sha256>",
+            "receivedSha256": "<sha256>",
+            "locationMetadataRemoved": []
+          },
+          "downloadable": true
+        },
+        "screen": {
+          "verdict": "PASS",
+          "screener": "structural-format-check-v1 (not a malware scanner)",
+          "reason": null
+        }
+      }
+    }
+  ]
+}

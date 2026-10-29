@@ -14,7 +14,9 @@
     "seed:fictional": "node scripts/seed-fictional.ts",
     "start": "node dist/src/server.js",
     "test": "node --test --test-concurrency=1 --test-timeout=60000 test/*.test.ts",
-    "test:dist": "npm run build && node --test --test-concurrency=1 --test-timeout=60000 dist/test/*.test.js"
+    "test:dist": "npm run build && node --test --test-concurrency=1 --test-timeout=60000 dist/test/*.test.js",
+    "gen:openapi": "node scripts/gen-openapi.ts",
+    "bench": "node scripts/bench.ts"
   },
   "devDependencies": {
     "@types/node": "26.6.3",

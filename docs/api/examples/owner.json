@@ -1,0 +1,486 @@
+{
+  "title": "Owner workflow",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/r73-api-contract.test.ts (backend)",
+  "placeholders": "<id-n> = a UUID (same n = same entity), <timestamp> = ISO-8601 instant, <sha256> = 64 hex chars, <token> = session token",
+  "steps": [
+    {
+      "file": "owner",
+      "title": "Open the cash period (password re-entry window applies)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/cash/periods",
+      "path": "/api/v1/cash/periods",
+      "request": {
+        "openingFloatMillimes": 20000
+      },
+      "status": 201,
+      "response": {
+        "period": {
+          "id": "<id-3>",
+          "periodNo": 1,
+          "openedAt": "<timestamp>",
+          "status": "OPEN"
+        }
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Blind count by a non-receptionist (no expected figure is ever returned to the counter)",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/cash/periods/:id/counts",
+      "path": "/api/v1/cash/periods/<id-3>/counts",
+      "request": {
+        "countedMillimes": 50000
+      },
+      "status": 201,
+      "response": {
+        "count": {
+          "id": "<id-22>",
+          "periodId": "<id-3>",
+          "attemptNo": 1,
+          "submittedAt": "<timestamp>"
+        },
+        "status": "RECORDED_PENDING_OWNER_REVIEW"
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Owner cash review (expected vs counted, after the count exists)",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/cash/periods/:id/review",
+      "path": "/api/v1/cash/periods/<id-3>/review",
+      "request": null,
+      "status": 200,
+      "response": {
+        "period": {
+          "id": "<id-3>",
+          "periodNo": 1,
+          "status": "OPEN",
+          "openedAt": "<timestamp>"
+        },
+        "expected": {
+          "expectedMillimes": 50000,
+          "breakdown": {
+            "openingFloatMillimes": 20000,
+            "openingBasis": "OWNER_DECLARED",
+            "cashPaymentsMillimes": 30000,
+            "cashPaymentCount": 1,
+            "floatTopUpsMillimes": 0,
+            "ownerWithdrawalsMillimes": 0,
+            "bankDepositsMillimes": 0,
+            "pettyExpensesMillimes": 0,
+            "cashRefundsMillimes": 0,
+            "cashVoidsMillimes": 0
+          }
+        },
+        "attempts": [
+          {
+            "id": "<id-22>",
+            "attemptNo": 1,
+            "countedBy": "<id-5>",
+            "countedMillimes": 50000,
+            "expectedMillimes": 50000,
+            "differenceMillimes": 0,
+            "submittedAt": "<timestamp>",
+            "recountReason": null,
+            "counterIndependent": true,
+            "independenceNotes": "software check only: physical independence of the count cannot be proven by software",
+            "wording": "count matches records"
+          }
+        ],
+        "summary": "1 attempt(s); first differed by 0 millimes; latest differs by 0 millimes",
+        "cashRecordedAfterLatestCount": {
+          "count": 0,
+          "totalMillimes": 0,
+          "note": "belongs to the next period when this one is closed"
+        },
+        "evidence": "COUNTED_BY_NON_RECEPTIONIST (software check)",
+        "scope": "Compares the drawer with RECORDED cash only. Cash never recorded cannot appear here (CH-002)."
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Owner exception list (evidence wording; zero items does not mean nothing is wrong)",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/owner/exceptions",
+      "path": "/api/v1/owner/exceptions?asOf=2026-10-28",
+      "request": null,
+      "status": 200,
+      "response": {
+        "asOf": "2026-10-28",
+        "open": [
+          {
+            "key": "audit:checkpoint:due",
+            "kind": "AUDIT_CHECKPOINT_DUE",
+            "evidence": "SYSTEM_CHECK",
+            "severity": "MEDIUM",
+            "wording": "No owner checkpoint in the last 7 days",
+            "known": "Last checkpoint: never",
+            "unknown": "Changes since then are tamper-evident only inside the database",
+            "nextStep": "Create a checkpoint and keep the printed line outside the clinic system"
+          },
+          {
+            "key": "security:<id-1>:denied_cash_review",
+            "kind": "DENIED_PRIVILEGED_ATTEMPT",
+            "evidence": "SYSTEM_CHECK",
+            "severity": "INFO",
+            "wording": "1 denied attempt(s) of \"cash.review\" by a staff account in 7 days",
+            "known": "The account lacked the role; nothing was changed",
+            "unknown": "Whether it was a mistake",
+            "nextStep": "Mention it at the next staff check-in if repeated",
+            "refs": {
+              "staffId": "<id-1>",
+              "action": "cash.review"
+            }
+          },
+          {
+            "key": "security:<id-1>:denied_clinical_read",
+            "kind": "DENIED_PRIVILEGED_ATTEMPT",
+            "evidence": "SYSTEM_CHECK",
+            "severity": "INFO",
+            "wording": "1 denied attempt(s) of \"clinical.read\" by a staff account in 7 days",
+            "known": "The account lacked the role; nothing was changed",
+            "unknown": "Whether it was a mistake",
+            "nextStep": "Mention it at the next staff check-in if repeated",
+            "refs": {
+              "staffId": "<id-1>",
+              "action": "clinical.read"
+            }
+          },
+          {
+            "key": "security:<id-23>:denied_clinical_read",
+            "kind": "DENIED_PRIVILEGED_ATTEMPT",
+            "evidence": "SYSTEM_CHECK",
+            "severity": "INFO",
+            "wording": "1 denied attempt(s) of \"clinical.read\" by a staff account in 7 days",
+            "known": "The account lacked the role; nothing was changed",
+            "unknown": "Whether it was a mistake",
+            "nextStep": "Mention it at the next staff check-in if repeated",
+            "refs": {
+              "staffId": "<id-23>",
+              "action": "clinical.read"
+            }
+          }
+        ],
+        "openCount": 4,
+        "resolvedCountByReason": {},
+        "scope": "Checks recorded entries only; unrecorded visits or payments cannot be assessed. Zero items does not mean nothing is wrong."
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Financial review for a period",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/owner/financial-review",
+      "path": "/api/v1/owner/financial-review?from=2026-10-28&to=2026-10-28",
+      "request": null,
+      "status": 200,
+      "response": {
+        "window": {
+          "from": "2026-10-28",
+          "to": "2026-10-28",
+          "timezone": "Africa/Tunis"
+        },
+        "reductions": {
+          "items": [],
+          "totalMillimes": 0,
+          "byKind": {},
+          "byReasonCode": {}
+        },
+        "returns": {
+          "items": [],
+          "totalMillimes": 0,
+          "byKind": {},
+          "byTender": {}
+        },
+        "feeCorrections": {
+          "items": [],
+          "netMillimes": 0,
+          "count": 0
+        },
+        "freeCare": {
+          "items": [],
+          "count": 0
+        },
+        "zeroedVisits": {
+          "items": [],
+          "count": 0,
+          "wording": "Fee brought to zero by a correction or reduction, with no payment. Legitimate cases exist; the owner reviews the reason codes."
+        },
+        "paymentEvidence": {
+          "byLevel": {},
+          "levels": {
+            "RECORDED_ONLY": "Recorded by staff; no independent evidence yet.",
+            "CASH_IN_COUNTED_PERIOD": "Inside a drawer period the owner counted and closed (drawer-level, not proof of this payment).",
+            "PAPER_SLIP_RECORD": "Re-entered from a numbered paper slip; the slip is the evidence.",
+            "CARD_DESK_CLAIM": "Card payment as claimed at the desk; owner proof separate.",
+            "CARD_OWNER_REVIEWED_STATEMENT": "Matched by the owner to an imported statement line; not provider-verified."
+          }
+        },
+        "cashPeriods": {
+          "closed": [],
+          "discrepancies": 0,
+          "open": {
+            "periodNo": 1,
+            "openedAt": "<timestamp>",
+            "attempts": 1
+          }
+        },
+        "byAuthorizer": {},
+        "unresolved": {
+          "integrityFindings": 0,
+          "checks": [],
+          "note": "System findings are data-consistency signals, not conclusions about any person."
+        },
+        "scope": "Recorded decisions and payments only. Money never recorded cannot appear here (CH-002). This view upgrades no evidence and accuses no one."
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Integrity check (recomputes hash chain and audited values)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/integrity/check",
+      "path": "/api/v1/integrity/check",
+      "request": {},
+      "status": 200,
+      "response": {
+        "ok": true,
+        "receiptsIssued": 2,
+        "auditEvents": 27,
+        "auditHead": {
+          "seq": 27,
+          "hash": "<sha256>"
+        },
+        "findings": [],
+        "scope": "Checks recorded entries only. A payment never entered anywhere cannot be detected (CH-002). Value checks compare each business row and each clinical row with the values captured in its audit event; an edit that also rewrites the audit chain is only detectable with an owner checkpoint kept outside the database."
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Create an owner checkpoint to print or store outside the system",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/owner/checkpoints",
+      "path": "/api/v1/owner/checkpoints",
+      "request": {
+        "note": "Fictional weekly checkpoint"
+      },
+      "status": 201,
+      "response": {
+        "checkpoint": {
+          "clinicCode": "astra-demo",
+          "seq": 27,
+          "hash": "<sha256>",
+          "at": "<timestamp>",
+          "checkCode": "29ab5ae1",
+          "hashGroups": "cb05 3d3e c3ed 9aa8 d2b0 4f04 9a55 5e14 d231 b1c3 9e0a f400 8008 1940 a206 4263"
+        },
+        "line": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb053d3ec3ed9aa8d2b04f049a555e14d231b1c39e0af40080081940a2064263 at=2026-10-29T02:04:18.039Z check=29ab5ae1",
+        "document": {
+          "documentType": "AUDIT_CHECKPOINT",
+          "reference": "astra-demo#27",
+          "size": "normal",
+          "fontPt": 12,
+          "sections": [
+            {
+              "lang": "fr",
+              "dir": "ltr",
+              "title": "Point de contrôle du registre (propriétaire)",
+              "mark": null,
+              "notice": "Prouve que l'historique enregistré jusqu'à ce point n'a pas été réécrit, supprimé ni restauré à une version antérieure. Ne peut pas montrer un paiement ou un soin jamais enregistré.",
+              "lines": [
+                {
+                  "key": "clinic",
+                  "label": "Cabinet",
+                  "value": "astra-demo",
+                  "isolate": true
+                },
+                {
+                  "key": "seq",
+                  "label": "Numéro de séquence",
+                  "value": "27",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "at",
+                  "label": "Pris le (UTC)",
+                  "value": "<timestamp>",
+                  "isolate": true
+                },
+                {
+                  "key": "hash",
+                  "label": "Empreinte",
+                  "value": "cb05 3d3e c3ed 9aa8 d2b0 4f04 9a55 5e14 d231 b1c3 9e0a f400 8008 1940 a206 4263",
+                  "isolate": true
+                },
+                {
+                  "key": "check",
+                  "label": "Code de contrôle",
+                  "value": "29ab5ae1",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "line",
+                  "label": "Ligne complète",
+                  "value": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb053d3ec3ed9aa8d2b04f049a555e14d231b1c39e0af40080081940a2064263 at=2026-10-29T02:04:18.039Z check=29ab5ae1",
+                  "isolate": true
+                },
+                {
+                  "key": "keep",
+                  "label": "Conservez cette feuille HORS du cabinet et hors du système (coffre, domicile, photo personnelle). C'est elle qui sert de preuve.",
+                  "value": "",
+                  "isolate": false
+                },
+                {
+                  "key": "signature",
+                  "label": "Signature du propriétaire et date",
+                  "value": "",
+                  "isolate": false
+                }
+              ]
+            },
+            {
+              "lang": "ar",
+              "dir": "rtl",
+              "title": "نقطة مراقبة السجل (المالك)",
+              "mark": null,
+              "notice": "يُثبت أن السجل المسجّل حتى هذه النقطة لم يُعَد كتابته أو حذفه أو استرجاعه إلى نسخة أقدم. لا يمكنه إظهار دفعة أو علاج لم يُسجَّل أبداً.",
+              "lines": [
+                {
+                  "key": "clinic",
+                  "label": "العيادة",
+                  "value": "astra-demo",
+                  "isolate": true
+                },
+                {
+                  "key": "seq",
+                  "label": "رقم التسلسل",
+                  "value": "27",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "at",
+                  "label": "أُخذ في (التوقيت العالمي)",
+                  "value": "<timestamp>",
+                  "isolate": true
+                },
+                {
+                  "key": "hash",
+                  "label": "البصمة",
+                  "value": "cb05 3d3e c3ed 9aa8 d2b0 4f04 9a55 5e14 d231 b1c3 9e0a f400 8008 1940 a206 4263",
+                  "isolate": true
+                },
+                {
+                  "key": "check",
+                  "label": "رمز التحقق",
+                  "value": "29ab5ae1",
+                  "isolate": true,
+                  "emphasis": true
+                },
+                {
+                  "key": "line",
+                  "label": "السطر الكامل",
+                  "value": "EZZ-CP2 clinic=astra-demo seq=27 hash=cb053d3ec3ed9aa8d2b04f049a555e14d231b1c39e0af40080081940a2064263 at=2026-10-29T02:04:18.039Z check=29ab5ae1",
+                  "isolate": true
+                },
+                {
+                  "key": "keep",
+                  "label": "احتفظ بهذه الورقة خارج العيادة وخارج النظام (خزنة، منزل، صورة شخصية). هي التي تُعدّ دليلاً.",
+                  "value": "",
+                  "isolate": false
+                },
+                {
+                  "key": "signature",
+                  "label": "إمضاء المالك والتاريخ",
+                  "value": "",
+                  "isolate": false
+                }
+              ]
+            }
+          ]
+        },
+        "instruction": "Print or copy this line and keep it outside the clinic system. Only that outside copy is evidence; the copy inside the database is a convenience.",
+        "scope": "A checkpoint proves that the recorded history up to its sequence number was not rewritten, deleted or rolled back afterwards. It cannot show that money or care that was never recorded happened (CH-002)."
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Checkpoint status (is one due?)",
+      "role": "OWNER",
+      "method": "GET",
+      "route": "/api/v1/owner/checkpoints",
+      "path": "/api/v1/owner/checkpoints",
+      "request": null,
+      "status": 200,
+      "response": {
+        "due": false,
+        "dueAfterDays": 7,
+        "last": {
+          "seq": 27,
+          "at": "<timestamp>",
+          "ageDays": 0
+        },
+        "eventsSinceLast": 0,
+        "internalCopies": {
+          "count": 1,
+          "differing": 0,
+          "items": [
+            {
+              "seq": 27,
+              "at": "<timestamp>",
+              "createdBy": "<id-24>",
+              "internalCopy": "MATCHES"
+            }
+          ]
+        },
+        "note": "The copies listed here are stored in the database and could be altered by a database superuser. Verify the copies you keep outside with POST /api/v1/owner/checkpoints/verify.",
+        "scope": "A checkpoint proves that the recorded history up to its sequence number was not rewritten, deleted or rolled back afterwards. It cannot show that money or care that was never recorded happened (CH-002)."
+      }
+    },
+    {
+      "file": "owner",
+      "title": "Change a clinic setting (reason required, audited)",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/clinic/settings",
+      "path": "/api/v1/clinic/settings",
+      "request": {
+        "changes": {
+          "checkpointDueDays": 14
+        },
+        "reason": "Fictional: fortnightly checkpoints"
+      },
+      "status": 200,
+      "response": {
+        "applied": [
+          {
+            "key": "checkpointDueDays",
+            "from": 7,
+            "to": 14
+          }
+        ],
+        "settings": {
+          "timezone": "Africa/Tunis",
+          "checkpointDueDays": 14,
+          "notArrivedGraceMinutes": 15,
+          "labUnbilledDays": 30
+        },
+        "sources": {
+          "timezone": "default",
+          "checkpointDueDays": "changed",
+          "notArrivedGraceMinutes": "default",
+          "labUnbilledDays": "default"
+        }
+      }
+    }
+  ]
+}
