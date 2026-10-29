@@ -90,9 +90,9 @@ export function amount(m: number) {
 export class PaymentIntent {
   readonly key = crypto.randomUUID();
   private body:
-    | Readonly<{ amountMillimes: number; tender: "CASH" | "CARD" }>
+    | Readonly<{ amountMillimes: number; tender: "CASH" | "CARD"; confirmDuplicate?: boolean }>
     | undefined;
-  payload(candidate: { amountMillimes: number; tender: "CASH" | "CARD" }) {
+  payload(candidate: { amountMillimes: number; tender: "CASH" | "CARD"; confirmDuplicate?: boolean }) {
     this.body ??= Object.freeze({ ...candidate });
     return this.body;
   }
