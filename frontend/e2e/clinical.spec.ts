@@ -56,6 +56,47 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await dialog.getByRole("button",{name:/Plan de traitement/}).click();
   await expect(dialog).toContainText("FICPLAN");
   await expect(dialog).toContainText("150.000 TND");
+
+  const newPlan = dialog.locator("form.cash-form");
+  await newPlan.getByLabel("Code").fill("TESTPLAN2");
+  await newPlan.getByLabel("Description").fill("Simulation de traitement");
+  await newPlan.getByLabel("Dent FDI").fill("16");
+  await newPlan.getByLabel("Estimation (TND, facultatif)").fill("25.000");
+  const savedPlan = page.waitForResponse(r =>
+    r.url().endsWith("/patients/" + patientId + "/treatment-plan-items") &&
+    r.request().method() === "POST" && r.status() === 201);
+  await newPlan.getByRole("button",{name:"Ajouter"}).click();
+  const createdPlan = await (await savedPlan).json();
+  expect(createdPlan.planItem.status).toBe("PROPOSED");
+  await expect(dialog).toContainText("TESTPLAN2");
+
+  const planEntry = dialog.locator(".clinical-entry").filter({hasText:"TESTPLAN2"});
+  const statusForm = planEntry.locator("form.clinical-status");
+  await statusForm.getByLabel("Décision").selectOption("ACCEPTED");
+  const statusSaved = page.waitForResponse(r =>
+    r.url().endsWith("/treatment-plan-items/" + createdPlan.planItem.id + "/status") &&
+    r.status() === 201);
+  await statusForm.getByRole("button",{name:"Enregistrer la décision"}).click();
+  expect((await (await statusSaved).json()).planItem.status).toBe("ACCEPTED");
+  await expect(planEntry).toContainText("ACCEPTED");
+
+  await dialog.getByRole("button",{name:/Constatations/}).click();
+  const findingForm = dialog.locator("form.cash-form");
+  await findingForm.getByLabel("Dent FDI").fill("16");
+  await findingForm.getByLabel("Code de condition").fill("TEST_FIND");
+  const savedFinding = page.waitForResponse(r =>
+    r.url().endsWith("/visits/" + visitId + "/chart-findings") && r.status() === 201);
+  await findingForm.getByRole("button",{name:"Ajouter"}).click();
+  const resultFinding = await (await savedFinding).json();
+  expect(resultFinding.finding.toothFdi).toBe(16);
+  await expect(dialog).toContainText("TEST_FIND");
+
+  const balance = await request.get("/api/v1/visits/" + visitId + "/balance", {
+    headers: {Authorization:"Bearer "+desk},
+  });
+  expect(balance.status()).toBe(200);
+  expect((await balance.json()).balance.chargedMillimes).toBe(0);
+
   await dialog.getByRole("button",{name:/Notes signées/}).click();
   await dialog.getByLabel("subjective").fill("Contexte fictif");
   const signed=page.waitForResponse(r=>r.url().endsWith("/visits/"+visitId+"/clinical-notes") && r.status()===201);
