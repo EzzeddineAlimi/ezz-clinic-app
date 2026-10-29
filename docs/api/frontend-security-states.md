@@ -117,7 +117,7 @@ When the server refuses, show its refusal. Never work around it by changing the 
   - Writes with the same Idempotency-Key are safe to retry.
 - `GET /health/ready` answers 503 when the database is down or the schema does not match.
   - Show a maintenance state.
-  - Requests during an outage fail fast (T-RES-1).
+  - Requests during an outage fail fast (T-CRASH-1).
 - Every response is fictional data in this build (`fictionalDataOnly` on `/health`). Keep the fictional-data banner.
 
 ## Patients
