@@ -91,6 +91,9 @@ export function errorText(error: unknown, w: Words) {
     CONFLICT: w.conflict,
     REAUTH_REQUIRED: w.reauth,
     IDEMPOTENCY_KEY_REUSED: w.conflict,
+    CARE_ALREADY_CONFIRMED: w.careDuplicate,
+    MEDICAL_ALERTS_NOT_ACKNOWLEDGED: w.careAlerts,
+    MEDICAL_ALERTS_CHANGED: w.careAlerts,
   };
   return messages[error.code] ?? w.generic;
 }
