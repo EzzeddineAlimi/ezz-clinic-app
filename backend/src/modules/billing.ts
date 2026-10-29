@@ -81,12 +81,17 @@ export function evidenceFor(tender: 'CASH' | 'CARD', source: 'DESK' | 'PAPER_OUT
   return { tier: source === 'PAPER_OUTAGE' ? 'PAPER_SLIP_RECORD' : 'DESK_RECORD', label: { fr: 'Espèces — vérifiées seulement par un comptage indépendant', ar: 'نقدًا — يُتحقَّق منها فقط بعدّ مستقل' }, verifiedBy: null };
 }
 
-/** Hook set by the cash module (slice C2): returns the open cash period for a CASH movement, or throws. */
+/**
+ * The open cash period for a CASH movement, or throws. Provided by the cash module and wired by the composition root
+ * (app.ts buildRoutes); billing cannot import cash (cash depends on billing). Unwired, CASH fails closed: recording
+ * cash outside every drawer count is worse than refusing it (R74 T-WIRE-1).
+ */
 export type CashPeriodResolver = (tx: Tx, actor: Actor) => Promise<string>;
 let cashPeriodResolver: CashPeriodResolver | null = null;
 export function setCashPeriodResolver(r: CashPeriodResolver) { cashPeriodResolver = r; }
 export async function cashPeriodFor(tx: Tx, actor: Actor, tender: string): Promise<string | null> {
-  if (tender !== 'CASH' || !cashPeriodResolver) return null;
+  if (tender !== 'CASH') return null;
+  if (!cashPeriodResolver) throw new Error('cash-period resolver is not wired: build the app with buildRoutes()');
   return cashPeriodResolver(tx, actor);
 }
 

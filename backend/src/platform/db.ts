@@ -9,7 +9,7 @@
  *    (visit, receipt counter, audit head, cash period) to serialise concurrent requests;
  *  - any thrown error rolls the whole transaction back (payment + receipt + audit + idempotency together).
  */
-import { PgPool, PgConnection, parseDatabaseUrl, type PgValue, type QueryResult, type Row, type PoolOptions } from './postgres.ts';
+import { PgPool, PgConnection, PgError, parseDatabaseUrl, type PgValue, type QueryResult, type Row, type PoolOptions } from './postgres.ts';
 
 // API defaults (overridable per URL): a request must not hold a transaction or run a statement forever.
 const API_STATEMENT_TIMEOUT_MS = 30_000;
@@ -92,3 +92,6 @@ export function pgTextArray(v: unknown): string[] {
   return s.replace(/[{}]/g, '').split(',').filter(Boolean);
 }
 export const pgIntArray = (v: unknown): number[] => pgTextArray(v).map(Number);
+
+/** A UNIQUE constraint refused the write (modules use this instead of importing the driver's error type). */
+export const isUniqueViolation = (e: unknown): boolean => e instanceof PgError && e.code === '23505';

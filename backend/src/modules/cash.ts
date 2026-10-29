@@ -1,7 +1,7 @@
 /*
  * CASH module: drawer periods, owner movements, blind independent counts, owner review and close.
  * Owns tables: cash_drawers, cash_periods, cash_movements, cash_counts. Reads payments/adjustments (billing).
- * Registers the billing cash-period resolver so every CASH payment/refund/void is tied to the open period.
+ * Provides openPeriodForCashWrite, which app.ts wires into billing so every CASH payment/refund/void is tied to the open period.
  *
  * C2 / CH-007 / CH-014 properties:
  *  - the counter (OWNER or DENTIST; never RECEPTIONIST) never receives expected cash, per-payment cash totals or
@@ -21,7 +21,6 @@ import { fail } from '../platform/errors.ts';
 import { asBody, millimes, oneOf, optStr, str, uuid, isUuid } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
-import { setCashPeriodResolver } from './billing.ts';
 
 const OUTFLOWS = ['OWNER_WITHDRAWAL', 'BANK_DEPOSIT', 'PETTY_EXPENSE'] as const;
 
@@ -37,7 +36,6 @@ export async function openPeriodForCashWrite(tx: Tx, actor: Actor): Promise<stri
   void actor;
   return p!.id;
 }
-setCashPeriodResolver(openPeriodForCashWrite);
 
 interface PeriodRow { id: string; period_no: number; opened_at: string; opening_float_millimes: number; opening_basis: string; status: string; cutoff_at: string | null; drawer_id: string }
 

@@ -1,7 +1,7 @@
 /*
  * Composition root. Each module contributes routes; slices are added one line at a time so each
  * pull request stays small and reviewable. Allowed module dependencies are enforced by
- * test/architecture.test.ts (see docs/architecture/module-map.md).
+ * test/architecture.test.ts (its ALLOWED map).
  */
 import type http from 'node:http';
 import { Db } from './platform/db.ts';
@@ -14,9 +14,9 @@ import { workbenchRoutes } from './modules/workbench.ts';
 import { careRoutes } from './modules/care.ts';
 import { medicalRoutes } from './modules/medical.ts';
 import { clinicalRoutes } from './modules/clinical.ts';
-import { billingRoutes } from './modules/billing.ts';
+import { billingRoutes, setCashPeriodResolver } from './modules/billing.ts';
 import { integrityRoutes } from './modules/integrity.ts';
-import { cashRoutes } from './modules/cash.ts';
+import { cashRoutes, openPeriodForCashWrite } from './modules/cash.ts';
 import { cardRoutes } from './modules/card.ts';
 import { paperRoutes } from './modules/paper.ts';
 import { exceptionRoutes } from './modules/exceptions.ts';
@@ -41,6 +41,7 @@ export interface AppOptions {
 }
 
 export function buildRoutes(db: Db, documents: Partial<DocumentDeps> = {}): Route[] {
+  setCashPeriodResolver(openPeriodForCashWrite); // billing -> cash, wired here because cash depends on billing
   const loginRoute: Route = { method: 'POST', path: '/api/v1/session/login', handler: async ({ body }) => login(db, body) };
   const health: Route = { method: 'GET', path: '/api/v1/health', handler: async ({ tx }) => {
     await tx.query('SELECT 1');

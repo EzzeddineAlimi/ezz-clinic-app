@@ -21,13 +21,12 @@
  *    given an outage window (max 7 days), lists care with no slip and no payment at all;
  *  - review items DATE_DIFFERS_FROM_VISIT and MULTIPLE_SLIPS_ONE_VISIT (legitimate cases exist; human check).
  */
-import { advisoryLock, type Tx } from '../platform/db.ts';
+import { advisoryLock, isUniqueViolation, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { AppError, fail } from '../platform/errors.ts';
 import { asBody, int, uuid, isUuid, oneOf, optStr, isoDate, millimes } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
-import { PgError } from '../platform/postgres.ts';
 import { recordPayment } from './billing.ts';
 import { clinicTimezone } from './settings.ts';
 
@@ -210,7 +209,7 @@ export const paperRoutes: Route[] = [
         } catch (err) {
           await tx.query('ROLLBACK TO SAVEPOINT slip');
           if (err instanceof AppError) results.push({ slip: label, outcome: 'REJECTED', code: err.code, message: err.message });
-          else if (err instanceof PgError && err.code === '23505') results.push({ slip: label, outcome: 'REJECTED', code: 'CONFLICT', message: 'Slip entered concurrently by another request; re-submit to classify it' });
+          else if (isUniqueViolation(err)) results.push({ slip: label, outcome: 'REJECTED', code: 'CONFLICT', message: 'Slip entered concurrently by another request; re-submit to classify it' });
           else throw err;
         }
       }

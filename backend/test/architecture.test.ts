@@ -20,7 +20,7 @@ const ALLOWED: Record<string, string[]> = {
   clinical: ['audit', 'patients', 'care', 'medical'],
   billing: ['audit', 'patients'],
   integrity: ['audit', 'cash', 'clinical'],
-  cash: ['audit', 'billing'],
+  cash: ['audit'],
   card: ['audit', 'settings'],
   paper: ['audit', 'billing', 'settings'],
   exceptions: ['audit', 'card', 'paper', 'integrity', 'settings', 'lab'],
@@ -97,4 +97,8 @@ test('ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open d
   const roots = [join(SRC, '..', 'test'), join(SRC, '..', 'scripts')];
   const files = [...serverFiles().map(rel => join(SRC, rel)), ...roots.flatMap(d => readdirSync(d).filter(f => f.endsWith('.ts')).map(f => join(d, f)))];
   for (const file of files) if (!file.endsWith('pgwire.ts')) assert.ok(!/from '[./a-z]*\/pgwire\.ts'/.test(readFileSync(file, 'utf8')), `${file}: import from platform/postgres.ts`);
+});
+
+test('ARCH-8 business modules reach PostgreSQL only through platform/db.ts (no driver imports)', () => {
+  for (const f of readdirSync(join(SRC, 'modules'))) assert.ok(!/from '\.\.\/platform\/(postgres|pgwire)\.ts'/.test(read(`modules/${f}`)), `modules/${f} imports the driver`);
 });
