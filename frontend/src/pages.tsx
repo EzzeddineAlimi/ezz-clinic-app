@@ -84,6 +84,7 @@ function VisitRow({
 }: {
   visit: Visit;
   w: Words;
+  lang: Lang;
   writable: boolean;
   api: Api;
   refreshed: () => void;
