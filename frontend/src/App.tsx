@@ -349,6 +349,7 @@ function Workspace({
                       key={current.day}
                       board={current}
                       w={w}
+                      lang={lang}
                       writable={writable}
                       api={auth.api}
                       refreshed={board.refresh}
