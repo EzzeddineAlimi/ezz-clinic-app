@@ -182,6 +182,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                 <p>{t.tooth}: {f.toothFdi ?? f.areaCode ?? "—"}</p>
                 {f.note && <p><bdi>{f.note}</bdi></p>}
               </article>)}
+              <FindingForm lang={lang} disabled={!editable || intent.uncertain}
+                submit={event => fromForm(event, "finding", visit.id, findingInput)} />
             </>}
             {mode === "plans" && <>
               <p className="warning">{t.quote}</p>
