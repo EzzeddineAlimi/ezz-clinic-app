@@ -75,7 +75,7 @@ For exact setup requirements, test commands, port assumptions, teardown and trou
 
 A **temporary GitHub Codespaces** configuration is being prepared for testing the merged receptionist slice from a signed-in phone. The preview must use a **Private** forwarded port, never a public port or real patient data. It is not a production deployment.
 
-Follow the [Codespaces phone preview guide](docs/operations/CODESPACES-FICTIONAL-PREVIEW.md) for the exact branch selection, startup, access checks and teardown. A working Codespace and its private URL require the repository owner's GitHub sign-in; configuration alone does not create a live service.
+[**Create a private Codespace from the preview branch**](https://codespaces.new/EzzeddineAlimi/ezz-clinic-app/tree/gpt/codespaces-private-fictional-preview) · Follow the [phone preview guide](docs/operations/CODESPACES-FICTIONAL-PREVIEW.md) for startup, private-port checks and teardown. A working Codespace and its private URL require the repository owner's GitHub sign-in; configuration alone does not create a live service.
 
 ## Engineering and verification
 
