@@ -1,13 +1,20 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Visit } from "./api.ts";
 import type { Lang, Words } from "./i18n.ts";
 import { nonemptyNote } from "./clinical-contracts.ts";
+import { findingInput, planInput, statusInput } from "./clinical-input.ts";
+import { FindingForm, PlanForm, PlanStatusForm } from "./clinical-action-forms.tsx";
 import { clinicalText } from "./clinical-text.ts";
 import { ErrorBox, Loading, Modal, useResource } from "./ui.tsx";
 import { nameOf } from "./forms.tsx";
 import { amount } from "./billing.ts";
+
+type ClinicalMutation = {
+  kind: "finding" | "plan" | "status"; targetId: string;
+  body: Record<string, unknown>; key: string;
+};
 
 export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   api: Api; visit: Visit; lang: Lang; w: Words; close: () => void;
@@ -18,6 +25,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   );
   const [intent, setIntent] = useState(() => new WriteIntent());
   const [saving, setSaving] = useState(false);
+  const lock = useRef(false);
+  const [unresolved, setUnresolved] = useState<ClinicalMutation | null>(null);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
   const [mode, setMode] = useState<"notes" | "findings" | "plans">("notes");
