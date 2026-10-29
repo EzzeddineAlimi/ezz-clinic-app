@@ -272,7 +272,18 @@ export function Checkout({
   async function recordPayment(intent: { id: string }) {
     if (!received || !reviewed) return;
     await guarded(async () => {
-      const result = await api.recordPaymentIntent(intent.id, crypto.randomUUID());
+      let result;
+      try {
+        result = await api.recordPaymentIntent(intent.id, crypto.randomUUID());
+      } catch (cause) {
+        if (cause instanceof ApiError && cause.code === "POSSIBLE_DUPLICATE_PAYMENT") {
+          // The intention payload is immutable. Reconcile/cancel the pending
+          // intention, then prepare a genuinely distinct payment with an override.
+          setDuplicateDenied(true);
+          setDuplicateApproved(false);
+        }
+        throw cause;
+      }
       setReceiptId(result.receipt.id);
       setPrepared(undefined);
       setReceived(false);
