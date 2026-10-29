@@ -37,6 +37,10 @@ Enforced server-side on every request; identity comes only from the session. Rou
 | `paper.enter_slips` | yes | yes | yes | — |
 | `paper.custody` | yes | yes | — | — |
 | `paper.read` | yes | yes | — | — |
+| `document.upload` | — | yes | — | — |
+| `document.read` | — | yes | — | — |
+| `document.correct` | — | yes | — | — |
+| `document.deletion_request` | yes | — | — | — |
 | `clinic.settings.read` | yes | yes | yes | yes |
 | `clinic.settings.manage` | yes | — | — | — |
 | `exceptions.read` | yes | — | — | — |

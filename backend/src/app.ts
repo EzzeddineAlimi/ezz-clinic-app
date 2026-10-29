@@ -25,15 +25,20 @@ import { dayBoardRoutes } from './modules/dayboard.ts';
 import { printRoutes } from './modules/print.ts';
 import { checkpointRoutes } from './modules/checkpoints.ts';
 import { settingsRoutes } from './modules/settings.ts';
+import { documentRoutes, type DocumentDeps } from './modules/documents.ts';
+import { PgBlobStore } from './platform/blobstore.ts';
+import { structuralScreener } from './platform/fileinspect.ts';
 
 export interface AppOptions {
   databaseUrl: string;
   allowedOrigins?: string[];
   extraAllowedHosts?: string[];
   log?: (line: Record<string, unknown>) => void;
+  /** Patient-document storage and screening; defaults are the PostgreSQL foundation and the format-only screener. */
+  documents?: Partial<DocumentDeps>;
 }
 
-export function buildRoutes(db: Db): Route[] {
+export function buildRoutes(db: Db, documents: Partial<DocumentDeps> = {}): Route[] {
   const loginRoute: Route = { method: 'POST', path: '/api/v1/session/login', handler: async ({ body }) => login(db, body) };
   const health: Route = { method: 'GET', path: '/api/v1/health', handler: async ({ tx }) => {
     await tx.query('SELECT 1');
@@ -52,6 +57,7 @@ export function buildRoutes(db: Db): Route[] {
     ...checkpointRoutes,
     ...settingsRoutes,
     ...patientRoutes,
+    ...documentRoutes({ store: documents.store ?? new PgBlobStore(), screener: documents.screener ?? structuralScreener }),
     ...workbenchRoutes,
     ...dayBoardRoutes,
     ...careRoutes,
@@ -70,7 +76,7 @@ export function buildRoutes(db: Db): Route[] {
 
 export function createApp(opts: AppOptions): { server: http.Server; db: Db } {
   const db = new Db(opts.databaseUrl, { log: opts.log });
-  const server = createServer(db, buildRoutes(db), securityHooks(), {
+  const server = createServer(db, buildRoutes(db, opts.documents), securityHooks(), {
     allowedOrigins: opts.allowedOrigins ?? [],
     extraAllowedHosts: opts.extraAllowedHosts ?? [],
     log: opts.log ?? (line => process.stdout.write(JSON.stringify(line) + '\n')),

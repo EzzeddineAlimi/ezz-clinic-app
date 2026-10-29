@@ -10,7 +10,7 @@ import type { AddressInfo } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
 import { migrate } from '../src/platform/migrate.ts';
-import { createApp } from '../src/app.ts';
+import { createApp, type AppOptions } from '../src/app.ts';
 import { hashPassword } from '../src/modules/identity.ts';
 
 export const ADMIN_URL = process.env.EZZ_TEST_ADMIN_URL ?? 'postgres://postgres@localhost:5432/postgres?host=/tmp';
@@ -97,9 +97,9 @@ export interface Api {
 
 export const key = () => 'k_' + randomBytes(12).toString('hex');
 
-export async function startApi(appUrl: string): Promise<Api> {
+export async function startApi(appUrl: string, opts: Omit<AppOptions, 'databaseUrl' | 'log'> = {}): Promise<Api> {
   const logs: unknown[] = [];
-  const { server } = createApp({ databaseUrl: appUrl, log: l => { logs.push(l); } });
+  const { server } = createApp({ ...opts, databaseUrl: appUrl, log: l => { logs.push(l); } });
   await new Promise<void>(res => server.listen(0, '127.0.0.1', () => res()));
   const port = (server.address() as AddressInfo).port;
   const base = `http://127.0.0.1:${port}`;

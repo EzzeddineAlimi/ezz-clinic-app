@@ -68,6 +68,12 @@ export const PERMISSIONS: Record<string, readonly Role[]> = {
   'paper.enter_slips':       ['OWNER', 'DENTIST', 'RECEPTIONIST'],
   'paper.custody':           ['OWNER', 'DENTIST'],
   'paper.read':              ['OWNER', 'DENTIST'],
+  // Patient documents / imaging attachments (R73-D): dentist-only like the clinical record. ASSISTANT capture and
+  // RECEPTIONIST scanning of administrative paperwork are open policy questions (docs/product/patient-documents.md).
+  'document.upload':         ['DENTIST'],
+  'document.read':           ['DENTIST'],
+  'document.correct':        ['DENTIST'],
+  'document.deletion_request': ['OWNER'],
   'clinic.settings.read':    ['OWNER', 'DENTIST', 'RECEPTIONIST', 'ASSISTANT'],
   'clinic.settings.manage':  ['OWNER'],
   'exceptions.read':         ['OWNER'],

@@ -57,6 +57,7 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
   findings.push(...await businessValueFindings(tx, clinicId, await tableExists(tx, 'cash_counts')));
   if (await tableExists(tx, 'clinical_notes')) findings.push(...await clinicalValueFindings(tx, clinicId));
   if (await tableExists(tx, 'clinic_setting_changes')) findings.push(...await settingValueFindings(tx, clinicId));
+  if (await tableExists(tx, 'patient_documents')) findings.push(...await documentValueFindings(tx, clinicId));
 
   const chain = await verifyChain(tx, clinicId, anchors);
   for (const f of chain.findings) findings.push({ check: 'AUDIT_' + f.kind, severity: 'HIGH', detail: `seq ${f.seq}: ${f.detail}` });
@@ -369,5 +370,40 @@ export async function settingValueFindings(tx: Tx, clinicId: string): Promise<In
     }
   }
   for (const id of ev.keys()) out.push({ check: 'AUDITED_ROW_MISSING', severity: 'HIGH', detail: `An audit event records clinic setting change ${id}, but the row no longer exists. ${NEUTRAL}`, refs: { table: 'clinic_setting_changes', id } });
+  return out;
+}
+
+/**
+ * R73-D patient documents: stored bytes still hash to what was recorded (PostgreSQL store), and every document row and
+ * stored-content event agrees with its audit event (patient, SHA-256). Bytes in another store are checked on download.
+ */
+export async function documentValueFindings(tx: Tx, clinicId: string): Promise<IntegrityFinding[]> {
+  const out: IntegrityFinding[] = [];
+  const blobs = (await tx.query<{ id: string; recorded: string; actual: string; size_ok: boolean }>(
+    `SELECT id, sha256 AS recorded, encode(sha256(content), 'hex') AS actual, octet_length(content) = size_bytes AS size_ok FROM document_blobs WHERE clinic_id = $1`, [clinicId])).rows;
+  const blobHash = new Map(blobs.map(b => [b.id, b.recorded]));
+  for (const b of blobs) if (b.recorded !== b.actual || !b.size_ok) out.push({ check: 'DOCUMENT_CONTENT_MISMATCH', severity: 'HIGH',
+    detail: `Stored document bytes ${b.id} no longer hash to the recorded SHA-256. ${NEUTRAL}`, refs: { table: 'document_blobs', id: b.id } });
+  const audit = new Map<string, Record<string, unknown>>();
+  for (const e of (await tx.query<{ action: string; entity_id: string; payload: Record<string, unknown> }>(
+    "SELECT action, entity_id, payload FROM audit_events WHERE clinic_id = $1 AND action IN ('document.created', 'document.reassigned', 'document.content_stored')", [clinicId])).rows)
+    audit.set(e.action + ':' + e.entity_id, e.payload);
+  const docs = (await tx.query<{ id: string; patient_id: string; reassigned_from_id: string | null }>('SELECT id, patient_id, reassigned_from_id FROM patient_documents WHERE clinic_id = $1', [clinicId])).rows;
+  for (const d of docs) {
+    const e = audit.get((d.reassigned_from_id ? 'document.reassigned:' : 'document.created:') + d.id);
+    if (!e) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `patient_documents ${d.id} has no audit event (written around the application?)`, refs: { table: 'patient_documents', id: d.id } }); continue; }
+    if (e.patientId !== d.patient_id) out.push({ check: 'DOCUMENT_AUDIT_VALUE_MISMATCH', severity: 'HIGH',
+      detail: `patient_documents ${d.id}: the patient differs from the one recorded in its audit event. ${NEUTRAL}`, refs: { table: 'patient_documents', id: d.id, field: 'patientId' } });
+  }
+  const stored = (await tx.query<{ document_id: string; blob_ref: string; stored_sha256: string }>(
+    "SELECT document_id, blob_ref, stored_sha256 FROM patient_document_events WHERE clinic_id = $1 AND kind = 'CONTENT_STORED'", [clinicId])).rows;
+  for (const s of stored) {
+    const e = audit.get('document.content_stored:' + s.document_id) ?? audit.get('document.reassigned:' + s.document_id);
+    if (!e || e.sha256 !== s.stored_sha256) out.push({ check: 'DOCUMENT_AUDIT_VALUE_MISMATCH', severity: 'HIGH',
+      detail: `Document ${s.document_id}: the stored-content SHA-256 differs from the audited one. ${NEUTRAL}`, refs: { table: 'patient_document_events', id: s.document_id, field: 'sha256' } });
+    const m = /^pg:(.+)$/.exec(s.blob_ref);
+    if (m && blobHash.get(m[1]!) !== s.stored_sha256) out.push({ check: 'DOCUMENT_CONTENT_MISMATCH', severity: 'HIGH',
+      detail: `Document ${s.document_id} points to stored bytes that are missing or differ from the recorded SHA-256. ${NEUTRAL}`, refs: { table: 'patient_document_events', id: s.document_id } });
+  }
   return out;
 }

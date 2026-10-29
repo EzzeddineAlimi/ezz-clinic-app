@@ -36,6 +36,7 @@ export const ErrorCodes = {
   MEDICAL_ALERTS_CHANGED: 409,
   MEDICAL_ALERTS_NOT_ACKNOWLEDGED: 409,
   PLAN_ITEM_CLOSED: 409,
+  CONTENT_INTEGRITY_FAILED: 500,
   INTERNAL: 500,
 } as const;
 export type ErrorCode = keyof typeof ErrorCodes;

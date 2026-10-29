@@ -1,7 +1,8 @@
 /*
  * HTTP layer (node:http, no framework). Responsibilities, in order, for every request:
  *  1. Host allow-list (DNS-rebinding guard, CH-019 T-ORG-2) and Origin allow-list (T-ORG-3).
- *  2. JSON-only bodies on writes (415 for text/plain etc., T-ORG-1), 64 KiB body cap.
+ *  2. JSON-only bodies on writes (415 for text/plain etc., T-ORG-1), 64 KiB body cap. A route that declares
+ *     binaryBody instead takes application/octet-stream up to its own cap (patient documents, R73-D).
  *  3. Bearer-token authentication -> server-derived Actor (body-supplied identity is ignored, T-CARE-4).
  *  4. Permission check against the single role matrix (403 + rate-limited denial counter).
  *  5. Optional step-up re-authentication for sensitive routes.
@@ -37,7 +38,9 @@ export interface Ctx {
   now: Date;
 }
 
-export interface Result { status: number; body: unknown }
+/** A file response (document download): always an attachment, never rendered by the API origin. */
+export interface FileBody { bytes: Buffer; contentType: string; filename: string; sha256: string }
+export interface Result { status: number; body: unknown; file?: FileBody }
 
 export interface Route {
   method: 'GET' | 'POST';
@@ -48,6 +51,8 @@ export interface Route {
   reauth?: boolean;
   /** Require an Idempotency-Key header; replay returns the stored response. */
   idempotent?: boolean;
+  /** Accept application/octet-stream (ctx.body is a Buffer) up to maxBytes instead of a JSON body. */
+  binaryBody?: { maxBytes: number };
   handler: (ctx: Ctx) => Promise<Result>;
 }
 
@@ -92,17 +97,42 @@ function send(res: http.ServerResponse, status: number, body: unknown, extra: Re
   res.end(data);
 }
 
+const SAFE_FILENAME = /^[A-Za-z0-9._-]{1,100}$/;
+function sendFile(res: http.ServerResponse, f: FileBody, requestId: string) {
+  if (!SAFE_FILENAME.test(f.filename)) throw new AppError('INTERNAL', 'Unsafe download file name');
+  res.writeHead(200, {
+    'Content-Type': f.contentType,
+    'Content-Disposition': `attachment; filename="${f.filename}"`,
+    'Content-Length': f.bytes.length.toString(),
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; sandbox",
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'Referrer-Policy': 'no-referrer',
+    'X-Frame-Options': 'DENY',
+    'X-Content-Sha256': f.sha256,
+    'X-Request-Id': requestId,
+  });
+  res.end(f.bytes);
+}
+
 const errBody = (code: string, message: string, details?: unknown) => ({ error: { code, message, ...(details === undefined ? {} : { details }) } });
 
-async function readBody(req: http.IncomingMessage): Promise<unknown> {
+async function readRaw(req: http.IncomingMessage, max: number): Promise<Buffer> {
+  const declared = Number(req.headers['content-length'] ?? NaN);
+  if (declared > max) throw new AppError('PAYLOAD_TOO_LARGE', 'Request body too large', { maxBytes: max });
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const c of req) {
     size += (c as Buffer).length;
-    if (size > MAX_BODY) throw new AppError('PAYLOAD_TOO_LARGE', 'Request body too large');
+    if (size > max) throw new AppError('PAYLOAD_TOO_LARGE', 'Request body too large', { maxBytes: max });
     chunks.push(c as Buffer);
   }
-  const raw = Buffer.concat(chunks).toString('utf8');
+  return Buffer.concat(chunks);
+}
+
+async function readBody(req: http.IncomingMessage): Promise<unknown> {
+  const raw = (await readRaw(req, MAX_BODY)).toString('utf8');
   if (!raw.trim()) return {};
   try { return JSON.parse(raw); } catch { throw new AppError('VALIDATION_FAILED', 'Malformed JSON'); }
 }
@@ -119,6 +149,10 @@ function mapPgError(e: PgError): AppError {
 }
 
 export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: AppConfig): http.Server {
+  for (const r of routes) {
+    // Idempotency replays compare JSON bodies; a binary route must be naturally idempotent (state-guarded) instead.
+    if (r.binaryBody && (r.idempotent || r.method !== 'POST' || !r.permission)) throw new Error(`binaryBody route ${r.path} must be an authenticated, non-idempotent POST`);
+  }
   const compiled = routes.map(r => ({ r, ...compile(r.path) }));
   return http.createServer(async (req, res) => {
     const started = Date.now();
@@ -156,8 +190,13 @@ export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: A
       let body: unknown = {};
       if (method === 'POST') {
         const ct = (req.headers['content-type'] ?? '').toLowerCase();
-        if (!ct.startsWith('application/json')) throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json');
-        body = await readBody(req);
+        if (route.binaryBody) {
+          if (ct.split(';')[0]!.trim() !== 'application/octet-stream') throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/octet-stream');
+          // Read AFTER authentication and the permission check below: large bodies are never buffered for anonymous callers.
+        } else {
+          if (!ct.startsWith('application/json')) throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json');
+          body = await readBody(req);
+        }
       }
 
       let actor: Actor | null = null;
@@ -174,6 +213,12 @@ export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: A
           const ok = actor.reauthAt !== null && Date.now() - new Date(actor.reauthAt).getTime() <= sec.reauthWindowMs;
           if (!ok) throw new AppError('REAUTH_REQUIRED', 'Re-enter your password to continue');
         }
+      }
+
+      if (route.binaryBody) {
+        const declared = Number(req.headers['content-length'] ?? NaN);
+        if (declared > route.binaryBody.maxBytes) throw new AppError('PAYLOAD_TOO_LARGE', 'Request body too large', { maxBytes: route.binaryBody.maxBytes });
+        body = await readRaw(req, route.binaryBody.maxBytes);
       }
 
       let idemKey: string | null = null;
@@ -195,6 +240,7 @@ export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: A
         return r;
       });
       status = result.status;
+      if (result.file) return sendFile(res, result.file, requestId);
       return send(res, result.status, result.body, { 'X-Request-Id': requestId });
     } catch (e) {
       let err: AppError;

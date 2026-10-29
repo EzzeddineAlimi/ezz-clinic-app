@@ -103,11 +103,12 @@ function tlsOptions(cfg: ConnConfig): pg.ClientConfig['ssl'] {
   };
 }
 
-const OID = { bool: 16, int8: 20, int2: 21, int4: 23, json: 114, jsonb: 3802, timestamp: 1114, timestamptz: 1184, float4: 700, float8: 701 } as const;
+const OID = { bool: 16, bytea: 17, int8: 20, int2: 21, int4: 23, json: 114, jsonb: 3802, timestamp: 1114, timestamptz: 1184, float4: 700, float8: 701 } as const;
 const raw = (v: string) => v;
 function textParser(oid: number): (v: string) => unknown {
   switch (oid) {
     case OID.bool: return v => v === 't';
+    case OID.bytea: return v => Buffer.from(v.slice(2), 'hex'); // hex output format (PostgreSQL default since 9.0)
     case OID.int2: case OID.int4: case OID.float4: case OID.float8: return v => Number(v);
     case OID.int8: return v => {
       const n = Number(v);
@@ -128,7 +129,7 @@ const types: pg.CustomTypesConfig = {
   getTypeParser: ((oid: number, format?: string) => (format === 'binary' ? raw : textParser(oid))) as pg.CustomTypesConfig['getTypeParser'],
 };
 
-/** Same serialisation as the previous client: objects/arrays as JSON text, never pg array literals. */
+/** Same serialisation as the previous client: objects/arrays as JSON text, never pg array literals; Buffers as bytea. */
 function serializeParam(v: PgValue): string | null {
   if (v === null || v === undefined) return null;
   if (typeof v === 'boolean') return v ? 't' : 'f';
@@ -138,6 +139,7 @@ function serializeParam(v: PgValue): string | null {
   }
   if (typeof v === 'bigint') return v.toString();
   if (v instanceof Date) return v.toISOString();
+  if (Buffer.isBuffer(v)) return '\\x' + v.toString('hex'); // bytea text input
   if (typeof v === 'object') return JSON.stringify(v);
   return String(v);
 }
