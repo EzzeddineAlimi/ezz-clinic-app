@@ -91,9 +91,9 @@ test("F1+F2: real dentist reviews active medical alert hash before care and expl
   expect(r2.request().headers()["idempotency-key"]).not.toBe(r1.request().headers()["idempotency-key"]);
   await expect(dialog).not.toBeVisible();
 });
-test("F3: second genuine identical payment needs explicit history confirmation, new immutable key and separate receipt", async ({ page, request }) => {
+test("F3: second identical payment explicitly reviewed, prepared and recorded as distinct server receipt", async ({ page, request }) => {
   const f = await newVisit(request);
-  const care = await request.post(`/api/v1/visits/${f.visitId}/care`, {
+  const care = await request.post("/api/v1/visits/" + f.visitId + "/care", {
     headers: { Authorization: "Bearer " + f.dentist, "Idempotency-Key": crypto.randomUUID() },
     data: { procedureCode: "F3TEST", procedureLabel: "Fictional examination", feeMillimes: 100000 },
   });
@@ -104,9 +104,14 @@ test("F3: second genuine identical payment needs explicit history confirmation, 
   let dialog = page.getByRole("dialog");
   await dialog.getByLabel("Montant (TND)").fill("10.000");
   await dialog.getByLabel("Mode de paiement").selectOption("CARD");
-  const p1 = page.waitForResponse(r => r.url().endsWith(`/visits/${f.visitId}/payments`) && r.request().method() === "POST" && r.status() === 201);
-  await dialog.getByRole("button", { name: "Enregistrer le paiement" }).click();
-  const first = await p1;
+  await dialog.getByRole("checkbox", { name: /vérifié les paiements enregistrés/ }).check();
+  await dialog.getByRole("button", { name: "Préparer le paiement" }).click();
+  await expect(dialog.getByText(/Paiement en attente de décision/)).toBeVisible();
+  await dialog.getByRole("checkbox", { name: /vérifié les paiements enregistrés/ }).check();
+  await dialog.getByRole("checkbox", { name: /paiement distinct a réellement été reçu/ }).check();
+  const firstResponse = page.waitForResponse(r => r.url().endsWith("/record") && r.status() === 201);
+  await dialog.getByRole("button", { name: "Confirmer l’encaissement" }).click();
+  const first = await firstResponse;
   const firstReceipt = (await first.json() as { receipt: { id: string } }).receipt.id;
   await expect(dialog.getByRole("heading", { name: /Reçu R-/ })).toBeVisible();
   await dialog.getByRole("button", { name: "Fermer le formulaire" }).click();
@@ -115,26 +120,28 @@ test("F3: second genuine identical payment needs explicit history confirmation, 
   dialog = page.getByRole("dialog");
   await dialog.getByLabel("Montant (TND)").fill("10.000");
   await dialog.getByLabel("Mode de paiement").selectOption("CARD");
-  const denial = page.waitForResponse(r => r.url().endsWith(`/visits/${f.visitId}/payments`) && r.status() === 409);
-  await dialog.getByRole("button", { name: "Enregistrer le paiement" }).click();
-  expect((await (await denial).json()).error.code).toBe("POSSIBLE_DUPLICATE_PAYMENT");
   await expect(dialog.getByText(/Paiement similaire détecté/)).toBeVisible();
-  await dialog.getByRole("button", { name: "Relire le solde et les paiements" }).click();
-  await expect(dialog.getByTestId("checkout-balance")).toHaveText("90.000 TND");
-  await dialog.getByRole("button", { name: "Nouvelle intention après refus confirmé" }).click();
-  await expect(dialog.getByRole("button", { name: "Enregistrer le paiement" })).toBeDisabled();
+  await dialog.getByRole("checkbox", { name: /vérifié les paiements enregistrés/ }).check();
+  await expect(dialog.getByRole("button", { name: "Préparer le paiement" })).toBeDisabled();
   await dialog.getByRole("checkbox", { name: /DEUXIÈME paiement distinct/ }).check();
-  const p2 = page.waitForResponse(r => r.url().endsWith(`/visits/${f.visitId}/payments`) && r.request().method() === "POST" && r.status() === 201);
-  await dialog.getByRole("button", { name: "Enregistrer le paiement" }).click();
-  const second = await p2;
-  const secondBody = second.request().postDataJSON();
-  expect(secondBody).toEqual({ amountMillimes: 10000, tender: "CARD", confirmDuplicate: true });
-  expect(second.request().headers()["idempotency-key"]).not.toBe(first.request().headers()["idempotency-key"]);
+  const preparation = page.waitForResponse(r => r.url().endsWith("/payment-intents") && r.status() === 201);
+  await dialog.getByRole("button", { name: "Préparer le paiement" }).click();
+  const secondPrepare = await preparation;
+  const body = secondPrepare.request().postDataJSON();
+  expect(body.amountMillimes).toBe(10000);
+  expect(body.confirmDuplicate).toBe(true);
+  expect(body.acknowledgedPaymentIds).toHaveLength(1);
+  await dialog.getByRole("checkbox", { name: /vérifié les paiements enregistrés/ }).check();
+  await dialog.getByRole("checkbox", { name: /paiement distinct a réellement été reçu/ }).check();
+  const secondResponse = page.waitForResponse(r => r.url().endsWith("/record") && r.status() === 201);
+  await dialog.getByRole("button", { name: "Confirmer l’encaissement" }).click();
+  const second = await secondResponse;
   const secondReceipt = (await second.json() as { receipt: { id: string } }).receipt.id;
   expect(secondReceipt).not.toBe(firstReceipt);
-  const hist = await request.get(`/api/v1/visits/${f.visitId}/payments`, {
+  expect(second.request().headers()["idempotency-key"]).not.toBe(first.request().headers()["idempotency-key"]);
+  const history = await request.get("/api/v1/visits/" + f.visitId + "/payments", {
     headers: { Authorization: "Bearer " + f.desk },
   });
-  expect(hist.status()).toBe(200);
-  expect((await hist.json()).payments).toHaveLength(2);
+  expect(history.status()).toBe(200);
+  expect((await history.json()).payments).toHaveLength(2);
 });
