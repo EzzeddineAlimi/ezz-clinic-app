@@ -7,11 +7,11 @@ remains the independent reviewer, and nothing here is production-ready.
 
 | Item | Value |
 |---|---|
-| `main` | `c89d6e6`: v0.1 prototype import. PR #1 was closed without merging; its content reached `main` directly. |
+| `main` | `c89d6e6`: v0.1 prototype import, the **squash merge of PR #1** (GitHub: `merged: true`, `merged_at` 2026-10-27T21:03:17Z, merged by the founder; one parent `bee453a`, tree `1c56848` identical to PR #1 head `8d0b95b`). *Corrected in R75-C: an earlier version said PR #1 was closed without merging (G-63).* |
 | Integrated lineage audited | #21 `integration/r72-candidate` @`0a57234`, then the R73 stack #22–#30. The audit baseline is **#30 `r73/i-residuals` @`3d8354d`**. |
 | Baseline suite | 312 tests, 311 pass, 0 fail, 1 skip (source and compiled; CI green on Node 22, 24 and 26). |
 | Code audited | `backend/src` (37 files, ~7 400 lines), `backend/test` (49 files), `backend/scripts`, `backend/migrations`, `.github/workflows`, the root v0.1 prototype (`src/`, `public/`, `test/`), and `docs/api` (OpenAPI and examples). |
-| PRs covered | #1–#30, listed in §6. |
+| PRs covered | #1–#30 (lanes in the authorship note below; module verdicts in §A; the R74 PRs in §C). *R75-C: there is no §6; the earlier reference was wrong.* |
 | Not changed | Every existing PR branch, including #21 under review. No rebase, merge, deploy or real data. |
 
 **Authorship.** Every commit is made under the founder's GitHub identity. Lanes are told apart by commit and PR content: the import of the Opus v0.2 backend (#2), the GPT-lane PRs #3, #8, #9 and #10, and the Claude-lane PRs #11–#30. The GPT-lane code still in the lineage:
@@ -115,7 +115,7 @@ Verdicts: **PASS** = sound as found. **REFACTORED** = changed in R74 (the PR is 
 | **ARCH-6** | One owner per shared rule. Advisory locks and PostgreSQL array parsing live only in `db.ts`. ISO 3950 area codes live only in contracts. `Intl.DateTimeFormat` appears only in settings, plus print for presentation. Business modules never call `to_regclass`. |
 | **ARCH-7** | Nothing imports the pgwire shim. |
 | **ARCH-8** | Business modules reach PostgreSQL only through `db.ts`. |
-| **ARCH-9** | Business modules hold no error catch-alls. There is one documented fallback: an invalid stored timezone must not turn a 403 into a 500. |
+| **ARCH-9** | Business modules hold no `.catch(() => …)` catch-all, except one documented fallback: an invalid stored timezone must not turn a 403 into a 500. *Scope (R75-C, G-63): the test is a static pattern match on that literal form only. It does not see `try { } catch { }` blocks or other spellings. The four `try/catch` blocks in `modules/` (`audit.ts` canonical JSON parse, `card.ts` amount parse, `settings.ts` zone validity, `paper.ts` savepoint that rethrows unknown errors) were checked by hand at `51e188b` and handle a specific error. This is not a behavioural proof of error handling; fault-injection tests would be needed for that.* |
 | Composition root | Owns cross-module wiring. A missing wire fails closed. |
 
 ## C. Draft PRs (stacked; each based on the previous one)
@@ -137,7 +137,7 @@ Verdicts: **PASS** = sound as found. **REFACTORED** = changed in R74 (the PR is 
 | #33 `beef168` | clean | 323 / 322 / 0 / 1 | 323 / 322 / 0 / 1 |
 | #34 | clean | 325 / 324 / 0 / 1 | 325 / 324 / 0 / 1 |
 
-The one skip is T-CRASH-1's environment guard: it skips only when the PostgreSQL server binaries are missing. CI results are linked on each PR.
+The one skip is **T-TLS-5** (optional local TLS evidence; `# SKIP EZZ_TEST_TLS_ROOTCERT not set`), locally and in CI. **T-CRASH-1 ran and passed** (CI run 40865577498, job `test` on #34 head `51e188b`: `ok 312 - T-CRASH-1 …` in both the source and the compiled run; totals `# tests 325 / # pass 324 / # fail 0 / # skipped 1`). T-CRASH-1 has its own guard that would skip it only if the PostgreSQL server binaries were missing. *Corrected in R75-C: an earlier version named T-CRASH-1 as the skip (G-64).* CI results are linked on each PR.
 
 **API contract.** T-API-1..7 pass at every step: the 102 operations have the same statuses and shapes. `docs/api/openapi.json` is unchanged, because routes, permissions and status codes did not change.
 
