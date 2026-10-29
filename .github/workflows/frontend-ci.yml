@@ -28,6 +28,8 @@ jobs:
       - run: npm --prefix backend ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
       - run: npm --prefix backend run typecheck
+      - run: node --test test/s3b-checkout.test.ts
+        working-directory: backend
       - run: npm --prefix frontend test
       - run: npm --prefix frontend run build
       - run: npx playwright install --with-deps chromium

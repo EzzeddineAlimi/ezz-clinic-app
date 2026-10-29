@@ -1303,3 +1303,15 @@ dialog::backdrop {
     transition: none !important;
   }
 }
+.checkout-summary {display:grid;grid-template-columns:1fr auto;gap:12px;padding:20px;background:#f4f7f6;border-radius:16px}
+.checkout-summary dd {margin:0;font-weight:700}
+.receipt-preview {border:1px solid #c7d6d1;padding:20px;border-radius:16px;margin-block:20px}
+#receipt-print {overflow-wrap:anywhere}
+#receipt-print dd {margin-inline-start:0;font-weight:600}
+@media print {
+ body * {visibility:hidden}
+ dialog {position:absolute;inset:0;max-height:none;overflow:visible;border:0}
+ #receipt-print,#receipt-print * {visibility:visible}
+ #receipt-print {position:absolute;inset:0;background:white;color:black}
+ dialog::backdrop {background:white}
+}

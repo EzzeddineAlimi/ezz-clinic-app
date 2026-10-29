@@ -1,4 +1,12 @@
 import { z } from "zod";
+import {
+  balanceSchema,
+  historySchema,
+  paymentSchema,
+  receiptSchema,
+  printSchema,
+  periodSchema,
+} from "./billing.ts";
 
 const staff = z.object({
   id: z.string(),
@@ -151,6 +159,27 @@ export class Api {
         response.headers.get("X-Request-Id") ?? "",
       );
     return parsed.data;
+  }
+  balance(id: string, signal?: AbortSignal) {
+    return this.call(`/visits/${id}/balance`, balanceSchema, { signal });
+  }
+  payments(id: string, signal?: AbortSignal) {
+    return this.call(`/visits/${id}/payments`, historySchema, { signal });
+  }
+  cashPeriod(signal?: AbortSignal) {
+    return this.call("/cash/periods/current", periodSchema, { signal });
+  }
+  payment(id: string, body: unknown, key: string) {
+    return this.call(`/visits/${id}/payments`, paymentSchema, { body, key });
+  }
+  receipt(id: string) {
+    return this.call(`/receipts/${id}`, receiptSchema);
+  }
+  printReceipt(id: string, lang: string, key: string) {
+    return this.call(`/receipts/${id}/print`, printSchema, {
+      body: { lang, size: "normal" },
+      key,
+    });
   }
   login(body: { clinicCode: string; username: string; password: string }) {
     return this.call("/session/login", loginSchema, { body });

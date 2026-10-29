@@ -1,5 +1,6 @@
 export const copy = {
   fr: {
+    checkout: "Encaissement",
     agenda: "Agenda",
     patients: "Patients",
     reception: "Accueil du cabinet",
@@ -139,6 +140,7 @@ export const copy = {
       "Actualisation indisponible : les données précédentes ont été masquées.",
   },
   ar: {
+    checkout: "استخلاص",
     agenda: "المواعيد",
     patients: "المرضى",
     reception: "استقبال العيادة",

@@ -1,3 +1,4 @@
+import { Checkout } from "./checkout.tsx";
 import { useState, useCallback } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
@@ -74,6 +75,7 @@ function VisitRow({
   refreshed: () => void;
   notify: (m: string) => void;
 }) {
+  const [checkout, setCheckout] = useState(false);
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
     [intent] = useState(() => new WriteIntent());
@@ -142,7 +144,23 @@ function VisitRow({
           </p>
         )}
       </div>
+      {checkout && (
+        <Checkout
+          api={api}
+          visit={v}
+          w={w}
+          close={() => {
+            setCheckout(false);
+            refreshed();
+          }}
+        />
+      )}
       <div className="visit-actions">
+        {writable && v.status === "COMPLETED" && (
+          <button className="primary compact" onClick={() => setCheckout(true)}>
+            {w.checkout}
+          </button>
+        )}
         <span className={`status-badge badge-${v.status}`}>
           <i />
           {w[v.status]}

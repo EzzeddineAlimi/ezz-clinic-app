@@ -34,13 +34,29 @@ const login = await call("/session/login", {
   password: "fictional-pass-123",
 });
 const token = String(login.token);
+// Real independently authenticated fixture authors; never impersonate a dentist as reception.
+const dentistLogin = await call("/session/login", {
+  clinicCode: "web-fictional",
+  username: "dentist",
+  password: "fictional-pass-123",
+});
+const ownerLogin = await call("/session/login", {
+  clinicCode: "web-fictional",
+  username: "owner",
+  password: "fictional-pass-123",
+});
+await call(
+  "/cash/periods",
+  { openingFloatMillimes: 0 },
+  String(ownerLogin.token),
+);
 const day = localDate("Africa/Tunis");
 const examples = [
   ["Ben Salem", "Amira", "أميرة بن سالم", "08:30", "ARRIVED"],
   ["Trabelsi", "Youssef", "يوسف الطرابلسي", "09:15", "SCHEDULED"],
   ["Mansour", "Leïla", "ليلى منصور", "10:00", "SCHEDULED"],
   ["Chaabane", "Karim", "كريم شعبان", "11:00", "SCHEDULED"],
-  ["Ayadi", "Nour", "نور العيادي", "14:00", "SCHEDULED"],
+  ["Ayadi", "Nour", "نور العيادي", "14:00", "COMPLETED"],
 ];
 for (const [familyName, givenName, nameAr, time, status] of examples) {
   const r = await call(
@@ -66,6 +82,16 @@ for (const [familyName, givenName, nameAr, time, status] of examples) {
     },
     token,
   );
+  if (status === "COMPLETED")
+    await call(
+      `/visits/${(v.visit as { id: string }).id}/care`,
+      {
+        procedureCode: "TEST",
+        procedureLabel: "Soin fictif de démonstration",
+        feeMillimes: 100000,
+      },
+      String(dentistLogin.token),
+    );
   if (status === "ARRIVED")
     await call(
       `/visits/${(v.visit as { id: string }).id}/status`,
