@@ -73,11 +73,27 @@ export function uuid(b: Body, key: string, optional = false): string {
 }
 export const isUuid = (s: string) => UUID.test(s);
 
+/**
+ * An RFC 3339 date-time WITH its UTC offset ('Z' or ±hh:mm; seconds optional), returned as the canonical UTC instant.
+ * CH-038: without an offset JavaScript would read the time in the server PROCESS's zone, so the stored appointment would
+ * depend on host configuration; such input is refused (the API contract already says format: date-time). A wall-clock
+ * time in the clinic's zone is a different input and is not accepted here. Impossible dates (02-30) are refused too,
+ * where Date would silently move them to another day.
+ */
+const RFC3339 = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(\.\d{1,9})?)?(Z|([+-])(\d{2}):(\d{2}))$/i;
 export function isoTime(b: Body, key: string): string {
   const s = str(b, key, { max: 40 });
-  const d = new Date(s);
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) || Number.isNaN(d.getTime())) fail('VALIDATION_FAILED', `${key} must be an ISO-8601 date-time`, { field: key });
-  return d.toISOString();
+  const m = RFC3339.exec(s);
+  if (!m) fail('VALIDATION_FAILED', `${key} must be an ISO-8601 date-time with a UTC offset, e.g. 2026-10-30T09:00:00+01:00 or 2026-10-30T08:00:00Z`, { field: key });
+  const [y, mo, d, h, mi, sec] = m!.slice(1, 7).map(x => Number(x ?? 0)) as [number, number, number, number, number, number];
+  const local = Date.UTC(y, mo - 1, d, h, mi, sec);
+  const t = new Date(local);
+  const offH = Number(m![10] ?? 0), offM = Number(m![11] ?? 0);
+  if (t.getUTCFullYear() !== y || t.getUTCMonth() !== mo - 1 || t.getUTCDate() !== d || t.getUTCHours() !== h || t.getUTCMinutes() !== mi || t.getUTCSeconds() !== sec || offH > 23 || offM > 59)
+    fail('VALIDATION_FAILED', `${key} is not a real date-time`, { field: key });
+  const ms = m![7] ? Math.floor(Number(m![7]) * 1000) : 0;
+  const offset = (m![9] === '-' ? -1 : 1) * (offH * 60 + offM) * 60_000;
+  return new Date(local + ms - offset).toISOString();
 }
 
 export function isoDate(b: Body, key: string, optional = false): string | null {
