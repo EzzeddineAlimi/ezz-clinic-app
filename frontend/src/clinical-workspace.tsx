@@ -90,7 +90,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
 
   async function sign(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (saving || chart.loading || !chart.data || chart.error) return;
+    if (saving || lock.current || unresolved || chart.loading || !chart.data || chart.error) return;
     const form = e.currentTarget;
     let body: Record<string, unknown> = {};
     if (!intent.uncertain) {
@@ -104,6 +104,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
       if (!nonemptyNote(values)) { setError(new ApiError("VALIDATION_FAILED")); return; }
       body = Object.fromEntries(Object.entries(values).filter(([, value]) => value.length > 0));
     }
+    lock.current = true;
     setSaving(true);
     setError(undefined);
     try {
@@ -118,10 +119,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         setIntent(new WriteIntent());
       }
       setError(cause);
-    } finally { setSaving(false); }
+    } finally { setSaving(false); lock.current = false; }
   }
   const data = chart.data;
-  const editable = !!data && !chart.loading && !chart.error && !saving &&
+  const editable = !!data && !chart.loading && !chart.error && !saving && !unresolved &&
     !["CANCELLED", "NO_SHOW"].includes(data.visit.status);
   return (
     <Modal title={t.title} busy={saving} w={w} close={close}>
@@ -135,6 +136,11 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         {error !== undefined && <ErrorBox error={error} w={w} />}
         {notice && <p role="status" className="toast">{notice}</p>}
         {intent.uncertain && <p role="alert" className="uncertain">{t.uncertain}</p>}
+        {unresolved && <section role="alert" className="uncertain">
+          <p>{t.uncertain}</p>
+          <button className="secondary" type="button" disabled={saving || chart.loading || !!chart.error}
+            onClick={() => void runClinicalWrite(unresolved)}>{t.retry}</button>
+        </section>}
         <button type="button" className="secondary" disabled={saving}
           onClick={() => chart.refresh()}>{t.refresh}</button>
         {data && (
