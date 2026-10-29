@@ -1,6 +1,16 @@
 import { isValidFdi } from "./clinical-contracts.ts";
-import { tndMillimes } from "./care.tsx";
+
 import { ApiError } from "./api.ts";
+
+/** Optional planned fees can be zero; only dentist-confirmed care becomes billable. */
+export function plannedFeeMillimes(text: string): number {
+  const m = /^(0|[1-9][0-9]{0,5})(?:[.,]([0-9]{1,3}))?$/.exec(text.trim());
+  if (!m) throw new ApiError("VALIDATION_FAILED", 400);
+  const n = Number(m[1]) * 1000 + Number((m[2] ?? "").padEnd(3, "0"));
+  if (!Number.isSafeInteger(n) || n < 0 || n > 100_000_000)
+    throw new ApiError("VALIDATION_FAILED", 400);
+  return n;
+}
 
 const required = (value: FormDataEntryValue | null): string =>
   String(value ?? "").trim();
@@ -30,7 +40,7 @@ export function planInput(fields: FormData, visitId: string): Record<string, unk
   return {
     visitId, procedureCode, procedureLabel, phaseNo,
     ...(tooth ? { toothFdi: Number(tooth) } : {}),
-    ...(estimate ? { estimatedFeeMillimes: tndMillimes(estimate) } : {}),
+    ...(estimate ? { estimatedFeeMillimes: plannedFeeMillimes(estimate) } : {}),
     ...(note ? { note } : {}),
   };
 }
