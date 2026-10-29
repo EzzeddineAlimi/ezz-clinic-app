@@ -160,7 +160,7 @@ export function Checkout({
   const [receipt, setReceipt] = useState<Awaited<ReturnType<Api["receipt"]>>>();
   const [printDoc, setPrintDoc] = useState<Awaited<ReturnType<Api["printReceipt"]>>>();
   const busy = useRef(false);
-  const printKey = useRef<{ id: string; key: string; lang: string }>();
+  const printKey = useRef<{ id: string; key: string; lang: string } | undefined>(undefined);
 
   useEffect(() => {
     if (!data.data || data.loading) return;
