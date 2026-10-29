@@ -41,6 +41,17 @@ Enforced server-side on every request; identity comes only from the session. Rou
 | `document.read` | — | yes | — | — |
 | `document.correct` | — | yes | — | — |
 | `document.deletion_request` | yes | — | — | — |
+| `lab.supplier.read` | yes | yes | yes | yes |
+| `lab.supplier.manage` | yes | yes | — | — |
+| `lab.case.create` | — | yes | — | yes |
+| `lab.case.read` | — | yes | — | yes |
+| `lab.case.track` | — | yes | — | yes |
+| `lab.case.sign` | — | yes | — | — |
+| `lab.status.read` | — | yes | yes | yes |
+| `lab.invoice.record` | yes | — | — | — |
+| `stock.read` | yes | yes | yes | yes |
+| `stock.record` | yes | yes | — | yes |
+| `stock.manage` | yes | — | — | — |
 | `clinic.settings.read` | yes | yes | yes | yes |
 | `clinic.settings.manage` | yes | — | — | — |
 | `exceptions.read` | yes | — | — | — |

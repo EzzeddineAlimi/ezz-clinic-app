@@ -26,6 +26,8 @@ import { printRoutes } from './modules/print.ts';
 import { checkpointRoutes } from './modules/checkpoints.ts';
 import { settingsRoutes } from './modules/settings.ts';
 import { documentRoutes, type DocumentDeps } from './modules/documents.ts';
+import { labRoutes } from './modules/lab.ts';
+import { stockRoutes } from './modules/stock.ts';
 import { PgBlobStore } from './platform/blobstore.ts';
 import { structuralScreener } from './platform/fileinspect.ts';
 
@@ -71,6 +73,8 @@ export function buildRoutes(db: Db, documents: Partial<DocumentDeps> = {}): Rout
     ...paperRoutes,
     ...exceptionRoutes,
     ...reviewRoutes,
+    ...labRoutes,
+    ...stockRoutes,
   ];
 }
 

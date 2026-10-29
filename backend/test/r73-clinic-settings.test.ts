@@ -31,7 +31,7 @@ test('T-SET-1 defaults are readable by every role; only the owner (with password
   for (const t of [f.owner, f.dentist, f.desk]) {
     const r = await api.call('GET', '/api/v1/clinic/settings', { token: t });
     assert.equal(r.status, 200, JSON.stringify(r.body));
-    assert.deepEqual(r.body.settings, { timezone: 'Africa/Tunis', checkpointDueDays: 7, notArrivedGraceMinutes: 15 });
+    assert.deepEqual(r.body.settings, { timezone: 'Africa/Tunis', checkpointDueDays: 7, notArrivedGraceMinutes: 15, labUnbilledDays: 30 });
     assert.equal(r.body.sources.timezone, 'default');
   }
   for (const t of [f.dentist, f.desk]) assert.equal((await api.call('POST', '/api/v1/clinic/settings', { token: t, body: { changes: { checkpointDueDays: 3 }, reason: 'Fictional' } })).status, 403);

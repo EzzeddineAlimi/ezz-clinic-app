@@ -3,7 +3,8 @@
  * Depends on: audit. Everything that needs the clinic's day or a clinic policy reads it from here.
  *
  * Only policies the code already relied on are configurable; each has a code default and strict validation:
- *   timezone (IANA, must be known to both Node and PostgreSQL), checkpointDueDays (1-31), notArrivedGraceMinutes (5-120).
+ *   timezone (IANA, must be known to both Node and PostgreSQL), checkpointDueDays (1-31), notArrivedGraceMinutes (5-120),
+ *   labUnbilledDays (7-180, R73-E: MF19 lab work without a linked billed care item; default 30 from clinical-requirements §9).
  * Effective value = latest change for the key, else the bootstrap value in clinics.settings (timezone only), else the
  * default. Reads are open to every role (a frontend needs the clinic's day); changes are owner-only with password
  * re-entry, a reason, an audit event, and an explicit confirmation before the timezone of a clinic with visits moves.
@@ -15,12 +16,12 @@ import { fail } from '../platform/errors.ts';
 import { asBody, str } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
 
-export interface ClinicSettings { timezone: string; checkpointDueDays: number; notArrivedGraceMinutes: number }
+export interface ClinicSettings { timezone: string; checkpointDueDays: number; notArrivedGraceMinutes: number; labUnbilledDays: number }
 type Key = keyof ClinicSettings;
-const COLUMN: Record<Key, string> = { timezone: 'timezone', checkpointDueDays: 'checkpoint_due_days', notArrivedGraceMinutes: 'not_arrived_grace_minutes' };
+const COLUMN: Record<Key, string> = { timezone: 'timezone', checkpointDueDays: 'checkpoint_due_days', notArrivedGraceMinutes: 'not_arrived_grace_minutes', labUnbilledDays: 'lab_unbilled_days' };
 const KEY_OF: Record<string, Key> = Object.fromEntries(Object.entries(COLUMN).map(([k, c]) => [c, k as Key]));
-export const DEFAULT_SETTINGS: Readonly<ClinicSettings> = Object.freeze({ timezone: 'Africa/Tunis', checkpointDueDays: 7, notArrivedGraceMinutes: 15 });
-export const LIMITS = { checkpointDueDays: { min: 1, max: 31 }, notArrivedGraceMinutes: { min: 5, max: 120 } } as const;
+export const DEFAULT_SETTINGS: Readonly<ClinicSettings> = Object.freeze({ timezone: 'Africa/Tunis', checkpointDueDays: 7, notArrivedGraceMinutes: 15, labUnbilledDays: 30 });
+export const LIMITS = { checkpointDueDays: { min: 1, max: 31 }, notArrivedGraceMinutes: { min: 5, max: 120 }, labUnbilledDays: { min: 7, max: 180 } } as const;
 
 const validIntlZone = (tz: string) => { try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return true; } catch { return false; } };
 
@@ -29,7 +30,7 @@ async function load(tx: Tx, clinicId: string) {
     'SELECT DISTINCT ON (key) key, value, changed_at FROM clinic_setting_changes WHERE clinic_id = $1 ORDER BY key, changed_at DESC, id DESC', [clinicId])).rows;
   const boot = await tx.one<{ tz: string | null }>("SELECT settings->>'timezone' AS tz FROM clinics WHERE id = $1", [clinicId]);
   const settings: ClinicSettings = { ...DEFAULT_SETTINGS };
-  const sources: Record<Key, 'default' | 'bootstrap' | 'changed'> = { timezone: 'default', checkpointDueDays: 'default', notArrivedGraceMinutes: 'default' };
+  const sources: Record<Key, 'default' | 'bootstrap' | 'changed'> = { timezone: 'default', checkpointDueDays: 'default', notArrivedGraceMinutes: 'default', labUnbilledDays: 'default' };
   if (boot.tz) { settings.timezone = boot.tz; sources.timezone = 'bootstrap'; }
   for (const r of rows) { const k = KEY_OF[r.key]; if (k) { (settings as unknown as Record<string, unknown>)[k] = r.value; sources[k] = 'changed'; } }
   return { settings, sources };

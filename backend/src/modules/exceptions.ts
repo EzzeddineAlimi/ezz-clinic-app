@@ -1,6 +1,6 @@
 /*
  * OWNER-EXCEPTIONS module (MF17): one evidence-rated list for the owner, computed on read from every evidence
- * root. Depends on (read-only): cash, card, paper, integrity, audit. Nothing depends on it.
+ * root. Depends on (read-only): cash, card, paper, integrity, audit, settings, lab (MF19). Nothing depends on it.
  * Owns: exception_resolutions (append-only, one resolution per item, reason code required, NO bulk clear).
  *
  * Wording rule: items describe evidence, never a person ("count differs", "desk record only"); every item says
@@ -16,6 +16,7 @@ import { clinicSettings, clinicTimezone, localDate } from './settings.ts';
 import { reconcile } from './card.ts';
 import { reconcileBook } from './paper.ts';
 import { integrityCheck } from './integrity.ts';
+import { labExceptionFacts } from './lab.ts';
 
 export interface OwnerException {
   key: string; kind: string; evidence: 'VERIFIED_BY_OWNER' | 'DESK_RECORD_ONLY' | 'NO_INDEPENDENT_RECORD' | 'SYSTEM_CHECK';
@@ -25,7 +26,7 @@ export interface OwnerException {
 export async function computeExceptions(tx: Tx, clinicId: string, asOf: string): Promise<OwnerException[]> {
   const out: OwnerException[] = [];
   // R73-C: the as-of day is a CLINIC day; asOfStart = local midnight of asOf as an instant.
-  const { timezone, checkpointDueDays } = await clinicSettings(tx, clinicId);
+  const { timezone, checkpointDueDays, labUnbilledDays } = await clinicSettings(tx, clinicId);
   const asOfStart = Date.parse((await tx.one<{ t: string }>('SELECT ($1::date)::timestamp AT TIME ZONE $2 AS t', [asOf, timezone])).t);
   // CH-018: visit in the past, no dentist record, not cancelled/no-show.
   const unresolved = (await tx.query<{ id: string; scheduled_at: string; file_no: number }>(`SELECT v.id, v.scheduled_at, p.file_no FROM visits v JOIN patients p ON p.id = v.patient_id
@@ -82,6 +83,18 @@ export async function computeExceptions(tx: Tx, clinicId: string, asOf: string):
   }
   // Integrity and owner checkpoint cadence.
   const integ = await integrityCheck(tx, clinicId, []);
+  // MF19 (R73-E): lab work implies a billable procedure; missing billing is evidence to look at, not a conclusion.
+  const lab = await labExceptionFacts(tx, new Date(asOfStart).toISOString(), labUnbilledDays);
+  for (const w of lab.work) out.push({ key: `lab:${w.id}:not_billed`, kind: 'LAB_WORK_NOT_BILLED', evidence: 'NO_INDEPENDENT_RECORD', severity: 'MEDIUM',
+    wording: `Lab work received more than ${labUnbilledDays} days ago has no linked billed care item`,
+    known: `${w.case_type} from ${w.supplier} for file no. ${w.file_no}; status ${w.status}; received ${new Date(w.received_at).toISOString()}`,
+    unknown: 'Whether it was billed under a care item not linked yet, provided free of charge, or paid outside the system',
+    nextStep: 'Dentist links the confirmed care item to the lab case, or the owner resolves with a reason', refs: { labCaseId: w.id } });
+  for (const i of lab.invoices) out.push({ key: `lab_invoice:${i.id}:cases_not_billed`, kind: 'LAB_INVOICE_WITHOUT_BILLED_CARE', evidence: 'VERIFIED_BY_OWNER', severity: 'MEDIUM',
+    wording: `Lab invoice ${i.invoice_number} covers ${i.unlinked} case(s) with no linked billed care item`,
+    known: `Invoice from ${i.supplier} dated ${i.invoice_date}, ${i.amount_millimes} millimes (clinic expense)`,
+    unknown: 'Whether the patient care was billed but not linked, or not billed',
+    nextStep: 'Dentist links the care items, or the owner resolves with a reason', refs: { labInvoiceId: i.id } });
   for (const f of integ.findings) out.push({ key: `integrity:${f.check.toLowerCase()}:finding`, kind: 'INTEGRITY_' + f.check, evidence: 'SYSTEM_CHECK', severity: 'HIGH', wording: f.detail, known: 'Detected by recomputation', unknown: 'Who changed the data outside the app', nextStep: 'Stop and compare with the latest owner checkpoint and backup' });
   const cp = await tx.maybeOne<{ at: string }>('SELECT max(created_at) AS at FROM audit_checkpoints');
   if (!cp?.at || new Date(cp.at).getTime() < asOfStart - checkpointDueDays * 86400_000) {

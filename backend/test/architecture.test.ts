@@ -22,13 +22,15 @@ const ALLOWED: Record<string, string[]> = {
   cash: ['audit', 'billing'],
   card: ['audit', 'settings'],
   paper: ['audit', 'billing', 'settings'],
-  exceptions: ['audit', 'card', 'paper', 'integrity', 'settings'],
+  exceptions: ['audit', 'card', 'paper', 'integrity', 'settings', 'lab'],
   review: ['integrity', 'patients'],
   dayboard: ['identity', 'patients', 'settings'],
   print: ['audit', 'patients'],
   checkpoints: ['audit', 'print', 'settings'],
   settings: ['audit'],
   documents: ['audit', 'patients'],
+  lab: ['audit', 'patients', 'settings'],
+  stock: ['audit', 'settings'],
 };
 const importsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '\.\/([a-z]+)\.ts'/g)].map(m => m[1]!);
 

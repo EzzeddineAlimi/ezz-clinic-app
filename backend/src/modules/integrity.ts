@@ -58,6 +58,7 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
   if (await tableExists(tx, 'clinical_notes')) findings.push(...await clinicalValueFindings(tx, clinicId));
   if (await tableExists(tx, 'clinic_setting_changes')) findings.push(...await settingValueFindings(tx, clinicId));
   if (await tableExists(tx, 'patient_documents')) findings.push(...await documentValueFindings(tx, clinicId));
+  if (await tableExists(tx, 'stock_movements')) findings.push(...await labStockFindings(tx, clinicId));
 
   const chain = await verifyChain(tx, clinicId, anchors);
   for (const f of chain.findings) findings.push({ check: 'AUDIT_' + f.kind, severity: 'HIGH', detail: `seq ${f.seq}: ${f.detail}` });
@@ -357,7 +358,7 @@ export async function settingValueFindings(tx: Tx, clinicId: string): Promise<In
   const out: IntegrityFinding[] = [];
   const ev = new Map((await tx.query<{ entity_id: string; payload: Record<string, unknown>; actor_staff_id: string | null }>(
     "SELECT entity_id, payload, actor_staff_id FROM audit_events WHERE clinic_id = $1 AND action = 'clinic.setting_changed'", [clinicId])).rows.map(e => [e.entity_id, e]));
-  const KEY: Record<string, string> = { timezone: 'timezone', checkpoint_due_days: 'checkpointDueDays', not_arrived_grace_minutes: 'notArrivedGraceMinutes' };
+  const KEY: Record<string, string> = { timezone: 'timezone', checkpoint_due_days: 'checkpointDueDays', not_arrived_grace_minutes: 'notArrivedGraceMinutes', lab_unbilled_days: 'labUnbilledDays' };
   const rows = (await tx.query<{ id: string; key: string; value: unknown; previous: unknown; changed_by: string }>(
     'SELECT id, key, value, previous, changed_by FROM clinic_setting_changes WHERE clinic_id = $1', [clinicId])).rows;
   for (const r of rows) {
@@ -404,6 +405,44 @@ export async function documentValueFindings(tx: Tx, clinicId: string): Promise<I
     const m = /^pg:(.+)$/.exec(s.blob_ref);
     if (m && blobHash.get(m[1]!) !== s.stored_sha256) out.push({ check: 'DOCUMENT_CONTENT_MISMATCH', severity: 'HIGH',
       detail: `Document ${s.document_id} points to stored bytes that are missing or differ from the recorded SHA-256. ${NEUTRAL}`, refs: { table: 'patient_document_events', id: s.document_id } });
+  }
+  return out;
+}
+
+/**
+ * R73-E lab and stock: the stock ledger's stored running totals and per-item sequence are recomputed, and stock
+ * movements, lab status events and lab invoices are compared with their audit events.
+ */
+export async function labStockFindings(tx: Tx, clinicId: string): Promise<IntegrityFinding[]> {
+  const out: IntegrityFinding[] = [];
+  const moves = (await tx.query<{ id: string; item_id: string; seq: number; kind: string; quantity: number; on_hand_after: number }>(
+    'SELECT id, item_id, seq, kind, quantity, on_hand_after FROM stock_movements WHERE clinic_id = $1 ORDER BY item_id, seq', [clinicId])).rows;
+  const audits = new Map((await tx.query<{ entity_id: string; payload: Record<string, unknown> }>(
+    "SELECT entity_id, payload FROM audit_events WHERE clinic_id = $1 AND action = 'stock.movement'", [clinicId])).rows.map(e => [e.entity_id, e.payload]));
+  const running = new Map<string, { total: number; seq: number }>();
+  for (const m of moves) {
+    const r = running.get(m.item_id) ?? { total: 0, seq: 0 };
+    r.total += m.quantity; r.seq += 1;
+    if (m.seq !== r.seq || m.on_hand_after !== r.total) out.push({ check: 'STOCK_LEDGER_INCONSISTENT', severity: 'HIGH',
+      detail: `Stock movement ${m.id}: recorded on-hand ${m.on_hand_after} (seq ${m.seq}) but recomputation gives ${r.total} (seq ${r.seq}). ${NEUTRAL}`, refs: { table: 'stock_movements', id: m.id } });
+    r.total = m.on_hand_after; r.seq = m.seq; // report each break once, not every later row
+    running.set(m.item_id, r);
+    const e = audits.get(m.id);
+    if (!e) out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `stock_movements ${m.id} has no audit event (written around the application?)`, refs: { table: 'stock_movements', id: m.id } });
+    else if (e.quantity !== m.quantity || e.kind !== m.kind) out.push({ check: 'STOCK_AUDIT_VALUE_MISMATCH', severity: 'HIGH',
+      detail: `Stock movement ${m.id}: ${m.kind} ${m.quantity} differs from its audit event (${String(e.kind)} ${String(e.quantity)}). ${NEUTRAL}`, refs: { table: 'stock_movements', id: m.id } });
+  }
+  const labAudit = new Set((await tx.query<{ k: string }>(
+    "SELECT entity_id::text || ':' || (payload->>'seq') || ':' || (payload->>'to') AS k FROM audit_events WHERE clinic_id = $1 AND action = 'lab.case_status'", [clinicId])).rows.map(r => r.k));
+  for (const e of (await tx.query<{ id: string; k: string }>("SELECT id, case_id::text || ':' || seq || ':' || status AS k FROM lab_case_events WHERE clinic_id = $1", [clinicId])).rows)
+    if (!labAudit.has(e.k)) out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `lab_case_events ${e.id} has no matching audit event (status or sequence differs, or written around the application)`, refs: { table: 'lab_case_events', id: e.id } });
+  const inv = new Map((await tx.query<{ entity_id: string; payload: Record<string, unknown> }>(
+    "SELECT entity_id, payload FROM audit_events WHERE clinic_id = $1 AND action = 'lab.invoice_recorded'", [clinicId])).rows.map(e => [e.entity_id, e.payload]));
+  for (const i of (await tx.query<{ id: string; amount_millimes: number }>('SELECT id, amount_millimes FROM lab_invoices WHERE clinic_id = $1', [clinicId])).rows) {
+    const e = inv.get(i.id);
+    if (!e) out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `lab_invoices ${i.id} has no audit event`, refs: { table: 'lab_invoices', id: i.id } });
+    else if (e.amountMillimes !== i.amount_millimes) out.push({ check: 'LAB_INVOICE_AUDIT_VALUE_MISMATCH', severity: 'HIGH',
+      detail: `Lab invoice ${i.id}: amount ${i.amount_millimes} differs from the audited ${String(e.amountMillimes)}. ${NEUTRAL}`, refs: { table: 'lab_invoices', id: i.id } });
   }
   return out;
 }
