@@ -74,9 +74,19 @@ for (const [familyName, givenName, nameAr, time, status] of examples) {
     );
 }
 await preparation.close();
+// Codespaces' private HTTPS origin is the only additional development origin.
+// This remains an isolated FICTIONAL data fixture; never broaden to *.app.github.dev.
+const codespaceName = process.env.CODESPACES === "true" ? process.env.CODESPACE_NAME : undefined;
+if (process.env.CODESPACES === "true" && (!codespaceName || !/^[a-z0-9-]+$/.test(codespaceName))) {
+  throw new Error("Codespaces preview requires a valid CODESPACE_NAME");
+}
+const allowedOrigins = [
+  "http://127.0.0.1:5173",
+  ...(codespaceName ? [`https://${codespaceName}-5173.app.github.dev`] : []),
+];
 const { server, db: appDb } = createApp({
   databaseUrl: db.appUrl,
-  allowedOrigins: ["http://127.0.0.1:5173"],
+  allowedOrigins,
   log: () => {},
 });
 await new Promise<void>((resolve) => server.listen(4180, "127.0.0.1", resolve));
