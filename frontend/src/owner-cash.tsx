@@ -21,6 +21,7 @@ export const cashText = {
     independent: "Entrez uniquement les espèces comptées physiquement, par vous ou un tiers présent. Une saisie informatique n'est pas une preuve d'indépendance physique.",
     counted: "Espèces effectivement comptées (TND)",
     reason: "Motif du recomptage (obligatoire)",
+    entry: "Saisir le comptage",
     submit: "Enregistrer le comptage",
     review: "Consulter le contrôle",
     countAgain: "Effectuer un nouveau comptage",
@@ -64,6 +65,7 @@ export const cashText = {
     independent: "أدخل النقد الذي تم عده فعليًا. الإدخال الرقمي لا يثبت استقلالية العَد.",
     counted: "النقد الذي تم عده (دينار)",
     reason: "سبب إعادة الجرد (إجباري)",
+    entry: "إدخال الجرد",
     submit: "تسجيل الجرد",
     review: "مراجعة الفارق",
     countAgain: "إعادة الجرد",
@@ -252,7 +254,7 @@ export function OwnerCashControl({ api, lang, w }: { api: Api; lang: Lang; w: Wo
             </dl>
             <div className="cash-view-tabs">
               <button className="secondary" type="button" disabled={blocked || mode === "count"} onClick={() => setMode("count")}>
-                {period.countAttempts ? t.countAgain : t.submit}
+                {period.countAttempts ? t.countAgain : t.entry}
               </button>
               {period.countAttempts > 0 &&
                 <button className="secondary" type="button" disabled={blocked || mode === "review"} onClick={() => setMode("review")}>{t.review}</button>}
