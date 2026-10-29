@@ -3,7 +3,7 @@
  * created through the API). Passwords come from the environment, never from the repository.
  * Usage: MIGRATION_DATABASE_URL=... SEED_PASSWORD='at-least-12-chars' node scripts/seed-fictional.ts [clinic-code]
  */
-import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
+import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
 import { hashPassword, validatePasswordPolicy } from '../src/modules/identity.ts';
 
 const url = process.env.MIGRATION_DATABASE_URL;

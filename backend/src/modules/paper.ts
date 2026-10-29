@@ -21,13 +21,13 @@
  *    given an outage window (max 7 days), lists care with no slip and no payment at all;
  *  - review items DATE_DIFFERS_FROM_VISIT and MULTIPLE_SLIPS_ONE_VISIT (legitimate cases exist; human check).
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { AppError, fail } from '../platform/errors.ts';
 import { asBody, int, uuid, isUuid, oneOf, optStr, isoDate, millimes } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
-import { PgError } from '../platform/pgwire.ts';
+import { PgError } from '../platform/postgres.ts';
 import { recordPayment } from './billing.ts';
 import { clinicTimezone } from './settings.ts';
 
@@ -140,7 +140,7 @@ export const paperRoutes: Route[] = [
       const custodian = uuid(b, 'custodianStaffId');
       const cust = await tx.maybeOne(`SELECT 1 FROM staff s JOIN staff_roles r ON r.staff_id = s.id AND r.role IN ('DENTIST','OWNER') WHERE s.id = $1 AND s.active`, [custodian]);
       if (!cust) fail('VALIDATION_FAILED', 'Custodian must be an active dentist or owner (never the desk)', { field: 'custodianStaffId' });
-      await tx.query("SELECT pg_advisory_xact_lock(hashtext('paper_books:' || $1))", [actor!.clinicId]);
+      await advisoryLock(tx, 'paper_books', actor!.clinicId);
       const overlap = await tx.maybeOne("SELECT id FROM paper_books WHERE prefix = 'P' AND int4range(first_no, last_no, '[]') && int4range($1, $2, '[]')", [first, last]);
       if (overlap) fail('CONFLICT', 'Slip numbers overlap an existing book');
       const book = await tx.one<{ id: string }>("INSERT INTO paper_books (clinic_id, prefix, first_no, last_no, custodian_staff_id, issued_by, note) VALUES ($1,'P',$2,$3,$4,$5,$6) RETURNING id",

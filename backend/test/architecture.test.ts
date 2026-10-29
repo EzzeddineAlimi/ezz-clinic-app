@@ -1,6 +1,7 @@
 /*
- * Architecture fitness tests: module boundaries of the modular monolith (docs/architecture/module-map.md),
- * platform must not depend on modules, no floating-point money parsing, no SQL string interpolation of values.
+ * Architecture fitness tests: module boundaries of the modular monolith (the ALLOWED map below is the source of truth),
+ * platform must not depend on modules, no floating-point money parsing, no SQL string interpolation of values,
+ * and (R74) one owner for each shared rule: advisory locks, dental-site validation, clinic-day computation.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,9 +24,9 @@ const ALLOWED: Record<string, string[]> = {
   card: ['audit', 'settings'],
   paper: ['audit', 'billing', 'settings'],
   exceptions: ['audit', 'card', 'paper', 'integrity', 'settings', 'lab'],
-  review: ['integrity', 'patients'],
-  dayboard: ['identity', 'patients', 'settings'],
-  print: ['audit', 'patients'],
+  review: ['integrity', 'settings'],
+  dayboard: ['identity', 'settings'],
+  print: ['audit', 'settings'],
   checkpoints: ['audit', 'print', 'settings'],
   settings: ['audit'],
   documents: ['audit', 'patients'],
@@ -39,7 +40,9 @@ test('ARCH-1 module dependency graph matches the declared map (no hidden couplin
   assert.deepEqual(files.map(f => f.replace('.ts', '')).sort(), Object.keys(ALLOWED).sort(), 'every module is declared');
   for (const f of files) {
     const mod = f.replace('.ts', '');
-    for (const dep of importsOf(join(SRC, 'modules', f))) assert.ok(ALLOWED[mod]!.includes(dep), `${mod} must not import ${dep}`);
+    const deps = importsOf(join(SRC, 'modules', f));
+    for (const dep of deps) assert.ok(ALLOWED[mod]!.includes(dep), `${mod} must not import ${dep}`);
+    for (const dep of ALLOWED[mod]!) assert.ok(deps.includes(dep), `${mod} declares ${dep} but no longer uses it: remove it from the map`);
   }
 });
 
@@ -73,4 +76,25 @@ test('ARCH-5 docs/security/permission-matrix.md is in sync with the code matrix'
   const { renderPermissionMatrix } = await import('../scripts/gen-permission-matrix.ts');
   const doc = readFileSync(join(SRC, '..', '..', 'docs', 'security', 'permission-matrix.md'), 'utf8');
   assert.equal(doc, renderPermissionMatrix());
+});
+
+const serverFiles = () => ['modules', 'platform', 'contracts'].flatMap(dir => readdirSync(join(SRC, dir)).filter(f => f.endsWith('.ts')).map(f => `${dir}/${f}`));
+const read = (rel: string) => readFileSync(join(SRC, rel), 'utf8');
+
+test('ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays', () => {
+  for (const rel of serverFiles()) {
+    const text = read(rel);
+    if (rel !== 'platform/db.ts') {
+      assert.ok(!text.includes('pg_advisory_xact_lock'), `${rel}: take advisory locks through db.ts advisoryLock()`);
+      assert.ok(!/replace\(\/\[\{\}\]\/g/.test(text), `${rel}: parse PostgreSQL arrays with db.ts pgTextArray()/pgIntArray()`);
+    }
+    if (rel !== 'contracts/clinical.ts') assert.ok(!/AREA_CODES\s*=/.test(text), `${rel}: ISO 3950 area codes live in contracts/clinical.ts`);
+    if (rel !== 'modules/settings.ts' && rel !== 'modules/print.ts') assert.ok(!text.includes('Intl.DateTimeFormat'), `${rel}: clinic days come from settings.ts localDate()/clinicDay()`);
+  }
+});
+
+test('ARCH-7 nothing imports the deprecated pgwire.ts shim (kept only for open draft branches)', () => {
+  const roots = [join(SRC, '..', 'test'), join(SRC, '..', 'scripts')];
+  const files = [...serverFiles().map(rel => join(SRC, rel)), ...roots.flatMap(d => readdirSync(d).filter(f => f.endsWith('.ts')).map(f => join(d, f)))];
+  for (const file of files) if (!file.endsWith('pgwire.ts')) assert.ok(!/from '[./a-z]*\/pgwire\.ts'/.test(readFileSync(file, 'utf8')), `${file}: import from platform/postgres.ts`);
 });

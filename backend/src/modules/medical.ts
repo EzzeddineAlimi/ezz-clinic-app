@@ -162,14 +162,14 @@ export const medicalRoutes: Route[] = dentistAuthored([
     // Desk-safe presence summary (no codes, no detail) for check-in and the receptionist screen.
     method: 'GET', path: '/api/v1/patients/:id/medical-alerts/summary', permission: 'medical.alert_presence',
     handler: async ({ tx, params }) => {
-      const p = await getPatient(tx, params.id!) as { id: string };
+      const p = await getPatient(tx, params.id!);
       return { status: 200, body: { patientId: p.id, ...alertPresence(await medicalState(tx, p.id)) } };
     },
   },
   {
     method: 'GET', path: '/api/v1/patients/:id/medical-alerts', permission: 'clinical.read',
     handler: async ({ tx, params, query }) => {
-      const p = await getPatient(tx, params.id!) as { id: string };
+      const p = await getPatient(tx, params.id!);
       const m = await medicalState(tx, p.id);
       const history = query.get('history') === 'true'
         ? (await tx.query(`SELECT a.id, a.chain_id AS "chainId", a.revision, a.code, a.severity, a.detail, a.source, a.status, a.reason,

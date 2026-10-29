@@ -14,7 +14,7 @@ import http from 'node:http';
 import crypto from 'node:crypto';
 import { AppError } from './errors.ts';
 import type { Db, Tx } from './db.ts';
-import { PgError } from './pgwire.ts';
+import { PgError } from './postgres.ts';
 
 export type Role = 'OWNER' | 'DENTIST' | 'RECEPTIONIST' | 'ASSISTANT';
 

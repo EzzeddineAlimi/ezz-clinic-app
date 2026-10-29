@@ -1,6 +1,6 @@
 /*
  * PRINT module (B15): printable document CONTRACTS for receipts and paper workflows, in French, Arabic (RTL) or both,
- * normal or large print. Depends on: audit, patients (clinic timezone, shared with B12). Owns no tables (writes receipt_prints rows and audit events).
+ * normal or large print. Depends on: audit, settings (clinic timezone, shared with B12). Owns no tables (writes receipt_prints rows and audit events).
  *
  * Rules:
  *  - a receipt's first print is the ORIGINAL; every later print is a COPY with its copy number (never a new receipt
@@ -14,10 +14,11 @@
  * Mandatory Tunisian receipt / fee-note fields and Arabic wording are UNVERIFIED: professional and native review needed.
  */
 import type { Route } from '../platform/http.ts';
+import { advisoryLock } from '../platform/db.ts';
 import { fail } from '../platform/errors.ts';
 import { isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
-import { clinicTimezone } from './patients.ts';
+import { clinicTimezone } from './settings.ts';
 
 export type Lang = 'fr' | 'ar';
 export type Size = 'normal' | 'large';
@@ -198,7 +199,7 @@ export const printRoutes: Route[] = [
       if (!isUuid(params.id!)) fail('NOT_FOUND', 'Receipt not found');
       const r = await tx.maybeOne<{ id: string; number: number; snapshot: ReceiptSnapshot; sha: string }>('SELECT id, number, snapshot, snapshot_sha256 AS sha FROM receipts WHERE id = $1', [params.id!]);
       if (!r) fail('NOT_FOUND', 'Receipt not found');
-      await tx.query("SELECT pg_advisory_xact_lock(hashtext('receipt_print:' || $1))", [r!.id]);
+      await advisoryLock(tx, 'receipt_print', r!.id);
       const prior = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM receipt_prints WHERE receipt_id = $1', [r!.id]);
       const copyNo = prior.n;
       await tx.query('INSERT INTO receipt_prints (clinic_id, receipt_id, printed_by, is_copy) VALUES ($1,$2,$3,$4)', [actor!.clinicId, r!.id, actor!.staffId, copyNo > 0]);
@@ -224,7 +225,7 @@ export const printRoutes: Route[] = [
       if (!isUuid(params.id!)) fail('NOT_FOUND', 'Paper book not found');
       const b = await tx.maybeOne<{ id: string; prefix: string; first_no: number; last_no: number }>('SELECT id, prefix, first_no, last_no FROM paper_books WHERE id = $1', [params.id!]);
       if (!b) fail('NOT_FOUND', 'Paper book not found');
-      await tx.query("SELECT pg_advisory_xact_lock(hashtext('paper_book_print:' || $1))", [b!.id]);
+      await advisoryLock(tx, 'paper_book_print', b!.id);
       const prior = await tx.one<{ n: number }>("SELECT count(*)::int AS n FROM audit_events WHERE action = 'paper.book_printed' AND entity_id = $1", [b!.id]);
       const printNo = prior.n + 1;
       await appendAudit(tx, actor!, 'paper.book_printed', 'paper_book', b!.id, { printNo, firstNo: b!.first_no, lastNo: b!.last_no, lang: o.lang, size: o.size });

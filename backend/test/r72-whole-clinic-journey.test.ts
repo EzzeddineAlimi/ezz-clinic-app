@@ -28,7 +28,7 @@ const at = (hhmm: string) => new Date(`${DAY}T${hhmm}:00+01:00`).toISOString(); 
 test('T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dentist, owner; second clinic isolated; backup restored', async () => {
   // ---------------------------------------------------------------- setup: two fictional clinics
   const A = await seedClinic(db, 'r72-clinic-a', [...STANDARD_STAFF, { username: 'assistant', roles: ['ASSISTANT'] }]);
-  const B = await seedClinic(db, 'r72-clinic-b', STANDARD_STAFF);
+  await seedClinic(db, 'r72-clinic-b', STANDARD_STAFF);
   const owner = await api.login('r72-clinic-a', 'owner'), dentist = await api.login('r72-clinic-a', 'dentist');
   const desk = await api.login('r72-clinic-a', 'desk'), assistant = await api.login('r72-clinic-a', 'assistant');
   const call = async (method: 'GET' | 'POST', path: string, token: string, body?: Record<string, unknown>, expect?: number) => {
@@ -47,7 +47,7 @@ test('T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dent
   const elder = await patient({ familyName: 'Jebali', givenName: 'Mabrouka', nameAr: 'مبروكة الجبالي', preferredLanguage: 'ar', contactPreference: 'IN_PERSON', dateOfBirth: '1944-02-01' });
   const dup = await call('POST', '/api/v1/patients', desk, { isSynthetic: true, familyName: 'Jebali', givenName: 'Mabrouka', phone: '+216 20 111 222', contactPreference: 'BASIC_PHONE_CALL' });
   assert.equal(dup.status, 409, 'same-name warning for the no-phone elderly patient');
-  const twin = await patient({ familyName: 'Jebali', givenName: 'Mabrouka', phone: '+216 20 111 222', contactPreference: 'BASIC_PHONE_CALL', confirmNotDuplicate: true });
+  await patient({ familyName: 'Jebali', givenName: 'Mabrouka', phone: '+216 20 111 222', contactPreference: 'BASIC_PHONE_CALL', confirmNotDuplicate: true });
   const p2 = await patient({ familyName: 'Trabelsi', givenName: 'Sami', phone: '+216 22 333 444', contactPreference: 'SMS' });
   const p3 = await patient({ familyName: 'Ayari', givenName: 'Nour' });
   const p4 = await patient({ familyName: 'Gharbi', givenName: 'Hedi' });

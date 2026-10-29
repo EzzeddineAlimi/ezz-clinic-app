@@ -8,7 +8,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, startApi, standardFixture, newVisit, confirmCare, reauth, type Api, type TestDb } from './helpers.ts';
-import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
+import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
 
 let db: TestDb; let api: Api;
 let A: Awaited<ReturnType<typeof standardFixture>>;

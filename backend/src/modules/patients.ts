@@ -13,24 +13,20 @@ import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
-import { clinicTimezone } from './settings.ts';
+import { clinicDay, clinicTimezone } from './settings.ts';
 
 const NAME = { min: 1, max: 80 };
-// The clinic timezone is a clinic setting (R73-C); re-exported here for the modules that took it from patients.
-export { clinicTimezone } from './settings.ts';
-
-/** A clinic-local calendar day from a query parameter (default: today in that timezone). */
-export function clinicDay(query: URLSearchParams, tz: string): string {
-  const day = query.get('day') ?? new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-  const t = Date.parse(day + 'T00:00:00Z');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== day) fail('VALIDATION_FAILED', 'day must be a real date YYYY-MM-DD', { field: 'day' });
-  return day;
-}
 const PHONE = /^\+?[0-9 ]{6,20}$/;
 
-export async function getPatient(tx: Tx, id: string) {
+/** The patient record as the API returns it (also the shape other modules read for headers). */
+export interface PatientView {
+  id: string; fileNo: number; familyName: string; givenName: string; nameAr: string | null; dateOfBirth: string | null; sex: string | null;
+  phone: string | null; contactPreference: string; preferredLanguage: string; createdAt: string;
+}
+
+export async function getPatient(tx: Tx, id: string): Promise<PatientView> {
   if (!isUuid(id)) fail('NOT_FOUND', 'Patient not found');
-  const p = await tx.maybeOne(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName", name_ar AS "nameAr",
+  const p = await tx.maybeOne<PatientView>(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName", name_ar AS "nameAr",
       date_of_birth::text AS "dateOfBirth", sex, phone, contact_preference AS "contactPreference", preferred_language AS "preferredLanguage", created_at AS "createdAt"
     FROM patients WHERE id = $1`, [id]);
   if (!p) fail('NOT_FOUND', 'Patient not found');
@@ -113,7 +109,7 @@ export const patientRoutes: Route[] = [
     method: 'POST', path: '/api/v1/patients/:id/contact', permission: 'patient.update_contact', idempotent: true,
     handler: async ({ tx, actor, params, body }) => {
       const b = asBody(body);
-      const before = await getPatient(tx, params.id!) as Record<string, unknown>;
+      const before = await getPatient(tx, params.id!);
       const phone = optStr(b, 'phone', { max: 20, pattern: PHONE });
       const pref = oneOf(b, 'contactPreference', ['IN_PERSON', 'BASIC_PHONE_CALL', 'SMS', 'NONE'] as const)!;
       const reason = str(b, 'reason', { min: 3, max: 200 });

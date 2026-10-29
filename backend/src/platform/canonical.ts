@@ -12,3 +12,6 @@ export function canonicalJson(v: unknown): string {
 }
 
 export const sha256 = (s: string | Buffer) => crypto.createHash('sha256').update(s).digest('hex');
+
+/** SHA-256 of a text, or null for no text: how free text is anchored in audit payloads without being disclosed (R73-H). */
+export const sha256OrNull = (s: string | null): string | null => (s === null ? null : sha256(s));

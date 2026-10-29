@@ -5,7 +5,7 @@
  */
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { PgConnection, parseDatabaseUrl } from './pgwire.ts';
+import { PgConnection, parseDatabaseUrl } from './postgres.ts';
 import { sha256 } from './canonical.ts';
 
 export interface MigrationStatus {

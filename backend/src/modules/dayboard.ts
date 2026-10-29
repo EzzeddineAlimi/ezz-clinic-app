@@ -1,6 +1,6 @@
 /*
  * DAY-BOARD module (B12): the clinic's working list for one clinic-local day. Read-only; owns no tables.
- * Depends on: patients (clinic timezone / day), identity (role checks for field visibility).
+ * Depends on: settings (clinic timezone / day), identity (role checks for field visibility).
  *
  * Shape rules:
  *  - one statement for the whole day whatever the number of visits (no N+1), plus one for the clinic timezone;
@@ -15,8 +15,7 @@ import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { isUuid } from '../platform/validate.ts';
 import { can } from './identity.ts';
-import { clinicDay } from './patients.ts';
-import { clinicSettings } from './settings.ts';
+import { clinicDay, clinicSettings } from './settings.ts';
 
 
 type Row = {

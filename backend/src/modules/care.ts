@@ -19,15 +19,10 @@ import type { Actor, Route } from '../platform/http.ts';
 import { AppError, fail } from '../platform/errors.ts';
 import { asBody, str, optStr, millimes, uuid, bool, oneOf, isUuid } from '../platform/validate.ts';
 import { readDentalSite, sameSite, type DentalSite } from '../contracts/clinical.ts';
-import { sha256 } from '../platform/canonical.ts';
+import { sha256OrNull } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 import { getVisitForUpdate, getVisit } from './patients.ts';
 import { requireAlertsAcknowledged, readAlertSetHash, requireDentistAuthor, dentistAuthored } from './medical.ts';
-
-export function validFdi(t: number): boolean {
-  const q = Math.floor(t / 10), n = t % 10;
-  return (q >= 1 && q <= 4 && n >= 1 && n <= 8) || (q >= 5 && q <= 8 && n >= 1 && n <= 5);
-}
 
 export const SITE_AMENDMENT_REASONS = ['WRONG_TOOTH', 'WRONG_SURFACE', 'WRONG_TOOTH_AND_SURFACE', 'TRANSCRIPTION', 'OTHER'] as const;
 
@@ -88,7 +83,7 @@ export async function confirmCareItem(tx: Tx, actor: Actor, v: { id: string; pat
     await tx.query("UPDATE visits SET status = 'COMPLETED', status_changed_at = now(), status_changed_by = $2 WHERE id = $1", [v.id, actor.staffId]);
   }
   await appendAudit(tx, actor, 'care.confirmed', 'care_item', c.id, { visitId: v.id, procedureCode: input.procedureCode, toothFdi: input.site.toothFdi, surfaces: input.site.surfaces, feeMillimes: input.feeMillimes, freeCare: input.feeMillimes === 0,
-    reasonSha256: input.reason ? sha256(input.reason) : null }); // R73-H: the reason is anchored by hash only
+    reasonSha256: sha256OrNull(input.reason) }); // R73-H: the reason is anchored by hash only
   return {
     careItem: { id: c.id, visitId: v.id, kind: 'CARE', procedureCode: input.procedureCode, procedureLabel: input.procedureLabel, toothFdi: input.site.toothFdi, surfaces: input.site.surfaces, feeMillimes: input.feeMillimes, confirmedBy: actor.staffId, confirmedAt: c.confirmed_at },
     visitTotalMillimes: await visitCareTotal(tx, v.id),

@@ -70,3 +70,25 @@ export class Db {
 
   async close() { await this.pool.end(); }
 }
+
+/**
+ * Transaction-scoped advisory lock serialising writers of one logical aggregate that has no row the application role may
+ * lock (append-only tables have no UPDATE privilege, so no FOR UPDATE). Key = hashtext('<namespace>:<id>'), the exact
+ * key the modules used before R74, so locks taken by old and new code paths still exclude each other.
+ */
+export async function advisoryLock(tx: Tx, namespace: string, id: string): Promise<void> {
+  await tx.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2))", [namespace, id]);
+}
+
+/**
+ * The driver returns PostgreSQL arrays (int2[], text[], uuid[] via array_agg) as their text form '{a,b}'. These helpers
+ * parse that form for arrays whose elements never need quoting (numbers, UUIDs, fixed tokens), which is every array the
+ * schema stores; a quoted element would be a programming error and is refused rather than mis-split.
+ */
+export function pgTextArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String);
+  const s = String(v ?? '{}');
+  if (s.includes('"')) throw new Error('pgTextArray: quoted array elements are not supported');
+  return s.replace(/[{}]/g, '').split(',').filter(Boolean);
+}
+export const pgIntArray = (v: unknown): number[] => pgTextArray(v).map(Number);

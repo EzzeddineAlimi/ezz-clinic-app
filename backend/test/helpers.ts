@@ -8,7 +8,7 @@
 import { randomBytes } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
+import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
 import { migrate } from '../src/platform/migrate.ts';
 import { createApp, type AppOptions } from '../src/app.ts';
 import { hashPassword } from '../src/modules/identity.ts';

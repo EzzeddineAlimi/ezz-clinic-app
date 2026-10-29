@@ -12,11 +12,11 @@
  * MF19: labExceptionFacts lists received/fitted work with no linked billed care item after N clinic days, and lab
  * invoices whose cases have none (the owner exception list words them as evidence, never as accusations).
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, pgIntArray, pgTextArray, type Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
-import { asBody, str, optStr, oneOf, int, isoDate, isUuid, uuid, millimes } from '../platform/validate.ts';
-import { isValidFdiTooth } from '../contracts/clinical.ts';
+import { asBody, str, optStr, oneOf, isoDate, isUuid, uuid, millimes } from '../platform/validate.ts';
+import { readTeethList, readAreaCode } from '../contracts/clinical.ts';
 import { appendAudit } from './audit.ts';
 import { getPatient, getVisit } from './patients.ts';
 import { clinicTimezone, localDate } from './settings.ts';
@@ -33,11 +33,9 @@ const TRANSITIONS: Record<LabStatus, LabStatus[]> = {
 };
 const DENTIST_ONLY: LabStatus[] = ['FITTED', 'REMAKE_REQUESTED', 'CANCELLED'];
 const OPEN: LabStatus[] = ['CREATED', 'SENT', 'TRY_IN_RETURNED', 'RESENT', 'RECEIVED'];
-const AREA_CODES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40];
 
 const roleOf = (a: Actor): 'DENTIST' | 'ASSISTANT' => (a.roles.includes('DENTIST') ? 'DENTIST' : 'ASSISTANT');
-const pgArray = (v: unknown): string[] => String(v ?? '{}').replace(/[{}]/g, '').split(',').filter(Boolean);
-const lockCase = (tx: Tx, id: string) => tx.query("SELECT pg_advisory_xact_lock(hashtext('lab_case:' || $1))", [id]);
+const lockCase = (tx: Tx, id: string) => advisoryLock(tx, 'lab_case', id);
 
 interface CaseRow {
   id: string; patient_id: string; visit_id: string | null; supplier_id: string; supplier: string; case_type: string; teeth: unknown; area_code: number | null;
@@ -58,7 +56,7 @@ async function loadCase(tx: Tx, id: string): Promise<CaseRow> {
 }
 const view = (c: CaseRow) => ({
   id: c.id, patientId: c.patient_id, visitId: c.visit_id, supplier: { id: c.supplier_id, name: c.supplier }, caseType: c.case_type,
-  teeth: pgArray(c.teeth).map(Number), areaCode: c.area_code, material: c.material, shade: c.shade, impression: c.impression, instructions: c.instructions,
+  teeth: pgIntArray(c.teeth), areaCode: c.area_code, material: c.material, shade: c.shade, impression: c.impression, instructions: c.instructions,
   dueOn: c.due_on, status: c.status, remakeOfId: c.remake_of_id, remakeResponsibility: c.remake_responsibility, createdRole: c.created_role,
   createdAt: new Date(c.created_at).toISOString(), allowedNext: TRANSITIONS[c.status].filter(s => s !== 'REMAKE_REQUESTED'),
 });
@@ -67,14 +65,7 @@ async function supplierExists(tx: Tx, id: string) {
   if (!isUuid(id) || !(await tx.maybeOne('SELECT 1 FROM lab_suppliers WHERE id = $1', [id]))) fail('VALIDATION_FAILED', 'supplierId is not a lab supplier of this clinic', { field: 'supplierId' });
 }
 
-function readSite(b: Record<string, unknown>) {
-  const raw = b.teeth ?? [];
-  if (!Array.isArray(raw) || raw.length > 32 || !raw.every(t => typeof t === 'number' && isValidFdiTooth(t)) || new Set(raw).size !== raw.length)
-    fail('VALIDATION_FAILED', 'teeth must be a list of distinct FDI tooth numbers (max 32)', { field: 'teeth' });
-  const areaCode = int(b, 'areaCode', 0, 40, true);
-  if (areaCode !== null && !AREA_CODES.includes(areaCode)) fail('VALIDATION_FAILED', 'areaCode is not a valid FDI area code', { field: 'areaCode' });
-  return { teeth: (raw as number[]).slice().sort((x, y) => x - y), areaCode };
-}
+const readSite = (b: Record<string, unknown>) => ({ teeth: readTeethList(b), areaCode: readAreaCode(b) });
 
 async function addStatus(tx: Tx, actor: Actor, c: CaseRow, to: LabStatus, reason: string | null) {
   if (!TRANSITIONS[c.status].includes(to)) fail('CONFLICT', `A ${c.status} lab case cannot become ${to}`, { from: c.status, allowed: TRANSITIONS[c.status] });
@@ -125,7 +116,7 @@ export const labRoutes: Route[] = [
     method: 'POST', path: '/api/v1/patients/:id/lab-cases', permission: 'lab.case.create', idempotent: true,
     handler: async ({ tx, actor, params, body }) => {
       const b = asBody(body);
-      const patient = await getPatient(tx, params.id!) as { id: string };
+      const patient = await getPatient(tx, params.id!);
       const supplierId = uuid(b, 'supplierId');
       await supplierExists(tx, supplierId);
       const caseType = oneOf(b, 'caseType', CASE_TYPES)!;
@@ -144,7 +135,7 @@ export const labRoutes: Route[] = [
   {
     method: 'GET', path: '/api/v1/patients/:id/lab-cases', permission: 'lab.case.read',
     handler: async ({ tx, params }) => {
-      const patient = await getPatient(tx, params.id!) as { id: string };
+      const patient = await getPatient(tx, params.id!);
       const rows = (await tx.query<CaseRow>(SELECT_CASE + ' WHERE c.patient_id = $1 ORDER BY c.created_at DESC, c.id DESC LIMIT 200', [patient.id])).rows;
       return { status: 200, body: { patientId: patient.id, labCases: rows.map(view) } };
     },
@@ -251,7 +242,7 @@ export const labRoutes: Route[] = [
         `SELECT i.id, s.name AS supplier, i.invoice_number, i.invoice_date::text AS invoice_date, i.amount_millimes, array_agg(ic.case_id ORDER BY ic.case_id)::text AS case_ids
            FROM lab_invoices i JOIN lab_suppliers s ON s.id = i.supplier_id JOIN lab_invoice_cases ic ON ic.invoice_id = i.id
           GROUP BY i.id, s.name ORDER BY i.invoice_date DESC, i.id LIMIT 500`)).rows;
-      return { status: 200, body: { invoices: rows.map(r => ({ id: r.id, supplier: r.supplier, invoiceNumber: r.invoice_number, invoiceDate: r.invoice_date, amountMillimes: r.amount_millimes, caseIds: pgArray(r.case_ids), kind: 'CLINIC_EXPENSE' })) } };
+      return { status: 200, body: { invoices: rows.map(r => ({ id: r.id, supplier: r.supplier, invoiceNumber: r.invoice_number, invoiceDate: r.invoice_date, amountMillimes: r.amount_millimes, caseIds: pgTextArray(r.case_ids), kind: 'CLINIC_EXPENSE' })) } };
     },
   },
 ];

@@ -8,7 +8,7 @@ Status: proposal by Claude Opus 5.5, 2026-10-28, implemented in `backend/` where
 /                      v0.1 prototype (unchanged, historical baseline: src/, public/, test/)
 backend/               v0.2 API (TypeScript, Node 22, PostgreSQL)
   migrations/          forward-only SQL, NNNN_name.sql (immutable once shared)
-  src/platform/        http, db, pgwire, validate, errors, canonical, migrate   (no business logic)
+  src/platform/        http, db, postgres, validate, errors, canonical, migrate   (no business logic)
   src/modules/         one file per module; dependency map enforced by test/architecture.test.ts
   test/                one throw-away PostgreSQL database per test file; helpers.ts
   scripts/             migrate, seed-fictional, bootstrap-roles.sql, v0.1 baseline probe, permission-matrix generator

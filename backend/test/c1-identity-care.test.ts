@@ -6,7 +6,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, startApi, standardFixture, seedClinic, STANDARD_STAFF, adminConn, PASSWORD, key, type TestDb, type Api } from './helpers.ts';
-import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
+import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
 import http from 'node:http';
 
 /** fetch() cannot override Host, so DNS-rebinding style requests use node:http directly. */

@@ -2,6 +2,7 @@
  * Not a diagnosis engine; do not infer medical validity or treatment from tooth codes.
  * Clinical and Tunisian legal review required before release. */
 import {fail} from '../platform/errors.ts';
+import {int} from '../platform/validate.ts';
 export type Dentition = 'PRIMARY'|'MIXED'|'PERMANENT';
 export type RecordKind = 'EXISTING'|'FINDING'|'PLANNED'|'COMPLETED';
 export type ClinicalSite = {siteKind:'NONE'}|{siteKind:'TOOTH';toothFdi:number}|{siteKind:'AREA';areaCode:number};
@@ -16,11 +17,14 @@ export function isValidFdiTooth(tooth:number):boolean{
  const q=Math.floor(tooth/10),p=tooth%10;
  return q>=1&&q<=4?p>=1&&p<=8:q>=5&&q<=8&&p>=1&&p<=5;
 }
-const AREA_CODES=new Set([0,1,2,3,4,5,6,7,8,9,10,20,30,40]);
+/** ISO 3950 area codes (00 whole mouth, 01-09 sextants/quadrant groups, 10-40 quadrants). The ONE list (R74). */
+export const AREA_CODES:readonly number[]=[0,1,2,3,4,5,6,7,8,9,10,20,30,40];
+const AREA_CODE_SET=new Set(AREA_CODES);
+export const isValidAreaCode=(n:number):boolean=>AREA_CODE_SET.has(n);
 export function validateClinicalSite(site:ClinicalSite):boolean{
  if(site.siteKind==='NONE')return Object.keys(site).length===1;
  if(site.siteKind==='TOOTH')return Object.keys(site).length===2&&isValidFdiTooth(site.toothFdi);
- if(site.siteKind==='AREA')return Object.keys(site).length===2&&AREA_CODES.has(site.areaCode);
+ if(site.siteKind==='AREA')return Object.keys(site).length===2&&isValidAreaCode(site.areaCode);
  return false;
 }
 export function fdiToUniversalDisplay(tooth:number):number|string{
@@ -72,3 +76,16 @@ export function readDentalSite(body:Record<string,unknown>,toothKey='toothFdi',s
  catch(e){return bad(surfacesKey,`${surfacesKey}: ${(e as Error).message}`);}
 }
 export const sameSite=(a:DentalSite,b:DentalSite)=>a.toothFdi===b.toothFdi&&a.surfaces===b.surfaces;
+/* ---- R74: the ONE reader for optional tooth lists and area codes (documents, lab cases, chart findings).
+ * Untyped JSON in; validated, canonical values out (sorted distinct FDI teeth; ISO 3950 area code or null). */
+export function readTeethList(body:Record<string,unknown>,key='teeth'):number[]{
+ const raw=body[key]??[];
+ if(!Array.isArray(raw)||raw.length>32||!raw.every(t=>typeof t==='number'&&isValidFdiTooth(t))||new Set(raw).size!==raw.length)
+  fail('VALIDATION_FAILED',`${key} must be a list of distinct FDI tooth numbers (max 32)`,{field:key});
+ return (raw as number[]).slice().sort((x,y)=>x-y);
+}
+export function readAreaCode(body:Record<string,unknown>,key='areaCode'):number|null{
+ const areaCode=int(body,key,0,40,true);
+ if(areaCode!==null&&!isValidAreaCode(areaCode))fail('VALIDATION_FAILED',`${key} is not an ISO 3950 area code`,{field:key});
+ return areaCode;
+}

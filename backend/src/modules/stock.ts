@@ -8,7 +8,7 @@
  * (which material to use is never suggested). Lots and expiry dates are recorded on receipt; per-lot consumption is
  * NOT tracked, so the expiry list says "received lots", not "lots still on the shelf".
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, type Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, int, isoDate, isUuid } from '../platform/validate.ts';
@@ -28,7 +28,7 @@ async function loadItem(tx: Tx, id: string) {
 /** Append one movement; quantity is signed (+ in, - out). Serialised per item; refuses to go below zero. */
 export async function recordMovement(tx: Tx, actor: Actor, itemId: string, m: { kind: Kind; quantity: number; lot?: string | null; expiresOn?: string | null; reason?: string | null }) {
   const item = await loadItem(tx, itemId);
-  await tx.query("SELECT pg_advisory_xact_lock(hashtext('stock_item:' || $1))", [item.id]);
+  await advisoryLock(tx, 'stock_item', item.id);
   const cur = await tx.one<{ n: number; seq: number }>(
     'SELECT coalesce((SELECT on_hand_after FROM stock_movements WHERE item_id = $1 ORDER BY seq DESC LIMIT 1), 0)::int AS n, coalesce((SELECT max(seq) FROM stock_movements WHERE item_id = $1), 0)::int AS seq', [item.id]);
   const after = cur.n + m.quantity;

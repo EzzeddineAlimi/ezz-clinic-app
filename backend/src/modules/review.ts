@@ -11,13 +11,13 @@
  *   CARD_DESK_CLAIM / CARD_OWNER_REVIEWED_STATEMENT - card claims; neither is provider-verified (none exists).
  * Wording is neutral: amounts, reason codes, who authorised and when. Never "suspicious", never a judgement.
  * Free-text notes are NOT returned (only hasNote): whether the owner may read them is a pending founder decision.
- * Dates are clinic-local calendar days (clinics.settings.timezone via patients.clinicTimezone, shared with B12).
+ * Dates are clinic-local calendar days (clinics.settings.timezone via settings.clinicTimezone, shared with B12).
  */
 import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { integrityCheck } from './integrity.ts';
-import { clinicTimezone } from './patients.ts';
+import { clinicTimezone, localDate } from './settings.ts';
 
 const MAX_DAYS = 92;
 const total = (rows: Array<{ amountMillimes: number }>) => rows.reduce((s, r) => s + r.amountMillimes, 0);
@@ -28,7 +28,7 @@ function groupTotals<T extends { amountMillimes: number }>(rows: T[], key: (r: T
 }
 
 function windowFrom(query: URLSearchParams, timezone: string) {
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  const today = localDate(timezone);
   const to = query.get('to') ?? today;
   const from = query.get('from') ?? new Date(Date.parse(to + 'T00:00:00Z') - 6 * 86400_000).toISOString().slice(0, 10);
   for (const [k, v] of [['from', from], ['to', to]] as const) {

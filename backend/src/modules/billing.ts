@@ -16,7 +16,7 @@ import type { Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, millimes, oneOf, optStr, str, bool, formatMillimes, isUuid } from '../platform/validate.ts';
-import { canonicalJson, sha256 } from '../platform/canonical.ts';
+import { canonicalJson, sha256, sha256OrNull } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 import { getVisitForUpdate, getVisit } from './patients.ts';
 
@@ -75,7 +75,6 @@ export async function issueReceipt(tx: Tx, actor: Actor, kind: 'PAYMENT' | 'REFU
 }
 
 /** R73-H: free text is anchored in audit payloads by hash only (no free-text disclosure decision is made here). */
-const textSha256 = (s: string | null) => (s === null ? null : sha256(s));
 
 export function evidenceFor(tender: 'CASH' | 'CARD', source: 'DESK' | 'PAPER_OUTAGE') {
   if (tender === 'CARD') return { tier: 'DESK_CLAIM', label: { fr: 'Carte — déclaration accueil uniquement (non vérifiée)', ar: 'بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)' }, verifiedBy: null };
@@ -218,7 +217,7 @@ export const billingRoutes: Route[] = [
       const role = primaryRole(actor!, ['DENTIST', 'OWNER']);
       const a = await tx.one<{ id: string; created_at: string }>(`INSERT INTO adjustments (clinic_id, visit_id, patient_id, kind, amount_millimes, reason_code, reason_note, authorized_by, authorized_role)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, created_at`, [actor!.clinicId, v.id, v.patient_id, kind, amount, reasonCode, reasonNote, actor!.staffId, role]);
-      await appendAudit(tx, actor!, 'adjustment.created', 'adjustment', a.id, { visitId: v.id, kind, amountMillimes: amount, reasonCode, authorizedRole: role, createdAt: a.created_at, reasonNoteSha256: textSha256(reasonNote) });
+      await appendAudit(tx, actor!, 'adjustment.created', 'adjustment', a.id, { visitId: v.id, kind, amountMillimes: amount, reasonCode, authorizedRole: role, createdAt: a.created_at, reasonNoteSha256: sha256OrNull(reasonNote) });
       return { status: 201, body: { adjustment: { id: a.id, kind, amountMillimes: amount, reasonCode, authorizedBy: actor!.staffId, authorizedRole: role }, balance: await visitBalance(tx, v.id) } };
     },
   },
@@ -240,7 +239,7 @@ export const billingRoutes: Route[] = [
           VALUES ($1,$2,$3,'REFUND',$4,$5,$6,$7,$8,$9,$10,'OWNER', clock_timestamp()) RETURNING id, created_at`, [actor!.clinicId, p.visit_id, p.patient_id, amount, reasonCode, reasonNote, p.id, p.tender, cashPeriodId, actor!.staffId]);
       const receipt = await issueReceipt(tx, actor!, 'REFUND', { adjustmentId: a.id }, p.visit_id, { amountMillimes: amount, amountText: formatMillimes(amount), tender: p.tender, originalPaymentId: p.id, reasonCode });
       await appendAudit(tx, actor!, 'payment.refunded', 'adjustment', a.id, { paymentId: p.id, amountMillimes: amount, tender: p.tender, reasonCode, receiptNumber: receipt.number, cashPeriodId,
-        visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: textSha256(reasonNote) });
+        visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: sha256OrNull(reasonNote) });
       return { status: 201, body: { refund: { id: a.id, paymentId: p.id, amountMillimes: amount, tender: p.tender }, receipt: { id: receipt.id, number: receipt.number, label: receipt.label }, balance: await visitBalance(tx, p.visit_id) } };
     },
   },
@@ -260,7 +259,7 @@ export const billingRoutes: Route[] = [
       const orig = await tx.one<{ number: number }>('SELECT number FROM receipts WHERE payment_id = $1', [p.id]).catch(() => ({ number: 0 }));
       const receipt = await issueReceipt(tx, actor!, 'VOID', { adjustmentId: a.id }, p.visit_id, { voidsReceiptNumber: orig.number || null, amountMillimes: p.amount_millimes, tender: p.tender, reasonCode });
       await appendAudit(tx, actor!, 'payment.voided', 'adjustment', a.id, { paymentId: p.id, amountMillimes: p.amount_millimes, reasonCode, receiptNumber: receipt.number, voidsReceiptNumber: orig.number || null,
-        visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: textSha256(reasonNote) });
+        visitId: p.visit_id, createdAt: a.created_at, receiptSha256: receipt.sha256, reasonNoteSha256: sha256OrNull(reasonNote) });
       return { status: 201, body: { void: { id: a.id, paymentId: p.id, amountMillimes: p.amount_millimes }, receipt: { id: receipt.id, number: receipt.number, label: receipt.label }, balance: await visitBalance(tx, p.visit_id) } };
     },
   },

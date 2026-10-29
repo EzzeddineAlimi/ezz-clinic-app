@@ -20,14 +20,13 @@ import type { Route } from '../platform/http.ts';
 import { AppError, fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, int, uuid, isoTime, millimes, isUuid } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
-import { readDentalSite } from '../contracts/clinical.ts';
+import { readDentalSite, readAreaCode } from '../contracts/clinical.ts';
 import { appendAudit } from './audit.ts';
 import { getPatient, getVisit, getVisitForUpdate } from './patients.ts';
 import { confirmCareItem, listCare } from './care.ts';
 import { medicalState, readAlertSetHash, requireDentistAuthor, dentistAuthored } from './medical.ts';
 
 const SECTIONS = ['subjective', 'objective', 'assessment', 'plan'] as const;
-const AREA_CODES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40];
 const CONDITION_CODE = /^[A-Z][A-Z0-9_]{1,40}$/;
 const PLAN_TERMINAL = ['DECLINED', 'CANCELLED', 'COMPLETED'];
 const PLAN_TRANSITIONS: Record<string, string[]> = { PROPOSED: ['ACCEPTED', 'DECLINED', 'CANCELLED'], ACCEPTED: ['CANCELLED'] };
@@ -161,7 +160,7 @@ async function patientCare(tx: Tx, patientId: string) {
 }
 
 async function patientHeader(tx: Tx, patientId: string) {
-  const p = await getPatient(tx, patientId) as Record<string, unknown>;
+  const p = await getPatient(tx, patientId);
   return { id: p.id, fileNo: p.fileNo, familyName: p.familyName, givenName: p.givenName, nameAr: p.nameAr, dateOfBirth: p.dateOfBirth, sex: p.sex, preferredLanguage: p.preferredLanguage };
 }
 
@@ -284,8 +283,7 @@ export const clinicalRoutes: Route[] = dentistAuthored([
       writableVisit(v);
       const kind = oneOf(b, 'kind', ['EXISTING', 'FINDING'] as const)!;
       const site = readDentalSite(b);
-      const areaCode = int(b, 'areaCode', 0, 40, true);
-      if (areaCode !== null && !AREA_CODES.includes(areaCode)) fail('VALIDATION_FAILED', 'areaCode is not an ISO 3950 area code', { field: 'areaCode' });
+      const areaCode = readAreaCode(b);
       if ((site.toothFdi === null) === (areaCode === null)) fail('VALIDATION_FAILED', 'Give exactly one of toothFdi or areaCode', { field: 'toothFdi' });
       const conditionCode = str(b, 'conditionCode', { min: 2, max: 41, pattern: CONDITION_CODE });
       const note = optStr(b, 'note', { max: 500 });

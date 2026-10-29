@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { createTestDb, startApi, standardFixture, newVisit, confirmCare, adminConn, reauth, ADMIN_URL, PASSWORD, key, type TestDb, type Api } from './helpers.ts';
-import { PgConnection, parseDatabaseUrl } from '../src/platform/pgwire.ts';
+import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
 import { SERVER_ENTRY } from '../src/platform/paths.ts';
 
 const SERVER = SERVER_ENTRY;

@@ -10,7 +10,7 @@
 import type { Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { asBody } from '../platform/validate.ts';
-import { canonicalJson, sha256 } from '../platform/canonical.ts';
+import { canonicalJson, sha256, sha256OrNull } from '../platform/canonical.ts';
 import { verifyChain, type Anchor } from './audit.ts';
 import { noteHash } from './clinical.ts';
 import { expectedCash } from './cash.ts';
@@ -108,7 +108,6 @@ export const LEGACY_TIME_TOLERANCE_MS = 120_000;
 
 type Ev = { action: string; payload: Record<string, unknown>; actor: string | null; at?: string };
 const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null);
-const textSha = (s: string | null) => (s === null ? null : sha256(s));
 
 export async function businessValueFindings(tx: Tx, clinicId: string, withCash = true): Promise<IntegrityFinding[]> {
   const out: IntegrityFinding[] = [];
@@ -198,7 +197,7 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     if (e.action === 'payment.refunded') pairs.push(['tender', j.tender, a.tender]);
     compare('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, pairs);
     compareTime('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'createdAt', j.created_at, e);
-    compareHash('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'reasonNoteSha256', textSha(j.reason_note), e);
+    compareHash('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'reasonNoteSha256', sha256OrNull(j.reason_note), e);
   }
 
   // V3/V4 receipts: snapshot integrity, then snapshot and number vs the audited operation; R73-H: the whole snapshot
@@ -228,7 +227,7 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     if (e.action === 'care.confirmed') {
       compare('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, [['kind', c.kind, 'CARE'], ['feeMillimes', c.fee_millimes, a.feeMillimes], ['visitId', c.visit_id, a.visitId],
         ['procedureCode', c.procedure_code, a.procedureCode], ['toothFdi', c.tooth_fdi, a.toothFdi], ['surfaces', c.surfaces, a.surfaces]]);
-      compareHash('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, 'reasonSha256', textSha(c.reason), e);
+      compareHash('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, 'reasonSha256', sha256OrNull(c.reason), e);
     } else {
       compare('CARE_AUDIT_VALUE_MISMATCH', 'care_items', c.id, [['kind', c.kind, 'CORRECTION'], ['feeMillimes', c.fee_millimes, a.deltaMillimes], ['correctsId', c.corrects_id, a.correctsId], ['reason', c.reason, a.reason],
         ...('procedureCode' in a ? [['procedureCode', c.procedure_code, a.procedureCode], ['toothFdi', c.tooth_fdi, a.toothFdi], ['surfaces', c.surfaces, a.surfaces]] as Array<[string, unknown, unknown]> : [])]);

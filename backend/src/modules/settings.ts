@@ -10,7 +10,7 @@
  * re-entry, a reason, an audit event, and an explicit confirmation before the timezone of a clinic with visits moves.
  * No hosting, payment-provider, fiscal or clinical policy lives here.
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str } from '../platform/validate.ts';
@@ -48,6 +48,14 @@ export async function clinicTimezone(tx: Tx, clinicId: string): Promise<string> 
 export const localDate = (timezone: string, at: Date = new Date()) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
 
+/** A clinic-local calendar day from a query parameter (default: today in that timezone). */
+export function clinicDay(query: URLSearchParams, tz: string): string {
+  const day = query.get('day') ?? localDate(tz);
+  const t = Date.parse(day + 'T00:00:00Z');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || Number.isNaN(t) || new Date(t).toISOString().slice(0, 10) !== day) fail('VALIDATION_FAILED', 'day must be a real date YYYY-MM-DD', { field: 'day' });
+  return day;
+}
+
 async function validate(tx: Tx, key: Key, raw: unknown): Promise<string | number> {
   if (key === 'timezone') {
     if (typeof raw !== 'string' || raw.length > 64 || !validIntlZone(raw)) fail('VALIDATION_FAILED', 'timezone must be an IANA name such as Africa/Tunis', { field: 'timezone' });
@@ -77,7 +85,7 @@ export const settingsRoutes: Route[] = [
       if (!keys.length) fail('VALIDATION_FAILED', 'changes must name at least one setting', { field: 'changes' });
       for (const k of keys) if (!(k in COLUMN)) fail('VALIDATION_FAILED', `Unknown setting ${k}; configurable: ${Object.keys(COLUMN).join(', ')}`, { field: k });
       const reason = str(b, 'reason', { min: 3, max: 300 });
-      await tx.query("SELECT pg_advisory_xact_lock(hashtext('clinic_settings:' || $1))", [actor!.clinicId]);
+      await advisoryLock(tx, 'clinic_settings', actor!.clinicId);
       const { settings: current } = await load(tx, actor!.clinicId);
       const applied: Array<{ key: Key; from: unknown; to: unknown }> = [];
       for (const k of keys as Key[]) {

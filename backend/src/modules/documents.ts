@@ -13,20 +13,19 @@
  * Nothing is ever deleted: an owner can only RECORD a deletion request, which waits for an approved retention policy.
  * Access: dentist-only, like the clinical record (assistant and receptionist access are open policy questions).
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, pgIntArray, pgTextArray, type Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, int, isoDate, isUuid, type Body } from '../platform/validate.ts';
 import { MAX_DOCUMENT_BYTES, type BlobStore } from '../platform/blobstore.ts';
 import { DOCUMENT_TYPES, EXTENSION, detectType, sha256Hex, stripLocation, type ContentScreener, type DocumentType } from '../platform/fileinspect.ts';
-import { isValidFdiTooth } from '../contracts/clinical.ts';
+import { readTeethList, readAreaCode } from '../contracts/clinical.ts';
 import { appendAudit } from './audit.ts';
 import { getPatient, getVisit } from './patients.ts';
 
 export const MODALITIES = ['INTRAORAL_PERIAPICAL', 'BITEWING', 'OCCLUSAL', 'PANORAMIC_OPG', 'CEPHALOMETRIC', 'CBCT', 'INTRAORAL_PHOTO', 'EXTRAORAL_PHOTO', 'SCAN_3D', 'DOCUMENT_SCAN'] as const;
 export const SOURCES = ['IN_CLINIC_SENSOR', 'EXTERNAL_RADIOLOGY', 'PATIENT_BROUGHT'] as const;
 export const DELETION_BASES = ['PATIENT_REQUEST', 'DUPLICATE', 'WRONG_PATIENT_CONFIRMED', 'RETENTION_EXPIRED', 'OTHER'] as const;
-const AREA_CODES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40];
 const HEX64 = /^[0-9a-f]{64}$/;
 
 export type DocumentStatus = 'AWAITING_CONTENT' | 'QUARANTINE' | 'ACTIVE' | 'REJECTED' | 'ENTERED_IN_ERROR';
@@ -46,25 +45,22 @@ interface EventRow {
 const SELECT_DOC = 'SELECT id, patient_id, visit_id, modality, title, teeth, area_code, acquired_on::text AS acquired_on, source, declared_type, declared_size, '
   + 'declared_sha256, reassigned_from_id, created_by, created_at FROM patient_documents';
 
-/** Postgres smallint[] arrives as text '{11,12}' (the driver keeps arrays as text); parse it strictly. */
-const parseIntArray = (v: unknown): number[] => (Array.isArray(v) ? v.map(Number) : String(v ?? '{}').replace(/[{}]/g, '').split(',').filter(Boolean).map(Number));
-
 async function loadDoc(tx: Tx, id: string): Promise<DocRow> {
   if (!isUuid(id)) fail('NOT_FOUND', 'Document not found');
   const d = await tx.maybeOne<DocRow>(SELECT_DOC + ' WHERE id = $1', [id]);
   if (!d) fail('NOT_FOUND', 'Document not found');
-  return { ...d!, teeth: parseIntArray(d!.teeth) };
+  return { ...d!, teeth: pgIntArray(d!.teeth) };
 }
 async function events(tx: Tx, id: string): Promise<EventRow[]> {
   return (await tx.query<EventRow>(`SELECT seq, kind, status_after, blob_ref, store_kind, detected_type, received_sha256, stored_sha256, stored_size,
       metadata_removed, screener, reason, by_staff_id, at FROM patient_document_events WHERE document_id = $1 ORDER BY seq`, [id])).rows
-    .map(e => ({ ...e, metadata_removed: e.metadata_removed === null ? null : String(e.metadata_removed).replace(/[{}]/g, '').split(',').filter(Boolean) }));
+    .map(e => ({ ...e, metadata_removed: e.metadata_removed === null ? null : pgTextArray(e.metadata_removed) }));
 }
 const statusOf = (ev: EventRow[]): DocumentStatus => ev.at(-1)?.status_after ?? 'AWAITING_CONTENT';
 const contentOf = (ev: EventRow[]) => ev.find(e => e.kind === 'CONTENT_STORED') ?? null;
 
 /** One document transition at a time (the app role has no UPDATE, so no row lock; UNIQUE (document_id, seq) is the backstop). */
-const lockDoc = (tx: Tx, id: string) => tx.query("SELECT pg_advisory_xact_lock(hashtext('patient_document:' || $1))", [id]);
+const lockDoc = (tx: Tx, id: string) => advisoryLock(tx, 'patient_document', id);
 
 async function addEvent(tx: Tx, actor: Actor, docId: string, seq: number, e: { kind: string; status: DocumentStatus } & Partial<Record<
   'blobRef' | 'storeKind' | 'detectedType' | 'receivedSha256' | 'storedSha256' | 'screener' | 'reason', string | null>> & { storedSize?: number; metadataRemoved?: string[] }) {
@@ -91,12 +87,9 @@ function readMetadata(b: Body) {
   const title = str(b, 'title', { max: 120 });
   const source = oneOf(b, 'source', SOURCES)!;
   const acquiredOn = isoDate(b, 'acquiredOn', true);
-  const rawTeeth = b.teeth ?? [];
-  if (!Array.isArray(rawTeeth) || rawTeeth.length > 32 || !rawTeeth.every(t => typeof t === 'number' && isValidFdiTooth(t)) || new Set(rawTeeth).size !== rawTeeth.length)
-    fail('VALIDATION_FAILED', 'teeth must be a list of distinct FDI tooth numbers (max 32)', { field: 'teeth' });
-  const areaCode = int(b, 'areaCode', 0, 40, true);
-  if (areaCode !== null && !AREA_CODES.includes(areaCode)) fail('VALIDATION_FAILED', 'areaCode is not a valid FDI area code', { field: 'areaCode' });
-  return { modality, title, source, acquiredOn, teeth: (rawTeeth as number[]).slice().sort((x, y) => x - y), areaCode };
+  const teeth = readTeethList(b);
+  const areaCode = readAreaCode(b);
+  return { modality, title, source, acquiredOn, teeth, areaCode };
 }
 
 /** Store, record and screen verified bytes for a document that is AWAITING_CONTENT. */
@@ -137,7 +130,7 @@ export function documentRoutes(deps: DocumentDeps): Route[] {
       method: 'POST', path: '/api/v1/patients/:id/documents', permission: 'document.upload', idempotent: true,
       handler: async ({ tx, actor, params, body }) => {
         const b = asBody(body);
-        const patient = await getPatient(tx, params.id!) as { id: string };
+        const patient = await getPatient(tx, params.id!);
         const m = readMetadata(b);
         const visitId = optStr(b, 'visitId', { max: 36 });
         if (visitId) {
@@ -192,12 +185,12 @@ export function documentRoutes(deps: DocumentDeps): Route[] {
     {
       method: 'GET', path: '/api/v1/patients/:id/documents', permission: 'document.read',
       handler: async ({ tx, params, query }) => {
-        const patient = await getPatient(tx, params.id!) as { id: string };
+        const patient = await getPatient(tx, params.id!);
         const includeErrors = query.get('includeEnteredInError') === 'true';
         const docs = (await tx.query<DocRow>(SELECT_DOC + ' WHERE patient_id = $1 ORDER BY created_at DESC, id DESC LIMIT 500', [patient.id])).rows;
         const out = [];
         for (const raw of docs) {
-          const d = { ...raw, teeth: parseIntArray(raw.teeth) };
+          const d = { ...raw, teeth: pgIntArray(raw.teeth) };
           const v = view(d, await events(tx, d.id));
           if (v.status !== 'ENTERED_IN_ERROR' || includeErrors) out.push(v);
         }
@@ -248,7 +241,7 @@ export function documentRoutes(deps: DocumentDeps): Route[] {
         await appendAudit(tx, actor!, 'document.entered_in_error', 'patient_document', d.id, { patientId: d.patient_id, from, reassignToPatientId: target, hasReason: true });
         let reassigned: ReturnType<typeof view> | null = null;
         if (target) {
-          const p = await getPatient(tx, target) as { id: string };
+          const p = await getPatient(tx, target);
           const visitId = optStr(b, 'visitId', { max: 36 });
           if (p.id === d.patient_id && visitId === d.visit_id) fail('VALIDATION_FAILED', 'Re-attachment must change the patient or the visit', { field: 'reassignToPatientId' });
           if (visitId) { const v = await getVisit(tx, visitId); if (v.patient_id !== p.id) fail('VALIDATION_FAILED', 'visitId belongs to another patient', { field: 'visitId' }); }
