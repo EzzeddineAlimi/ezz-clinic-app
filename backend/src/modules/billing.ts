@@ -200,13 +200,15 @@ const recoveryRoutes: Route[] = [
   { method:'GET', path:'/api/v1/visits/:id/payment-recovery', permission:'payment.read', handler:async({tx,params})=>{
     // Same aggregate lock as every billing writer: coherent reads, waits for uncertain commits.
     const v=await getVisitForUpdate(tx,params.id!);
-    await unresolvedIntent(tx,v.id);
+    // Reads must remain available even if corrupt/legacy state has multiple pending intents.
+    // All preparation/recording safety guards remain unchanged.
     const state=await recoveryState(tx,v.id);
     const intentions=(await tx.query(`SELECT i.id,i.payload,i.created_by AS "createdBy",i.created_at AS "createdAt",
       coalesce(o.status,'PENDING') AS status,o.payment_id AS "paymentId",o.result,o.reason,o.resolved_by AS "resolvedBy"
       FROM payment_intents i LEFT JOIN payment_intent_outcomes o ON o.intent_id=i.id
       WHERE i.visit_id=$1 ORDER BY i.created_at,i.id`,[v.id])).rows;
-    return {status:200,body:{...state,intentions,automaticRetry:false}};
+    const pendingCount=intentions.filter(i=>i.status==='PENDING').length;
+    return {status:200,body:{...state,intentions,pendingAnomaly:pendingCount>1,automaticRetry:false}};
   }},
   { method:'POST', path:'/api/v1/visits/:id/payment-intents', permission:'payment.record', idempotent:true, handler:async({tx,actor,params,body})=>{
     const b=asBody(body),payload=deskPayload(b),v=await getVisitForUpdate(tx,params.id!);
