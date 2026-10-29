@@ -90,6 +90,18 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   const resultFinding = await (await savedFinding).json();
   expect(resultFinding.finding.toothFdi).toBe(16);
   await expect(dialog).toContainText("TEST_FIND");
+  const originalFinding = dialog.locator(".clinical-entry").filter({hasText:"TEST_FIND"});
+  const correction = await request.post(
+    "/api/v1/chart-findings/" + resultFinding.finding.id + "/entered-in-error",
+    { headers: { Authorization: "Bearer " + dentist, "Idempotency-Key": crypto.randomUUID() },
+      data: { reason: "Incorrect chart entry, fictional correction" } },
+  );
+  expect(correction.status()).toBe(201);
+  await dialog.getByRole("button", {name:"Actualiser"}).click();
+  await expect(originalFinding).toHaveAttribute("data-struck","true");
+  await expect(originalFinding.locator("s")).toContainText("TEST_FIND");
+  await expect(originalFinding.getByTestId("struck-finding"))
+    .toContainText("Incorrect chart entry, fictional correction");
 
   const balance = await request.get("/api/v1/visits/" + visitId + "/balance", {
     headers: {Authorization:"Bearer "+desk},
