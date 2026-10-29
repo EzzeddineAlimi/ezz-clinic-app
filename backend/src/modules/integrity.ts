@@ -111,6 +111,9 @@ const NEUTRAL = 'The recorded value differs from the value captured in its audit
  */
 export const LEGACY_TIME_TOLERANCE_MS = 120_000;
 
+/** The adjustments expectedCash (cash.ts) subtracts: cash refunds and cash voids. */
+const inCashWindow = (j: { kind: string; tender: string | null }) => j.tender === 'CASH' && (j.kind === 'REFUND' || j.kind === 'PAYMENT_VOID');
+
 type Ev = { action: string; payload: Record<string, unknown>; actor: string | null; at?: string };
 const same = (a: unknown, b: unknown) => (a ?? null) === (b ?? null);
 
@@ -134,11 +137,18 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
   const compare = (check: string, table: string, id: string, pairs: Array<[string, unknown, unknown]>) => {
     for (const [field, recorded, audited] of pairs) if (!same(recorded, audited)) mismatch(check, table, id, field, recorded, audited);
   };
-  /** Exact when the event anchored the value (R73-H), else within LEGACY_TIME_TOLERANCE_MS of the event's own time. */
-  const compareTime = (check: string, table: string, id: string, field: string, recorded: string, e: Ev) => {
+  /**
+   * Exact when the event anchored the value (R73-H), else within LEGACY_TIME_TOLERANCE_MS of the event's own time.
+   * A legacy time inside the tolerance is only approximately verified; if it decides which cash count window an item
+   * falls in (cash = 'item' or 'cutoff'), it is kept for the INCONCLUSIVE check below (CH-035).
+   */
+  const legacyCashTimes: Array<{ table: string; id: string; field: string; recorded: string; at: string; cash: 'item' | 'cutoff' }> = [];
+  const compareTime = (check: string, table: string, id: string, field: string, recorded: string, e: Ev, cash?: 'item' | 'cutoff') => {
     const anchored = e.payload[field];
     if (typeof anchored === 'string') { if (Date.parse(anchored) !== Date.parse(recorded)) mismatch(check, table, id, field, recorded, anchored); return; }
-    if (e.at && Math.abs(Date.parse(recorded) - Date.parse(e.at)) > LEGACY_TIME_TOLERANCE_MS) mismatch(check, table, id, field, recorded, `around ${e.at} (event time; pre-R73-H event)`);
+    if (!e.at) return;
+    if (Math.abs(Date.parse(recorded) - Date.parse(e.at)) > LEGACY_TIME_TOLERANCE_MS) mismatch(check, table, id, field, recorded, `around ${e.at} (event time; pre-R73-H event)`);
+    else if (cash) legacyCashTimes.push({ table, id, field, recorded, at: e.at, cash });
   };
   /** A hash is compared only when the event carried it (events before R73-H did not). Free text never appears in findings. */
   const compareHash = (check: string, table: string, id: string, field: string, recordedHash: string | null, e: Ev) => {
@@ -163,7 +173,7 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
       ['amountMillimes', p.amount_millimes, a.amountMillimes], ['tender', p.tender, a.tender], ['source', p.source, a.source],
       ['visitId', p.visit_id, a.visitId], ['cashPeriodId', p.cash_period_id, a.cashPeriodId], ['recordedBy', p.recorded_by, ev[0]!.actor],
     ]);
-    compareTime('PAYMENT_AUDIT_VALUE_MISMATCH', 'payments', p.id, 'recordedAt', p.recorded_at, ev[0]!);
+    compareTime('PAYMENT_AUDIT_VALUE_MISMATCH', 'payments', p.id, 'recordedAt', p.recorded_at, ev[0]!, p.tender === 'CASH' ? 'item' : undefined);
   }
 
   // V2 allocations: in v0.2 a payment is allocated in full to its own visit (no deposits/credit, R55). If
@@ -201,7 +211,7 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     }
     if (e.action === 'payment.refunded') pairs.push(['tender', j.tender, a.tender]);
     compare('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, pairs);
-    compareTime('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'createdAt', j.created_at, e);
+    compareTime('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'createdAt', j.created_at, e, inCashWindow(j) ? 'item' : undefined);
     compareHash('ADJUSTMENT_AUDIT_VALUE_MISMATCH', 'adjustments', j.id, 'reasonNoteSha256', sha256OrNull(j.reason_note), e);
   }
 
@@ -247,29 +257,33 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
     const periods = (await tx.query<{ id: string; period_no: number; opened_at: string; opening_float_millimes: number; opening_basis: string; previous_period_id: string | null; status: string; cutoff_at: string | null; drawer_id: string }>(
       'SELECT id, period_no, opened_at, opening_float_millimes, opening_basis, previous_period_id, status, cutoff_at, drawer_id FROM cash_periods WHERE clinic_id = $1', [clinicId])).rows;
     const periodById = new Map(periods.map(p => [p.id, p]));
+    const counts = (await tx.query<{ id: string; period_id: string; attempt_no: number; counted_millimes: number; expected_millimes: number; submitted_at: string; denominations: Record<string, number> | null }>(
+      'SELECT id, period_id, attempt_no, counted_millimes, expected_millimes, submitted_at, denominations FROM cash_counts WHERE clinic_id = $1', [clinicId])).rows;
+    const acceptedCutoff = new Map(counts.map(c => [c.id, c.submitted_at]));
     for (const p of periods) {
       present.add(`cash_period:${p.id}`);
       if (p.opening_basis === 'OWNER_DECLARED') {
         const ev = one('cash_period', p.id, ['cash.period_opened']);
         if (!ev.length) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `cash_periods ${p.id} has no opening audit event`, refs: { table: 'cash_periods', id: p.id } }); continue; }
         compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, [['openingFloatMillimes', p.opening_float_millimes, ev[0]!.payload.openingFloatMillimes], ['periodNo', p.period_no, ev[0]!.payload.periodNo]]);
-        compareTime('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, ev[0]!);
+        compareTime('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, ev[0]!, 'cutoff');
       } else {
         // Carry-forward: there is no opening event; the float and start come from the previous period's close event.
         const closed = p.previous_period_id ? one('cash_period', p.previous_period_id, ['cash.period_closed']).find(e => e.payload.nextPeriodId === p.id) : undefined;
         if (!closed) { out.push({ check: 'ROW_WITHOUT_AUDIT_EVENT', severity: 'HIGH', detail: `cash_periods ${p.id} (carried forward) has no matching close event of its previous period`, refs: { table: 'cash_periods', id: p.id } }); continue; }
         compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, [['openingFloatMillimes', p.opening_float_millimes, closed.payload.nextOpeningFloatMillimes]]);
-        if (typeof closed.payload.nextOpenedAt === 'string' && Date.parse(closed.payload.nextOpenedAt) !== Date.parse(p.opened_at))
-          mismatch('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, closed.payload.nextOpenedAt);
+        // The start is the accepted count's cut-off: anchored since R73-H; before that, the accepted count row's own
+        // (separately compared) submitted_at. Leaving it unchecked let a moved start hide cash from every count.
+        const start = typeof closed.payload.nextOpenedAt === 'string' ? closed.payload.nextOpenedAt : acceptedCutoff.get(String(closed.payload.acceptedCountId));
+        if (start !== undefined && Date.parse(start) !== Date.parse(p.opened_at))
+          mismatch('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, typeof closed.payload.nextOpenedAt === 'string' ? start : `${start} (cut-off of accepted count ${String(closed.payload.acceptedCountId)}; pre-R73-H event)`);
       }
     }
-    const counts = (await tx.query<{ id: string; period_id: string; attempt_no: number; counted_millimes: number; expected_millimes: number; submitted_at: string; denominations: Record<string, number> | null }>(
-      'SELECT id, period_id, attempt_no, counted_millimes, expected_millimes, submitted_at, denominations FROM cash_counts WHERE clinic_id = $1', [clinicId])).rows;
     for (const c of counts) {
       const ev = one('cash_count', c.id, ['cash.count_submitted']);
       if (ev.length) {
         compare('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, [['countedMillimes', c.counted_millimes, ev[0]!.payload.countedMillimes], ['periodId', c.period_id, ev[0]!.payload.periodId], ['attemptNo', c.attempt_no, ev[0]!.payload.attemptNo]]);
-        compareTime('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, 'submittedAt', c.submitted_at, ev[0]!);
+        compareTime('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, 'submittedAt', c.submitted_at, ev[0]!, 'cutoff');
         compareHash('CASH_COUNT_AUDIT_VALUE_MISMATCH', 'cash_counts', c.id, 'denominationsSha256', c.denominations === null ? null : sha256(canonicalJson(c.denominations)), ev[0]!);
       }
       // M-267 6: a deleted period is a finding, never an aborted check.
@@ -290,7 +304,21 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
       const ev = one('cash_movement', m.id, ['cash.movement_recorded']);
       if (!ev.length) continue;
       compare('CASH_MOVEMENT_AUDIT_VALUE_MISMATCH', 'cash_movements', m.id, [['amountMillimes', m.amount_millimes, ev[0]!.payload.amountMillimes], ['kind', m.kind, ev[0]!.payload.kind], ['periodId', m.period_id, ev[0]!.payload.periodId], ['voucherRef', m.voucher_ref, ev[0]!.payload.voucherRef]]);
-      compareTime('CASH_MOVEMENT_AUDIT_VALUE_MISMATCH', 'cash_movements', m.id, 'recordedAt', m.recorded_at, ev[0]!);
+      compareTime('CASH_MOVEMENT_AUDIT_VALUE_MISMATCH', 'cash_movements', m.id, 'recordedAt', m.recorded_at, ev[0]!, 'item');
+    }
+    // CH-035: a pre-R73-H time inside the tolerance cannot be verified exactly. That only matters when a count cut-off
+    // (or period start) lies between the row time and the event time: then the item's window, and that count's expected
+    // cash, cannot be verified either. Reported as INCONCLUSIVE (MEDIUM), never as verified and never as proven tampering.
+    const cutoffs = [...counts.map(c => Date.parse(c.submitted_at)), ...periods.map(p => Date.parse(p.opened_at))];
+    const items = [...payments.filter(p => p.tender === 'CASH').map(p => p.recorded_at), ...adjustments.filter(inCashWindow).map(j => j.created_at), ...moves.map(m => m.recorded_at)].map(t => Date.parse(t));
+    for (const l of legacyCashTimes) {
+      const [lo, hi] = [Date.parse(l.recorded), Date.parse(l.at)].sort((a, b) => a - b) as [number, number];
+      // windows are (start, cut-off]: two times fall in different windows iff a cut-off c has lo <= c < hi
+      const crossed = l.cash === 'item' ? cutoffs.find(c => lo <= c && c < hi) : items.find(t => lo < t && t <= hi);
+      if (crossed === undefined) continue;
+      out.push({ check: 'LEGACY_TIME_UNANCHORED', severity: 'MEDIUM',
+        detail: `${l.table} ${l.id}: ${l.field} ${l.recorded} cannot be verified exactly: its audit event was written before exact times were recorded (R73-H) and only shows ${l.at}. A cash ${l.cash === 'item' ? 'count cut-off or period start' : 'payment, refund or movement'} lies between these two times, so the expected cash of the affected count cannot be verified either. This is inconclusive history and not by itself evidence that anything was changed; compare with the paper count sheet.`,
+        refs: { table: l.table, id: l.id, field: l.field, recorded: l.recorded, eventTime: l.at, between: new Date(crossed).toISOString(), verdict: 'INCONCLUSIVE' } });
     }
   }
 

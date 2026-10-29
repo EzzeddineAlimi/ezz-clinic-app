@@ -14851,7 +14851,7 @@
                   "asOf": "2026-10-28",
                   "open": [
                     {
-                      "key": "audit:checkpoint:due",
+                      "key": "audit:never:checkpoint_due",
                       "kind": "AUDIT_CHECKPOINT_DUE",
                       "evidence": "SYSTEM_CHECK",
                       "severity": "MEDIUM",

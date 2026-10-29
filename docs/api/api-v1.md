@@ -645,7 +645,7 @@ Response `200`
       }
     },
     {
-      "key": "audit:checkpoint:due",
+      "key": "audit:never:checkpoint_due",
       "kind": "AUDIT_CHECKPOINT_DUE",
       "evidence": "SYSTEM_CHECK",
       "severity": "MEDIUM",

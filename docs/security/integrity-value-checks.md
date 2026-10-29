@@ -49,3 +49,18 @@ Events written **before** R73-H carry no anchored timestamps. For those, a row t
 Unchanged limits:
 - A rewrite of rows **and** a consistently re-hashed chain, including the new anchors, is caught only with an outside owner checkpoint (T-INT-LIMIT-1 now also rewrites `receiptSha256`, to model that attacker honestly).
 - Money never recorded anywhere stays invisible (CH-002).
+
+## R75-A: legacy (pre-R73-H) cash times — CH-035 (draft, not yet independently reviewed)
+
+Two gaps remained for events written before R73-H, both reproduced first (RED: the check returned **no findings**):
+
+| Test | Privileged edit on a pre-R73-H history | Before | Now |
+|---|---|---|---|
+| T-INT-CASH-LEGACY-1 | a cash payment moved 1 s past a count cut-off (or the cut-off moved 1 ms before the payment), stored expected adjusted to match; inside ±120 s | `[]` | `LEGACY_TIME_UNANCHORED`, MEDIUM, `verdict: INCONCLUSIVE` |
+| T-INT-CASH-LEGACY-2 | a carried-forward period's `opened_at` moved past a cash payment (the payment then lies in no count window), stored expected adjusted | `[]` (start not compared at all) | `CASH_PERIOD_AUDIT_VALUE_MISMATCH` `openedAt`, HIGH |
+
+Rules:
+- A carried-forward period starts at its accepted count's cut-off (`close`). Before R73-H the close event names `acceptedCountId`, so the start is compared **exactly** with that count's `submitted_at` (itself compared with its own event). A difference is a proven mismatch (HIGH).
+- A legacy row time inside ±120 s cannot be verified exactly. It is reported only when it matters: a count cut-off or period start lies between the row time and the event time (or, for a cut-off, a cash payment/refund/void/movement lies between). Then the item's window and that count's expected cash cannot be verified. The finding is **INCONCLUSIVE** (MEDIUM), worded as unverifiable history, not as a detected change; the owner exception list shows it as MEDIUM with "Whether anything was changed" as the unknown and the paper count sheet as next step.
+- Original times are never inferred or rewritten; event hashes are untouched. An honest legacy history stays clean (T-INT-CASH-LEGACY-0).
+- Residual (accepted, documented): if the database and API clocks were skewed when legacy events were written, an honest item could be reported INCONCLUSIVE. That is the safe direction. Nothing is deployed and all data is fictional, so no real pre-R73-H history exists today.
