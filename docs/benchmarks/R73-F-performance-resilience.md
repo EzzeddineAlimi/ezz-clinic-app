@@ -61,12 +61,12 @@ run2 repeated run1 within ±15 %.
 | Blind cash count submitted while 120 cash payments were arriving | expected cash stored at the cut = the owner review's recomputation; expected-at-cut + cash recorded after the cut = final drawer |
 | Integrity check of every clinic after the load and after the kill | **0** findings |
 | **API process SIGKILL** in the middle of 300 concurrent payments, then restart | 150–151 acknowledged before the kill, **0** lost; one payment committed whose answer was lost (run2) was replayed, not duplicated, on retry; 300 keys → exactly 300 payments |
-| **PostgreSQL crash** (`pg_ctl -m immediate`) mid-burst (`test/r73-resilience.test.ts`, T-RES-1) | requests fail fast (no hang); readiness 503; the **same** API process recovers when PostgreSQL returns; no acknowledged payment lost; retries give exactly one payment per key; receipts contiguous; integrity clean |
+| **PostgreSQL crash** (`pg_ctl -m immediate`) mid-burst (`test/r73-resilience.test.ts`, T-CRASH-1) | requests fail fast (no hang); readiness 503; the **same** API process recovers when PostgreSQL returns; no acknowledged payment lost; retries give exactly one payment per key; receipts contiguous; integrity clean |
 | Encrypted backup + fresh restore + 16 checks | run1: 0.6 s backup (3.0 MB) and 2.4 s restore+verify; run3: 2.0 s (12.3 MB) and 7.9 s; all checks passed |
 
 ## Defects found and fixed (RED before GREEN)
 
-1. **Readiness answered 500 instead of 503 while PostgreSQL was down.** The HTTP layer opens a transaction before every handler, so `/api/v1/health/ready` failed before its own "database unreachable" logic could run. Reproduced by T-RES-1 (`expected 503, actual 500`). Fix: a route can declare `transaction: false`; this is allowed only for public GET probes and enforced when the server starts. Load balancers treat both codes as unhealthy, but the documented contract (503 + `checks`) was wrong.
+1. **Readiness answered 500 instead of 503 while PostgreSQL was down.** The HTTP layer opens a transaction before every handler, so `/api/v1/health/ready` failed before its own "database unreachable" logic could run. Reproduced by T-CRASH-1 (`expected 503, actual 500`). Fix: a route can declare `transaction: false`; this is allowed only for public GET probes and enforced when the server starts. Load balancers treat both codes as unhealthy, but the documented contract (503 + `checks`) was wrong.
 2. **The harness itself** had three bugs, fixed before the recorded runs:
    - it double-booked dentists (the app's overlap guard correctly refused);
    - it hit the intended duplicate-payment guard;
