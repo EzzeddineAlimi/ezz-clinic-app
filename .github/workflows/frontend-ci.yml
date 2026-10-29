@@ -1,5 +1,8 @@
 name: Frontend real-API fictional clinic checks
 on:
+  push:
+    branches: [main]
+    paths: ['frontend/**', 'backend/**', '.github/workflows/frontend-ci.yml']
   pull_request:
     paths: ['frontend/**', 'backend/**', '.github/workflows/frontend-ci.yml']
 permissions:
