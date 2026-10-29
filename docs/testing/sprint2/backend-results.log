@@ -1,0 +1,226 @@
+TAP version 13
+# Subtest: T-DAY-1 (RED on base) GET /visits?day uses the clinic-local day: 00:30 in Tunis on the 29th is not on the 28th list
+ok 1 - T-DAY-1 (RED on base) GET /visits?day uses the clinic-local day: 00:30 in Tunis on the 29th is not on the 28th list
+  ---
+  duration_ms: 422.499233
+  type: 'test'
+  ...
+# Subtest: T-DAY-2 an impossible or malformed day is a 400 on both the visit list and the day-board
+ok 2 - T-DAY-2 an impossible or malformed day is a 400 on both the visit list and the day-board
+  ---
+  duration_ms: 190.715643
+  type: 'test'
+  ...
+# Subtest: T-DAY-3 (RED on base) NO_SHOW cannot be recorded before the appointment time; CANCELLED still can (with reason)
+ok 3 - T-DAY-3 (RED on base) NO_SHOW cannot be recorded before the appointment time; CANCELLED still can (with reason)
+  ---
+  duration_ms: 211.71041
+  type: 'test'
+  ...
+# Subtest: T-DAY-4 (RED on base) same-name warning also fires when one record has no phone (elderly patient, relative adds a number later)
+ok 4 - T-DAY-4 (RED on base) same-name warning also fires when one record has no phone (elderly patient, relative adds a number later)
+  ---
+  duration_ms: 215.721632
+  type: 'test'
+  ...
+# Subtest: T-DAY-5 day-board lists the clinic-local day in time order with status summary, local time and patient flow fields
+ok 5 - T-DAY-5 day-board lists the clinic-local day in time order with status summary, local time and patient flow fields
+  ---
+  duration_ms: 210.252487
+  type: 'test'
+  ...
+# Subtest: T-DAY-6 a per-clinic timezone setting is honoured (Asia/Kolkata, +05:30)
+ok 6 - T-DAY-6 a per-clinic timezone setting is honoured (Asia/Kolkata, +05:30)
+  ---
+  duration_ms: 192.361009
+  type: 'test'
+  ...
+# Subtest: T-DAY-7 no-phone and same-name patients are flagged; the phone number itself never appears on the board
+ok 7 - T-DAY-7 no-phone and same-name patients are flagged; the phone number itself never appears on the board
+  ---
+  duration_ms: 209.01962
+  type: 'test'
+  ...
+# Subtest: T-DAY-8 role-aware: dentist defaults to own + unassigned visits; assistant sees no money and no status reasons; desk sees balances
+ok 8 - T-DAY-8 role-aware: dentist defaults to own + unassigned visits; assistant sees no money and no status reasons; desk sees balances
+  ---
+  duration_ms: 314.818127
+  type: 'test'
+  ...
+# Subtest: T-DAY-9 not-arrived-past-start and desk-marked cancellations/no-shows are flagged; summary counts them
+ok 9 - T-DAY-9 not-arrived-past-start and desk-marked cancellations/no-shows are flagged; summary counts them
+  ---
+  duration_ms: 214.48999
+  type: 'test'
+  ...
+# Subtest: T-DAY-10 tenant isolation: another clinic never appears, even with a dentistId from clinic A
+ok 10 - T-DAY-10 tenant isolation: another clinic never appears, even with a dentistId from clinic A
+  ---
+  duration_ms: 365.051334
+  type: 'test'
+  ...
+# Subtest: T-DAY-11 constant query count (no N+1): 3 visits and 40 visits cost the same number of SQL statements
+ok 11 - T-DAY-11 constant query count (no N+1): 3 visits and 40 visits cost the same number of SQL statements
+  ---
+  duration_ms: 379.590854
+  type: 'test'
+  ...
+# Subtest: T-DAY-12 an invalid clinic timezone setting fails loudly (never silently falls back to UTC)
+ok 12 - T-DAY-12 an invalid clinic timezone setting fails loudly (never silently falls back to UTC)
+  ---
+  duration_ms: 176.52262
+  type: 'test'
+  ...
+# Subtest: T-CARE-1 unauthenticated care confirmation -> 401, visit stays unconfirmed
+ok 13 - T-CARE-1 unauthenticated care confirmation -> 401, visit stays unconfirmed
+  ---
+  duration_ms: 600.733896
+  type: 'test'
+  ...
+# Subtest: T-CARE-2 receptionist session -> 403 and a rate-limited denial counter for the owner
+ok 14 - T-CARE-2 receptionist session -> 403 and a rate-limited denial counter for the owner
+  ---
+  duration_ms: 32.063985
+  type: 'test'
+  ...
+# Subtest: T-CARE-4 body-supplied identity is ignored: receptionist sending role DENTIST -> 403
+ok 15 - T-CARE-4 body-supplied identity is ignored: receptionist sending role DENTIST -> 403
+  ---
+  duration_ms: 4.850215
+  type: 'test'
+  ...
+# Subtest: T-CARE-3 dentist confirms; duplicate rejected; correction is a new linked row; original unchanged
+ok 16 - T-CARE-3 dentist confirms; duplicate rejected; correction is a new linked row; original unchanged
+  ---
+  duration_ms: 37.309355
+  type: 'test'
+  ...
+# Subtest: T-CARE-5 free care needs an explicit reason
+ok 17 - T-CARE-5 free care needs an explicit reason
+  ---
+  duration_ms: 18.561261
+  type: 'test'
+  ...
+# Subtest: T-CARE-6 / T-ISO-1 cross-clinic: clinic B staff cannot see or act on clinic A records (404, no existence leak)
+ok 18 - T-CARE-6 / T-ISO-1 cross-clinic: clinic B staff cannot see or act on clinic A records (404, no existence leak)
+  ---
+  duration_ms: 12.63394
+  type: 'test'
+  ...
+# Subtest: T-ISO-2 database-level RLS: app role sees nothing without clinic context and only its clinic with it
+ok 19 - T-ISO-2 database-level RLS: app role sees nothing without clinic context and only its clinic with it
+  ---
+  duration_ms: 7.021734
+  type: 'test'
+  ...
+# Subtest: T-ISO-3 composite foreign keys block cross-clinic references even for the schema owner
+ok 20 - T-ISO-3 composite foreign keys block cross-clinic references even for the schema owner
+  ---
+  duration_ms: 5.709362
+  type: 'test'
+  ...
+# Subtest: T-PRIV-1 receptionist cannot escalate: staff management and audit checkpoints are owner-only
+ok 21 - T-PRIV-1 receptionist cannot escalate: staff management and audit checkpoints are owner-only
+  ---
+  duration_ms: 14.516813
+  type: 'test'
+  ...
+# Subtest: T-SESS-1 employee departure: deactivation revokes live sessions immediately
+ok 22 - T-SESS-1 employee departure: deactivation revokes live sessions immediately
+  ---
+  duration_ms: 164.9583
+  type: 'test'
+  ...
+# Subtest: T-SESS-2 lockout after 5 failures: correct password then refused (423)
+ok 23 - T-SESS-2 lockout after 5 failures: correct password then refused (423)
+  ---
+  duration_ms: 218.359803
+  type: 'test'
+  ...
+# Subtest: T-SESS-3 sensitive owner action requires recent re-authentication
+ok 24 - T-SESS-3 sensitive owner action requires recent re-authentication
+  ---
+  duration_ms: 87.853098
+  type: 'test'
+  ...
+# Subtest: T-ORG-1..3 / CH-019 HTTP guards: text/plain 415, foreign Origin 403, foreign Host 421, bad JSON 400, big body 413
+ok 25 - T-ORG-1..3 / CH-019 HTTP guards: text/plain 415, foreign Origin 403, foreign Host 421, bad JSON 400, big body 413
+  ---
+  duration_ms: 9.693329
+  type: 'test'
+  ...
+# Subtest: T-INPUT-1 hostile money and identifier inputs are rejected, never rounded
+ok 26 - T-INPUT-1 hostile money and identifier inputs are rejected, never rounded
+  ---
+  duration_ms: 78.662939
+  type: 'test'
+  ...
+# Subtest: T-VIS-2 desk cannot cancel or no-show a visit that has dentist-confirmed care
+ok 27 - T-VIS-2 desk cannot cancel or no-show a visit that has dentist-confirmed care
+  ---
+  duration_ms: 3.350771
+  type: 'test'
+  ...
+# Subtest: T-PAT-1 patient contact change keeps old and new values in the audit chain
+ok 28 - T-PAT-1 patient contact change keeps old and new values in the audit chain
+  ---
+  duration_ms: 10.242789
+  type: 'test'
+  ...
+# Subtest: T-IDEM-0 idempotency key is mandatory on writes
+ok 29 - T-IDEM-0 idempotency key is mandatory on writes
+  ---
+  duration_ms: 11.016277
+  type: 'test'
+  ...
+# Subtest: T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+ok 30 - T-API-1 recorded fictional workflow examples: same statuses, compatible shapes
+  ---
+  duration_ms: 837.874453
+  type: 'test'
+  ...
+# Subtest: T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+ok 31 - T-API-6 recorded examples for the remaining operations: same statuses, compatible shapes
+  ---
+  duration_ms: 802.212616
+  type: 'test'
+  ...
+# Subtest: T-API-7 every route in the table has at least one recorded example
+ok 32 - T-API-7 every route in the table has at least one recorded example
+  ---
+  duration_ms: 25.143562
+  type: 'test'
+  ...
+# Subtest: T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+ok 33 - T-API-2 openapi.json and endpoints.md are in sync with the route table, role matrix and examples
+  ---
+  duration_ms: 12.875064
+  type: 'test'
+  ...
+# Subtest: T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+ok 34 - T-API-3 every route in the table is live: 401 without a session for protected routes, never 404/405
+  ---
+  duration_ms: 69.126878
+  type: 'test'
+  ...
+# Subtest: T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+ok 35 - T-API-4 the role matrix in the docs is what the server enforces, for every protected route and every role
+  ---
+  duration_ms: 1233.346787
+  type: 'test'
+  ...
+# Subtest: T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+ok 36 - T-API-5 OpenAPI sanity: unique operation ids, resolvable refs, declared path params, known permissions
+  ---
+  duration_ms: 26.317065
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8001.70986

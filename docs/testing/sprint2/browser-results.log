@@ -1,0 +1,42 @@
+
+> ezz-clinic-web@0.1.0 test:e2e
+> playwright test
+
+[2m[WebServer] [22m(node:36331) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:36370) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22mnode_modules/zod/v4/core/util.js (400:0): A comment
+[2m[WebServer] [22m
+[2m[WebServer] [22m"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+[2m[WebServer] [22m
+[2m[WebServer] [22min "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[2m[WebServer] [22mnode_modules/zod/v4/core/regexes.js (74:0): A comment
+[2m[WebServer] [22m
+[2m[WebServer] [22m"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+[2m[WebServer] [22m * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+[2m[WebServer] [22m * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+[2m[WebServer] [22m
+[2m[WebServer] [22min "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[2m[WebServer] [22m(node:36406) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 11 tests using 1 worker
+
+(node:36422) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36422) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/app.spec.ts:28:1 › Real seeded board: French desktop, Arabic mobile, no storage, accessibility and screenshots (2.0s)
+  ✓   2 e2e/app.spec.ts:74:1 › Register no-phone patient, schedule in clinic zone, record arrival and search file (1.4s)
+  ✓   3 e2e/app.spec.ts:116:1 › Duplicate warning requires human decision; no automatic retry (981ms)
+  ✓   4 e2e/app.spec.ts:136:1 › Lost response after actual database commit: retry same body/key creates only one file (1.1s)
+  ✓   5 e2e/app.spec.ts:173:1 › Real server revocation clears patient data and returns to login (806ms)
+  ✓   6 e2e/app.spec.ts:190:1 › Assistant is read-only and real server denies registration; no role workaround (752ms)
+  ✓   7 e2e/app.spec.ts:210:1 › Real empty day, loading delay, offline and recovery states (1.3s)
+  ✓   8 e2e/app.spec.ts:250:1 › Invalid credentials and native required fields; modal keyboard escape restores focus (1.0s)
+  ✓   9 e2e/app.spec.ts:277:1 › Server permission change produces visible 403 and masks prior board data (862ms)
+  ✓  10 e2e/app.spec.ts:310:1 › Other clinic patient remains absent and cross-clinic id returns neutral 404 (945ms)
+  ✓  11 e2e/app.spec.ts:347:1 › Overlapping appointment requires explicit confirmation; Arabic form remains keyboard accessible (1.4s)
+
+  11 passed (19.4s)

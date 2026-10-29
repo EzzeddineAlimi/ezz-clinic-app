@@ -1,23 +1,93 @@
-# EZZ Clinic — fictional-data prototype v0.1
+# EZZ Clinic
 
-**NOT FOR CLINICAL USE.** This is a local-only research/build demonstration. It has no real authentication, persistent database, protected ledger, backups, payment gateway, medical chart, device connectivity, or legal/compliance approval. Never enter real patient data. Demo identity labels are not authentication.
+**A dental-clinic management application for private practices in Tunisia.**
 
-## Run
+EZZ Clinic brings patient registration, appointments, dentist-authored care, payments, receipts and owner financial oversight together in one system. The design prioritizes a simple reception workflow, French/Arabic accessibility, and independent evidence for cash handling.
 
-Requires Node.js 22 and TypeScript compiler `tsc` installed. No third-party dependencies are used.
+> [!IMPORTANT]
+> **Development build — fictional data only. Not for clinical use, fiscal issuance or production deployment.** EZZ Clinic is not approved to store real patient records, process real payments or produce legally valid fiscal documents. Software cannot detect cash that is never recorded, and it cannot guarantee zero theft.
 
-```bash
-npm run typecheck
-npm test
-npm start
+## Current build
+
+| Area | Implementation status |
+| --- | --- |
+| **Backend** | TypeScript / Node.js 22 / PostgreSQL 16 modular monolith integrated into `main` through [PR #42](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/42). |
+| **Web application** | React, TypeScript and Vite receptionist slice in [PR #43](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/43), subject to independent review and merge. |
+| **Receptionist workflow** | Real staff login, patient search and registration, daily clinic agenda, appointment scheduling and arrival recording; frontend connects to real API and fictional PostgreSQL records. |
+| **Languages** | French and Arabic with responsive right-to-left (RTL) layouts in the receptionist slice. |
+| **Other backend capabilities** | Server-enforced roles and clinic isolation, authenticated dentist care, payments, receipts, cash-period evidence, owner review, paper recovery and audit checks — **not yet all exposed in the web UI**. |
+| **Release** | Not deployed and not production-approved; clinical, security, Tunisian legal/fiscal/privacy and CNAM gates remain open. |
+
+### Screenshots of the working receptionist app
+
+Captured in Chromium against a migrated database populated with fictional test records, not AI-generated concepts.
+
+**French desktop agenda**
+
+![EZZ Clinic French receptionist agenda, fictional data](docs/images/sprint2/agenda-fr-desktop.png)
+
+**Arabic mobile agenda**
+
+![EZZ Clinic Arabic right-to-left mobile agenda, fictional data](docs/images/sprint2/agenda-ar-mobile.png)
+
+[See the other screenshots and test evidence](docs/testing/SPRINT2-FRONTEND.md).
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| [`frontend/`](frontend/) | React / TypeScript / Vite web application, real-API browser tests and [run guide](frontend/README.md). |
+| [`backend/`](backend/) | Node.js / TypeScript API, PostgreSQL 16 migrations, fictional fixtures and [backend guide](backend/README.md). |
+| [`docs/`](docs/) | Product, architecture, API, security, testing and review evidence. |
+| [`src/`](src/) and [`test/`](test/) | Historical v0.1 local prototype retained as a separate reference. |
+
+## Try the fictional development app locally
+
+Requirements: Node.js 22 (`>=22.18 <23`), npm, PostgreSQL 16 binaries and a Chromium-compatible browser. **Run only on a trusted local development machine. Do not expose this fixture server on the public internet.**
+
+From the repository root, install the locked dependencies:
+
+```sh
+npm --prefix backend ci --ignore-scripts --no-audit --no-fund
+npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
 ```
 
-Open `http://127.0.0.1:4173` on the same computer. The service listens on loopback only. Data resets when the server stops.
+In the first terminal:
 
-## Scope
+```sh
+cd backend
+bash scripts/dev-pg16.sh start
+# Set EZZ_TEST_ADMIN_URL to the disposable PostgreSQL URL printed by the script.
+node scripts/dev-web.ts
+```
 
-Patient → appointment → doctor-care confirmation (simulated) → partial/full cash/card record → sequential simulated receipt → synthetic cash discrepancy → event history. All money stored in integer millimes; card payments are simulations.
+In a second terminal, from the repository root:
 
-## Release gates
+```sh
+npm --prefix frontend run dev
+```
 
-Before any real data: authenticate clinic users; implement role-based permissions on server; design a protected audit store with independent owner-held evidence; use secure durable database + backups; follow local medical data law, payment delegation, Tunisian medical fee-note/invoicing and residency rules; independently test security, dental usability, accessibility and restore; get founder's separate go-live decision. The app can never guarantee zero theft, including completely off-book cash.
+Open **http://127.0.0.1:5173**. Use only the seeded **fictional** clinic and staff credentials documented in [`frontend/README.md`](frontend/README.md). The backend fixture creates disposable test data; stopping it tears down its test database.
+
+For exact setup requirements, test commands, port assumptions, teardown and troubleshooting, follow the [frontend run instructions](frontend/README.md) rather than improvising production configuration.
+
+## Engineering and verification
+
+The application uses server-derived staff identity and clinic scope, PostgreSQL-enforced data boundaries, integer **millimes** for monetary amounts, unique write-intent idempotency keys, and audit records for sensitive changes. The frontend shows server-authorized results; hiding buttons is **not** a security boundary.
+
+- [API routes](docs/api/endpoints.md) and [OpenAPI contract](docs/api/openapi.json)
+- [Frontend security states](docs/api/frontend-security-states.md)
+- [Sprint 1 backend integration test evidence](docs/testing/SPRINT1-INTEGRATION.md)
+- [Sprint 2 real-API frontend test evidence](docs/testing/SPRINT2-FRONTEND.md)
+- [Engineering standards](docs/engineering/standards.md)
+
+Automated tests and sample screenshots use fictional data. A passing test suite is not an independent production certification.
+
+## What's next
+
+1. Independently review and merge the receptionist frontend.
+2. Complete the dentist workflow, checkout, payment/receipt printing and owner cash-review screens against the existing backend contracts.
+3. Test a private fictional-data deployment before considering any real-clinic rollout.
+4. Resolve outstanding production authentication, privacy/clinical access, scheduling concurrency, receipt-timezone, document screening, independent financial evidence, and Tunisian clinical/fiscal/CNAM requirements.
+
+**No real patient data, real payments or production deployment until separate safety, legal and founder release approval.**

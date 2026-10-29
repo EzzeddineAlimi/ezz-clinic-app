@@ -1,0 +1,38 @@
+
+> ezz-clinic-web@0.1.0 test
+> node --test test/*.test.ts
+
+TAP version 13
+# Subtest: Clinic wall time is independent of device/server zone; DST folds and gaps refused
+ok 1 - Clinic wall time is independent of device/server zone; DST folds and gaps refused
+  ---
+  duration_ms: 12.913354
+  type: 'test'
+  ...
+# Subtest: Unknown write outcome freezes body/key; confirmed rejection allows explicit correction
+ok 2 - Unknown write outcome freezes body/key; confirmed rejection allows explicit correction
+  ---
+  duration_ms: 2.108705
+  type: 'test'
+  ...
+# Subtest: Client schemas distinguish patient search projection and integer financial values
+ok 3 - Client schemas distinguish patient search projection and integer financial values
+  ---
+  duration_ms: 3.945679
+  type: 'test'
+  ...
+# Subtest: Every first-slice endpoint exists in checked-in OpenAPI; no proposed clinical endpoints
+ok 4 - Every first-slice endpoint exists in checked-in OpenAPI; no proposed clinical endpoints
+  ---
+  duration_ms: 4.916806
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 139.519163

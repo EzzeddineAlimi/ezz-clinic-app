@@ -1,0 +1,4 @@
+
+> ezz-clinic-backend@0.2.0-fictional typecheck
+> tsc -p tsconfig.json --noEmit
+
