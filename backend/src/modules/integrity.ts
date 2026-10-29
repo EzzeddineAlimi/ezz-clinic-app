@@ -1,13 +1,13 @@
 /*
  * INTEGRITY module (read-only, owner): missing-record and tamper detection across modules (C5).
- * Depends on: audit (chain verification) and reads billing/care tables. Nothing depends on it.
+ * Depends on: audit (chain verification), cash (expected cash), clinical (note hash); reads other modules' tables. Read by: exceptions, review.
  *
  * Detects: receipt-number gaps or counter drift; payments without a receipt (desk source); receipts whose
  * referenced records are missing; financial rows with no matching audit event (row inserted around the
  * application, e.g. directly in the database); audit chain breaks; owner-checkpoint mismatches.
  * Cannot detect: a payment that was never entered anywhere (CH-002).
  */
-import type { Tx } from '../platform/db.ts';
+import { tableExists, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { asBody } from '../platform/validate.ts';
 import { canonicalJson, sha256, sha256OrNull } from '../platform/canonical.ts';
@@ -17,9 +17,17 @@ import { expectedCash } from './cash.ts';
 
 export interface IntegrityFinding { check: string; severity: 'HIGH' | 'MEDIUM'; detail: string; refs?: unknown }
 
-async function tableExists(tx: Tx, name: string) {
-  return (await tx.one<{ ok: boolean }>('SELECT to_regclass($1) IS NOT NULL AS ok', [name])).ok;
-}
+/**
+ * Row-vs-audit value checks of the later modules, each run only when that module's table exists. This verifier stays
+ * one module on purpose: the code that checks a table is kept apart from the code that writes it. A new module's
+ * check is one function below plus one row here. B06 business values (receipts, payments, cash) run unconditionally.
+ */
+const OPTIONAL_VALUE_CHECKS: Array<{ requires: string; run: (tx: Tx, clinicId: string) => Promise<IntegrityFinding[]> }> = [
+  { requires: 'clinical_notes', run: (tx, clinicId) => clinicalValueFindings(tx, clinicId) },
+  { requires: 'clinic_setting_changes', run: (tx, clinicId) => settingValueFindings(tx, clinicId) },
+  { requires: 'patient_documents', run: (tx, clinicId) => documentValueFindings(tx, clinicId) },
+  { requires: 'stock_movements', run: (tx, clinicId) => labStockFindings(tx, clinicId) },
+];
 
 export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[] = []) {
   const findings: IntegrityFinding[] = [];
@@ -55,10 +63,7 @@ export async function integrityCheck(tx: Tx, clinicId: string, anchors: Anchor[]
   }
 
   findings.push(...await businessValueFindings(tx, clinicId, await tableExists(tx, 'cash_counts')));
-  if (await tableExists(tx, 'clinical_notes')) findings.push(...await clinicalValueFindings(tx, clinicId));
-  if (await tableExists(tx, 'clinic_setting_changes')) findings.push(...await settingValueFindings(tx, clinicId));
-  if (await tableExists(tx, 'patient_documents')) findings.push(...await documentValueFindings(tx, clinicId));
-  if (await tableExists(tx, 'stock_movements')) findings.push(...await labStockFindings(tx, clinicId));
+  for (const c of OPTIONAL_VALUE_CHECKS) if (await tableExists(tx, c.requires)) findings.push(...await c.run(tx, clinicId));
 
   const chain = await verifyChain(tx, clinicId, anchors);
   for (const f of chain.findings) findings.push({ check: 'AUDIT_' + f.kind, severity: 'HIGH', detail: `seq ${f.seq}: ${f.detail}` });

@@ -81,13 +81,14 @@ test('ARCH-5 docs/security/permission-matrix.md is in sync with the code matrix'
 const serverFiles = () => ['modules', 'platform', 'contracts'].flatMap(dir => readdirSync(join(SRC, dir)).filter(f => f.endsWith('.ts')).map(f => `${dir}/${f}`));
 const read = (rel: string) => readFileSync(join(SRC, rel), 'utf8');
 
-test('ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays', () => {
+test('ARCH-6 shared rules have one owner (R74): advisory locks, dental-site validation, clinic-day, pg arrays, table existence', () => {
   for (const rel of serverFiles()) {
     const text = read(rel);
     if (rel !== 'platform/db.ts') {
       assert.ok(!text.includes('pg_advisory_xact_lock'), `${rel}: take advisory locks through db.ts advisoryLock()`);
       assert.ok(!/replace\(\/\[\{\}\]\/g/.test(text), `${rel}: parse PostgreSQL arrays with db.ts pgTextArray()/pgIntArray()`);
     }
+    if (rel.startsWith('modules/')) assert.ok(!text.includes('to_regclass'), `${rel}: check optional tables with db.ts tableExists()`);
     if (rel !== 'contracts/clinical.ts') assert.ok(!/AREA_CODES\s*=/.test(text), `${rel}: ISO 3950 area codes live in contracts/clinical.ts`);
     if (rel !== 'modules/settings.ts' && rel !== 'modules/print.ts') assert.ok(!text.includes('Intl.DateTimeFormat'), `${rel}: clinic days come from settings.ts localDate()/clinicDay()`);
   }

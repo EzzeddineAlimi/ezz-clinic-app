@@ -95,3 +95,8 @@ export const pgIntArray = (v: unknown): number[] => pgTextArray(v).map(Number);
 
 /** A UNIQUE constraint refused the write (modules use this instead of importing the driver's error type). */
 export const isUniqueViolation = (e: unknown): boolean => e instanceof PgError && e.code === '23505';
+
+/** Whether a table exists (a module's migration is present); lets read-only checks span optional modules. */
+export async function tableExists(tx: Tx, name: string): Promise<boolean> {
+  return (await tx.one<{ ok: boolean }>('SELECT to_regclass($1) IS NOT NULL AS ok', [name])).ok;
+}
