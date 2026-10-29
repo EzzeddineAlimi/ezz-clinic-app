@@ -93,6 +93,7 @@ function VisitRow({
   confirmCare: (visit: Visit) => void;
 }) {
   const [checkout, setCheckout] = useState(false);
+  const [clinical, setClinical] = useState(false);
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
     [intent] = useState(() => new WriteIntent());
