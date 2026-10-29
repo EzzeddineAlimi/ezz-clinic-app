@@ -177,8 +177,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
             </>}
             {mode === "findings" && <>
               {data.findings.length === 0 && <p>{t.empty}</p>}
-              {data.findings.map(f => <article className="clinical-entry" key={f.id}>
-                <strong>{f.kind} · {f.conditionCode}</strong>
+              {data.findings.map(f => <article className="clinical-entry" key={f.id} data-struck={!!f.enteredInError}>
+                <strong>{f.enteredInError
+                  ? <s>{f.kind} · {f.conditionCode}</s>
+                  : <>{f.kind} · {f.conditionCode}</>}</strong>
                 <p>{t.tooth}: {f.toothFdi ?? f.areaCode ?? "—"}</p>
                 {f.enteredInError && <p role="alert" className="warning" data-testid="struck-finding">
                   {lang === "fr" ? "Constatation signalée comme erronée : " : "تم تصنيف الملاحظة كإدخال خاطئ: "}
