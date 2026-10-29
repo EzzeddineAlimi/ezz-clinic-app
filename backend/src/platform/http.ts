@@ -51,6 +51,9 @@ export interface Route {
   reauth?: boolean;
   /** Require an Idempotency-Key header; replay returns the stored response. */
   idempotent?: boolean;
+  /** false = run WITHOUT the per-request database transaction (ctx.tx is unusable). Only for public probes that must
+   *  answer while the database is down (readiness); such a route manages its own connections. */
+  transaction?: false;
   /** Accept application/octet-stream (ctx.body is a Buffer) up to maxBytes instead of a JSON body. */
   binaryBody?: { maxBytes: number };
   handler: (ctx: Ctx) => Promise<Result>;
@@ -152,6 +155,7 @@ export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: A
   for (const r of routes) {
     // Idempotency replays compare JSON bodies; a binary route must be naturally idempotent (state-guarded) instead.
     if (r.binaryBody && (r.idempotent || r.method !== 'POST' || !r.permission)) throw new Error(`binaryBody route ${r.path} must be an authenticated, non-idempotent POST`);
+    if (r.transaction === false && (r.permission || r.idempotent || r.method !== 'GET')) throw new Error(`transaction: false route ${r.path} must be a public GET probe`);
   }
   const compiled = routes.map(r => ({ r, ...compile(r.path) }));
   return http.createServer(async (req, res) => {
@@ -230,7 +234,10 @@ export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: A
         idemKey = k;
       }
 
-      const result = await db.tx(actor?.clinicId ?? null, async tx => {
+      const noTx = new Proxy({}, { get() { throw new Error(`route ${routeLabel} declared transaction: false but used ctx.tx`); } }) as Tx;
+      const result = route.transaction === false
+        ? await route.handler({ tx: noTx, actor, params: match!.params, query: url.searchParams, body, idempotencyKey: null, requestId, now: new Date() })
+        : await db.tx(actor?.clinicId ?? null, async tx => {
         if (route.idempotent && actor && idemKey) {
           const prior = await sec.idempotency.begin(tx, actor, idemKey, routeLabel, { params: match!.params, body });
           if (prior) return prior;

@@ -46,7 +46,8 @@ export function buildRoutes(db: Db, documents: Partial<DocumentDeps> = {}): Rout
     await tx.query('SELECT 1');
     return { status: 200, body: { status: 'ok', build: 'v0.2-fictional', fictionalDataOnly: true } };
   } };
-  const ready: Route = { method: 'GET', path: '/api/v1/health/ready', handler: async () => {
+  // transaction: false — the probe must answer 503 (not a 500 from opening a transaction) while the database is down.
+  const ready: Route = { method: 'GET', path: '/api/v1/health/ready', transaction: false, handler: async () => {
     const r = await readiness(db);
     return { status: r.ready ? 200 : 503, body: { status: r.ready ? 'ready' : 'not_ready', checks: r.checks } };
   } };
