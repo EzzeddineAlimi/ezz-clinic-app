@@ -652,3 +652,39 @@ test("UX12 status: lost committed response retries the same frozen request, not 
   expect(bodies[0]).toBe(bodies[1]);
   await expect(row.getByText("Annulé", { exact: true })).toBeVisible();
 });
+
+test("UX12 review: Arabic-only duplicate triggers verification, normalized search and list DOB minimization", async ({ page }) => {
+  const session = await login(page);
+  const headers = () => ({ Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() });
+  const suffix = crypto.randomUUID().slice(0, 8);
+  const first = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: {
+      familyName: "ArabicFictionalA" + suffix, givenName: "FictifA",
+      nameAr: "أَحْمَد سـليم " + suffix, dateOfBirth: "1982-01-03", isSynthetic: true,
+    },
+  });
+  expect(first.status()).toBe(201);
+  const other = {
+    familyName: "ArabicFictionalB" + suffix, givenName: "FictifB",
+    nameAr: "احمد سليم " + suffix, dateOfBirth: "1994-02-05", isSynthetic: true,
+  };
+  const denied = await page.request.post("/api/v1/patients", { headers: headers(), data: other });
+  expect(denied.status()).toBe(409);
+  const second = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: { ...other, confirmNotDuplicate: true },
+  });
+  expect(second.status()).toBe(201);
+  await page.getByRole("button", { name: "Patients", exact: true }).click();
+  await page.getByPlaceholder("Nom, numéro de dossier ou téléphone").fill("احمد سليم " + suffix);
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.locator(".patient-row")).toHaveCount(2);
+  const row = page.locator(".patient-row").filter({ hasText: "ArabicFictionalA" + suffix });
+  await expect(row).toContainText("Année de naissance");
+  await expect(row).toContainText("1982");
+  await expect(row).not.toContainText("03/01/1982");
+  await row.getByRole("button", { name: "Planifier", exact: true }).click();
+  const verify = page.getByRole("dialog");
+  await expect(verify).toContainText("Noms identiques");
+  await expect(verify).toContainText("03/01/1982");
+  await verify.getByRole("button", { name: "Fermer", exact: true }).click();
+});
