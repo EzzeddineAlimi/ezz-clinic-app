@@ -163,5 +163,10 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("تحقّق منه طبيب الأسنان");
   await expect(arabicOverview.getByTestId("clinical-alert-details").locator("li").first()).toContainText("ALLERGY_LATEX");
   await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("التفاصيل غير مسجّلة");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await test.info().attach("dentist-ar-390-critical-first-null-detail", {
+    body: await page.screenshot({ path: "../docs/images/sprint3b/dentist-ar-medical-alert-details.png", animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
 });
