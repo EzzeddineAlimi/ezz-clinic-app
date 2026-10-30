@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
 import { createServer, type SecurityHooks } from '../src/platform/http.ts';
+import { isoDate } from '../src/platform/validate.ts';
 import type { Db, Tx } from '../src/platform/db.ts';
 
 const security: SecurityHooks = {
@@ -65,4 +66,12 @@ test('SEC-HTTP-1 rejects JSON-like media types, supports valid JSON parameters, 
   } finally {
     await new Promise<void>((resolve, reject) => server.close(err => err ? reject(err) : resolve()));
   }
+});
+
+test('SEC-DATE-1 server-side ISO date validator refuses impossible February and month dates', () => {
+  for (const impossible of ['2026-02-29', '2026-02-30', '2026-04-31', '2026-13-01', '2026-00-10']) {
+    assert.throws(() => isoDate({ birthDate: impossible }, 'birthDate'), /birthDate must be a valid date|birthDate has invalid format/, impossible);
+  }
+  assert.equal(isoDate({ birthDate: '2028-02-29' }, 'birthDate'), '2028-02-29');
+  assert.equal(isoDate({ birthDate: '2026-10-30' }, 'birthDate'), '2026-10-30');
 });
