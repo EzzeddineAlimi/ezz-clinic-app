@@ -1,9 +1,9 @@
 # EZZ Clinic — V1 role-based visual experience (design baseline)
 
-Status: **proposed design foundation, pending independent UX review**. Founder endorsed the recommended **Concept A: Clean Professional** direction on October 29, 2026. This document is a product design specification, **not** proof the screens are implemented. No production or real-patient approval.
+Status: **proposed design foundation; Muse Ons first-pass research received, implementation-level UX review still pending**. Founder endorsed the recommended **Concept A: Clean Professional** direction on October 29, 2026. This document is a product design specification, **not** proof the screens are implemented. No production or real-patient approval.
 
 Source of truth:
-- Current merged code: `main` at `406c5dd1fd16dd543f2c0b9a3a601af33ae6568b`.
+- Historical design snapshot: `main` at `406c5dd1fd16dd543f2c0b9a3a601af33ae6568b` (2026-10-29). For current implementation status, inspect live `main`, CI and Mission Control; this snapshot is not an acceptance ledger.
 - 61 approved V1 groups: Mission Control `R76_FEATURE_SCOPE_DECISIONS` and `V1_ACCEPTANCE_CURRENT`.
 - Clinical authorship: `docs/decisions/clinical-authorship.md`.
 - Model-neutral engineering: `AGENTS.md`.
@@ -68,7 +68,7 @@ One **shared** accessible French + Arabic (RTL) design system and one secure app
 
 ## Screen inventory and delivery stages
 
-| Stage | Screen | Source status at current main |
+| Stage | Screen | Source status at the 2026-10-29 snapshot (revalidate against live main) |
 | --- | --- | --- |
 | S0 | Role-aware shell, login, language switch, low-noise alerts | Basic frontend present; design unapproved |
 | S1 | Receptionist appointment board, patient register/search | Functional fictional forms and tests; scheduling/leave later |
