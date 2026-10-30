@@ -89,9 +89,7 @@ test("UX13 struck initial SOAP remains visible but permits a new signed note (Ar
     data: { patientId: created.id, scheduledAt: "2098-01-19T09:00:00+01:00" },
   });
   expect(visitResponse.status()).toBe(201);
-  const { visit } = await visitResponse.json() as { visit: { id: string } };
   const dentist = await login(page, "dentist");
-  const auth = { Authorization: "Bearer " + dentist.token, "Idempotency-Key": crypto.randomUUID() };
   await page.getByLabel("Date des rendez-vous", { exact: true }).fill("2098-01-19");
   const row = page.locator(".visit-row").filter({ hasText: name });
   await expect(row).toBeVisible();
