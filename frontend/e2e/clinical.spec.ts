@@ -45,6 +45,20 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
     data:{visitId,procedureCode:"FICPLAN",procedureLabel:"Étape simulée",phaseNo:2,estimatedFeeMillimes:150000},
   });
   expect(plan.status()).toBe(201);
+  // Two dentist-authored alerts prove details are available only inside clinical.read.
+  for (const alert of [
+    { code: "ALLERGY_LATEX", severity: "CRITICAL", detail: "Allergie au latex fictive" },
+    { code: "ANTICOAGULANT_DOAC", severity: "CAUTION", detail: "Anticoagulant fictif signalé" },
+  ]) {
+    const recorded = await request.post("/api/v1/patients/" + patientId + "/medical-alerts", {
+      headers: { Authorization: "Bearer " + dentist, "Idempotency-Key": crypto.randomUUID() },
+      data: alert,
+    });
+    expect(recorded.status()).toBe(201);
+  }
+  expect((await request.get("/api/v1/patients/" + patientId + "/medical-alerts", {
+    headers: { Authorization: "Bearer " + desk },
+  })).status()).toBe(403);
   await signIn(page,"desk");
   await expect(page.getByRole("button",{name:"Dossier clinique"})).toHaveCount(0);
   await page.getByRole("button",{name:"Se déconnecter"}).click();
@@ -53,10 +67,17 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await row.getByRole("button",{name:"Dossier clinique"}).click();
   const dialog=page.getByRole("dialog");
   await expect(dialog).toContainText(familyName);
-  await dialog.getByRole("button", { name: "Vue d’ensemble" }).click();
   const overview = dialog.getByTestId("clinical-overview");
+  await expect(overview).toBeVisible();
   await expect(overview).toContainText("État du rendez-vous: Arrivé");
-  await expect(overview).toContainText("Alertes médicales actives: 0");
+  await expect(overview).toContainText("Alertes médicales actives: 2");
+  const details = overview.getByTestId("clinical-alert-details");
+  await expect(details.locator("li")).toHaveCount(2);
+  await expect(details).toContainText("ALLERGY_LATEX");
+  await expect(details).toContainText("Allergie au latex fictive");
+  await expect(details).toContainText("ANTICOAGULANT_DOAC");
+  await expect(details).toContainText("Anticoagulant fictif signalé");
+  await expect(details).toContainText("Vérifié par le dentiste");
   await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
   await dialog.getByRole("button",{name:/Plan de traitement/}).click();
   await expect(dialog).toContainText("FICPLAN");
@@ -125,4 +146,14 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await dialog.getByRole("button",{name:"Actualiser"}).click();
   await expect(dialog.getByText("Contexte fictif")).toBeVisible();
   await expect(dialog.getByRole("button",{name:/Notes signées/})).toContainText("(1)");
+  await dialog.getByRole("button", { name: "Fermer le formulaire" }).click();
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await row.getByRole("button", { name: "الملف السريري" }).click();
+  const arabicOverview = page.getByRole("dialog").getByTestId("clinical-overview");
+  await expect(arabicOverview).toBeVisible();
+  await expect(arabicOverview).toContainText("التنبيهات الطبية النشطة");
+  await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("Allergie au latex fictive");
+  await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("تحقّق منه طبيب الأسنان");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
