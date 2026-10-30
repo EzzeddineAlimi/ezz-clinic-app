@@ -49,6 +49,30 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await expect(cash.getByTestId("cash-expected")).toBeVisible();
   await expect(cash.getByTestId("cash-counted")).toHaveText("17.250 TND");
   await expect(cash.getByText("Un écart ne prouve pas un vol.", { exact: false })).toBeVisible();
+  // The owner must see every stored attempt and its reason before accepting the latest.
+  await expect(cash.getByTestId("cash-attempt-history").locator("li")).toHaveCount(attempts + 1);
+  await cash.getByRole("button", { name: "Effectuer un nouveau comptage" }).click();
+  await expect(cash.getByTestId("cash-expected")).toHaveCount(0);
+  await expect(cash.getByTestId("cash-difference")).toHaveCount(0);
+  await expect(cash.getByTestId("cash-attempt-history")).toHaveCount(0);
+  await cash.getByTestId("cash-count-amount").fill("17.000");
+  await cash.getByLabel("Motif du recomptage (obligatoire)").fill("Vérification contradictoire fictive");
+  const recountResponse = page.waitForResponse(r => r.url().includes("/cash/periods/") &&
+    r.url().endsWith("/counts") && r.request().method() === "POST");
+  await cash.getByRole("button", { name: "Enregistrer le comptage" }).click();
+  expect((await recountResponse).status()).toBe(201);
+  await expect(cash.getByTestId("cash-attempt-history").locator("li")).toHaveCount(attempts + 2);
+  await expect(cash.getByTestId("cash-attempt-history")).toContainText("Vérification contradictoire fictive");
+  await expect(cash.getByTestId("cash-attempt-history")).toContainText("17.250 TND");
+  await expect(cash.getByTestId("cash-attempt-history")).toContainText("17.000 TND");
+  await expect(cash.getByTestId("cash-counted")).toHaveText("17.000 TND");
+
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(cash.getByRole("heading", { name: "سجل عمليات الجرد المسجلة" })).toBeVisible();
+  await expect(cash.getByTestId("cash-attempt-history").locator("li")).toHaveCount(attempts + 2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole("button", { name: "FR", exact: true }).click();
   const id = await (async () => {
     const r = await request.get("/api/v1/cash/periods/current", {
       headers: { Authorization: "Bearer " + deskToken },
@@ -69,7 +93,8 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await page.getByRole("button", { name: "Caisse", exact: true }).click();
   await expect(cash.getByTestId("cash-expected")).toHaveCount(0);
   await cash.getByRole("button", { name: "Consulter le contrôle" }).click();
-  await expect(cash.getByTestId("cash-counted")).toHaveText("17.250 TND");
+  await expect(cash.getByTestId("cash-counted")).toHaveText("17.000 TND");
+  await expect(cash.getByTestId("cash-attempt-history").locator("li")).toHaveCount(attempts + 2);
   await cash.getByLabel("Espèces sorties physiquement lors de la remise (TND)").fill("0");
   await cash.getByLabel("Mot de passe du responsable (confirmation d'identité)").fill("fictional-pass-123");
   await cash.getByRole("checkbox", { name: /vérifié les tentatives/ }).check();
