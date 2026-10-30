@@ -169,7 +169,14 @@ export const cashRoutes: Route[] = [
       const latest = counts[counts.length - 1]!;
       const exp = await expectedCash(tx, p, latest.submitted_at); // recomputed: authoritative for the latest cut
       const first = counts[0]!;
-      const late = await tx.one<{ n: number; total: number }>("SELECT count(*)::int AS n, coalesce(sum(amount_millimes),0)::bigint AS total FROM payments WHERE tender = 'CASH' AND recorded_at > $1", [latest.submitted_at]);
+      // Bound the warning to this clinic and period; closed-period cash belongs to the next period.
+      const late = await tx.one<{ n: number; total: number }>(
+        `SELECT count(*)::int AS n, coalesce(sum(amount_millimes),0)::bigint AS total
+         FROM payments
+         WHERE clinic_id = (SELECT clinic_id FROM cash_periods WHERE id = $3)
+           AND tender = 'CASH' AND recorded_at > $1
+           AND ($2::timestamptz IS NULL OR recorded_at <= $2::timestamptz)`,
+        [latest.submitted_at, p.cutoff_at, p.id]);
       const label = (d: number) => d === 0 ? 'count matches records' : `count differs by ${d} millimes — owner review pending (not an accusation)`;
       return {
         status: 200,
