@@ -1,5 +1,12 @@
 import { defineConfig } from "@playwright/test";
 import { existsSync } from "node:fs";
+
+// Capture the clinic day before starting either the API fixture or browser tests.
+const fixtureDay = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Africa/Tunis", year: "numeric", month: "2-digit", day: "2-digit",
+}).format(new Date());
+process.env.EZZ_E2E_FIXTURE_DAY = fixtureDay;
+
 export default defineConfig({
   testDir: "./e2e",
   workers: 1,
@@ -29,6 +36,7 @@ export default defineConfig({
         EZZ_TEST_ADMIN_URL:
           process.env.EZZ_TEST_ADMIN_URL ??
           "postgres://postgres:fictional-dev-superuser-pw@127.0.0.1:54316/postgres",
+        EZZ_E2E_FIXTURE_DAY: fixtureDay,
       },
     },
     {
