@@ -261,3 +261,48 @@ test('UX12 patient search: Arabic name and literal FR substring, spaced phone, D
   const literal = await find('%');
   assert.ok(!literal.body.patients.some((x: { id: string }) => x.id === id), '% is search text, not a wildcard');
 });
+
+test('UX12 review: Arabic-only same names, diacritics and French accents cannot bypass identity warnings', async () => {
+  const f = await clinic();
+  const mk = (body: Record<string, unknown>) => api.call('POST', '/api/v1/patients', {
+    token: f.desk, body: { isSynthetic: true, ...body },
+  });
+  const first = await mk({
+    familyName: 'ChérifUx12', givenName: 'LéilaUx12',
+    nameAr: 'أَحْمَد سـليم', dateOfBirth: '1982-01-03',
+  });
+  assert.equal(first.status, 201, JSON.stringify(first.body));
+  const secondBody = {
+    familyName: 'DifferentLatinUx12', givenName: 'OtherUx12',
+    nameAr: 'احمد سليم', dateOfBirth: '1994-02-05',
+  };
+  const warning = await mk(secondBody);
+  assert.equal(warning.status, 409, 'same Arabic name must warn even when Latin names and birth dates differ');
+  assert.ok(warning.body.error.details.possibleDuplicates.some(
+    (p: { id: string }) => p.id === first.body.patient.id,
+  ));
+  const second = await mk({ ...secondBody, confirmNotDuplicate: true });
+  assert.equal(second.status, 201, JSON.stringify(second.body));
+  const find = (q: string) => api.call('GET', '/api/v1/patients?q=' + encodeURIComponent(q), { token: f.desk });
+  const ar = await find('احمد سليم');
+  assert.equal(ar.status, 200);
+  for (const id of [first.body.patient.id, second.body.patient.id]) {
+    const patient = ar.body.patients.find((p: { id: string }) => p.id === id);
+    assert.ok(patient, 'Arabic alef/diacritics/tatweel must fold for both records');
+    assert.equal(patient.hasSameNameInClinic, true, 'even a filtered result must require file confirmation');
+  }
+  for (const query of ['cherifux12', 'leilaux12']) {
+    const fr = await find(query);
+    assert.ok(fr.body.patients.some((p: { id: string }) => p.id === first.body.patient.id),
+      'French accents must not hide a file for ' + query);
+  }
+  const a = await newVisit(api, f.desk, first.body.patient.id, '2026-10-28T10:00:00Z');
+  const b = await newVisit(api, f.desk, second.body.patient.id, '2026-10-28T11:00:00Z');
+  const day = await board(f.desk, '?day=2026-10-28');
+  assert.equal(day.status, 200, JSON.stringify(day.body));
+  for (const id of [a, b]) {
+    const visit = day.body.visits.find((v: { id: string }) => v.id === id);
+    assert.ok(visit.flags.includes('SAME_NAME_OTHER_FILE'), 'Arabic duplicate must flag the day board');
+    assert.equal(visit.patient.sameNameFileNos.length, 1);
+  }
+});
