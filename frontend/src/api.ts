@@ -28,6 +28,7 @@ export const patientSchema = z.object({
   preferredLanguage: z.string().optional(),
   phone: z.string().nullable().optional(),
   dateOfBirth: z.string().nullable().optional(),
+  birthYear: z.string().nullable().optional(),
   phoneLast4: z.string().nullable().optional(),
   hasSameNameInClinic: z.boolean().optional(),
 });
@@ -233,6 +234,9 @@ export class Api {
       z.object({ patients: z.array(patientSchema) }),
       { signal },
     );
+  }
+  patient(id: string, signal?: AbortSignal) {
+    return this.call(`/patients/${encodeURIComponent(id)}`, z.object({ patient: patientSchema }), { signal });
   }
   register(body: Record<string, unknown>, key: string) {
     return this.call("/patients", z.object({ patient: patientSchema }), {
