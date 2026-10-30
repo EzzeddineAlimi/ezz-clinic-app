@@ -32,6 +32,7 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Dossier clinique" }).click();
   const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: /Notes signées/ }).click();
   const initial = dialog.getByTestId("clinical-initial-note-form");
   await initial.getByLabel("Subjectif").fill("Symptômes fictifs d'essai");
   const signed = page.waitForResponse(r => r.url().endsWith("/clinical-notes") &&
@@ -67,6 +68,8 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
   await page.setViewportSize({ width: 390, height: 844 });
   await row.getByRole("button", { name: "الملف السريري" }).click();
   const arabic = page.getByRole("dialog");
+  await expect(arabic.getByTestId("clinical-overview")).toBeVisible();
+  await arabic.getByRole("button", { name: /ملاحظات موقعة/ }).click();
   await expect(arabic.getByText("تم توقيع الملاحظة الأصلية.", { exact: false })).toBeVisible();
   await expect(arabic.getByRole("button", { name: "توقيع وتسجيل" })).toHaveCount(0);
   await arabic.getByRole("button", { name: "نظرة عامة" }).click();
@@ -100,6 +103,7 @@ test("UX13 struck initial SOAP remains visible but permits a new signed note (Ar
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Dossier clinique" }).click();
   const frenchDialog = page.getByRole("dialog");
+  await frenchDialog.getByRole("button", { name: /Notes signées/ }).click();
   const firstNote = frenchDialog.getByTestId("clinical-initial-note-form");
   await firstNote.getByLabel("Subjectif").fill("Texte initial fictif à conserver");
   const firstSigned = page.waitForResponse(r => r.url().endsWith("/clinical-notes") &&
@@ -128,6 +132,7 @@ test("UX13 struck initial SOAP remains visible but permits a new signed note (Ar
   await page.setViewportSize({ width: 390, height: 844 });
   await row.getByRole("button", { name: "الملف السريري" }).click();
   const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: /ملاحظات موقعة/ }).click();
   await expect(dialog.getByText("إدخال تم تصنيفه كخطأ", { exact: false })).toBeVisible();
   await expect(dialog.getByText("Texte initial fictif à conserver")).toBeVisible();
   const replacement = dialog.getByTestId("clinical-initial-note-form");
