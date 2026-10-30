@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: S4 durable intent survives lost key, process restart, new login and concurrent new-key retries
+ok 1 - S4 durable intent survives lost key, process restart, new login and concurrent new-key retries
+  ---
+  duration_ms: 610.414891
+  type: 'test'
+  ...
+# Subtest: S4 concurrent prepares reserve one active intention; legacy new-key payments cannot bypass it
+ok 2 - S4 concurrent prepares reserve one active intention; legacy new-key payments cannot bypass it
+  ---
+  duration_ms: 228.161572
+  type: 'test'
+  ...
+# Subtest: S4 stale recovery, changed body, cancellation and ledger changes fail closed
+ok 3 - S4 stale recovery, changed body, cancellation and ledger changes fail closed
+  ---
+  duration_ms: 256.194082
+  type: 'test'
+  ...
+# Subtest: S4 commit failure rolls payment, receipt number, audit and idempotency back; same intention recovers
+ok 4 - S4 commit failure rolls payment, receipt number, audit and idempotency back; same intention recovers
+  ---
+  duration_ms: 222.792409
+  type: 'test'
+  ...
+# Subtest: S4 a new partial payment must explicitly acknowledge the previous payment, not blindly repeat
+ok 5 - S4 a new partial payment must explicitly acknowledge the previous payment, not blindly repeat
+  ---
+  duration_ms: 252.022672
+  type: 'test'
+  ...
+# Subtest: S4 current roles and tenant boundaries protect every recovery/write/cancel route
+ok 6 - S4 current roles and tenant boundaries protect every recovery/write/cancel route
+  ---
+  duration_ms: 520.019559
+  type: 'test'
+  ...
+# Subtest: S4 mixed /print and /reprint share unique copy sequence; preparations never attest delivery
+ok 7 - S4 mixed /print and /reprint share unique copy sequence; preparations never attest delivery
+  ---
+  duration_ms: 223.744089
+  type: 'test'
+  ...
+# Subtest: S4 reprint before any original makes subsequent print a distinct copy
+ok 8 - S4 reprint before any original makes subsequent print a distinct copy
+  ---
+  duration_ms: 209.788357
+  type: 'test'
+  ...
+# Subtest: S4 real SIGKILL after commit with discarded response recovers through new process and login
+ok 9 - S4 real SIGKILL after commit with discarded response recovers through new process and login
+  ---
+  duration_ms: 723.242527
+  type: 'test'
+  ...
+# Subtest: S4 inconsistent multiple pending intentions fail closed instead of choosing one
+ok 10 - S4 inconsistent multiple pending intentions fail closed instead of choosing one
+  ---
+  duration_ms: 245.27391
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3700.974452

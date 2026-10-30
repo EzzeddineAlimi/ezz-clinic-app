@@ -1,0 +1,56 @@
+TAP version 13
+# Subtest: S4 durable intent survives lost key and replay after new session creates one receipt
+not ok 1 - S4 durable intent survives lost key and replay after new session creates one receipt
+  ---
+  duration_ms: 469.342613
+  type: 'test'
+  location: '/workspace/ezz-sprint4/backend/test/sprint4-recovery.test.ts:7:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"error":{"code":"NOT_FOUND","message":"Not found"}}
+    
+    404 !== 201
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 201
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-sprint4/backend/test/sprint4-recovery.test.ts:10:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: S4 reprint following original preparation has copyNo1
+not ok 2 - S4 reprint following original preparation has copyNo1
+  ---
+  duration_ms: 244.773446
+  type: 'test'
+  location: '/workspace/ezz-sprint4/backend/test/sprint4-recovery.test.ts:12:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    2 !== 1
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 1
+  actual: 2
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-sprint4/backend/test/sprint4-recovery.test.ts:17:9)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 897.9904

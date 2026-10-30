@@ -228,6 +228,8 @@
             "recordedAt": "<timestamp>",
             "recordedBy": "<id-3>",
             "receiptNumber": 1,
+            "receiptId": "<id-24>",
+            "receiptSeries": "R",
             "returnedMillimes": 0
           },
           {
@@ -238,6 +240,8 @@
             "recordedAt": "<timestamp>",
             "recordedBy": "<id-3>",
             "receiptNumber": 2,
+            "receiptId": "<id-26>",
+            "receiptSeries": "R",
             "returnedMillimes": 0
           }
         ]
@@ -302,6 +306,8 @@
       "request": {},
       "status": 200,
       "response": {
+        "preparationOnly": true,
+        "paperDelivery": "UNKNOWN",
         "receipt": {
           "kind": "PAYMENT",
           "label": "R-000001",
@@ -524,6 +530,113 @@
           "key": "visit:<id-21>:no_dentist_record",
           "reasonCode": "OWNER_REVIEWED"
         }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Recover durable payment state after reload",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/visits/:id/payment-recovery",
+      "path": "/api/v1/visits/<id-55>/payment-recovery",
+      "request": null,
+      "status": 200,
+      "response": {
+        "balance": {
+          "visitId": "<id-55>",
+          "chargedMillimes": 100000,
+          "paidMillimes": 0,
+          "reducedMillimes": 0,
+          "returnedMillimes": 0,
+          "balanceMillimes": 100000,
+          "careConfirmed": true
+        },
+        "recoveryVersion": "<sha256>",
+        "paymentIds": [],
+        "intentions": [],
+        "automaticRetry": false
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Prepare durable intention without recording money",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/visits/:id/payment-intents",
+      "path": "/api/v1/visits/<id-55>/payment-intents",
+      "request": {
+        "amountMillimes": 30000,
+        "tender": "CARD",
+        "recoveryVersion": "<sha256>",
+        "acknowledgedPaymentIds": []
+      },
+      "status": 201,
+      "response": {
+        "intent": {
+          "id": "<id-56>",
+          "status": "PENDING",
+          "payload": {
+            "amountMillimes": 30000,
+            "tender": "CARD",
+            "cardTerminalRef": null,
+            "cardLast4": null,
+            "confirmDuplicate": false
+          }
+        },
+        "paymentRecorded": false
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Explicitly record immutable intention",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/payment-intents/:id/record",
+      "path": "/api/v1/payment-intents/<id-56>/record",
+      "request": {},
+      "status": 201,
+      "response": {
+        "payment": {
+          "id": "<id-57>",
+          "visitId": "<id-55>",
+          "patientId": "<id-58>",
+          "amountMillimes": 30000,
+          "tender": "CARD",
+          "source": "DESK",
+          "recordedAt": "<timestamp>",
+          "recordedBy": "<id-3>",
+          "cashPeriodId": null,
+          "evidence": {
+            "tier": "DESK_CLAIM",
+            "label": {
+              "fr": "Carte — déclaration accueil uniquement (non vérifiée)",
+              "ar": "بطاقة — تسجيل الاستقبال فقط (غير مُتحقَّق منه)"
+            },
+            "verifiedBy": null
+          }
+        },
+        "receipt": {
+          "id": "<id-59>",
+          "number": 6,
+          "label": "R-000006"
+        },
+        "balanceAfterMillimes": 70000
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Cancel unrecorded intention after explicit reconciliation (not a refund)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/payment-intents/:id/cancel",
+      "path": "/api/v1/payment-intents/<id-60>/cancel",
+      "request": {
+        "reason": "Fictional money not received"
+      },
+      "status": 200,
+      "response": {
+        "status": "CANCELLED",
+        "paymentRecorded": false
       }
     }
   ]

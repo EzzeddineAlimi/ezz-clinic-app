@@ -1,0 +1,52 @@
+
+> ezz-clinic-web@0.1.0 test:e2e
+> playwright test
+
+[2m[WebServer] [22m(node:54899) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22m(node:54973) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+[2m[WebServer] [22mnode_modules/zod/v4/core/regexes.js (74:0): A comment
+[2m[WebServer] [22m
+[2m[WebServer] [22m"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+[2m[WebServer] [22m * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+[2m[WebServer] [22m * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+[2m[WebServer] [22m
+[2m[WebServer] [22min "node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[2m[WebServer] [22mnode_modules/zod/v4/core/util.js (400:0): A comment
+[2m[WebServer] [22m
+[2m[WebServer] [22m"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+[2m[WebServer] [22m
+[2m[WebServer] [22min "node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[2m[WebServer] [22m(node:55015) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[2m[WebServer] [22m(Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 21 tests using 1 worker
+
+(node:55054) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:55054) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 e2e/app.spec.ts:28:1 › Real seeded board: French desktop, Arabic mobile, no storage, accessibility and screenshots (2.4s)
+  ✓   2 e2e/app.spec.ts:74:1 › Register no-phone patient, schedule in clinic zone, record arrival and search file (1.8s)
+  ✓   3 e2e/app.spec.ts:116:1 › Duplicate warning requires human decision; no automatic retry (1.5s)
+  ✓   4 e2e/app.spec.ts:143:1 › Lost response after actual database commit: retry same body/key creates only one file (1.4s)
+  ✓   5 e2e/app.spec.ts:180:1 › Real server revocation clears patient data and returns to login (976ms)
+  ✓   6 e2e/app.spec.ts:197:1 › Assistant is read-only and real server denies registration; no role workaround (930ms)
+  ✓   7 e2e/app.spec.ts:217:1 › Real empty day, loading delay, offline and recovery states (1.4s)
+  ✓   8 e2e/app.spec.ts:257:1 › Invalid credentials and native required fields; modal keyboard escape restores focus (1.4s)
+  ✓   9 e2e/app.spec.ts:284:1 › Server permission change produces visible 403 and masks prior board data (1.0s)
+  ✓  10 e2e/app.spec.ts:317:1 › Other clinic patient remains absent and cross-clinic id returns neutral 404 (1.1s)
+  ✓  11 e2e/app.spec.ts:354:1 › Overlapping appointment requires explicit confirmation; Arabic form remains keyboard accessible (2.6s)
+  ✓  12 e2e/app.spec.ts:423:3 › Malformed authenticated GET401 clears workspace and all patient DOM (892ms)
+  ✓  13 e2e/app.spec.ts:423:3 › Malformed authenticated POST401 clears workspace and all patient DOM (1.1s)
+  ✓  14 e2e/app.spec.ts:460:1 › Dentist confirms fictional care through real API; receptionist remains denied (1.4s)
+  ✓  15 e2e/checkout.spec.ts:72:1 › Partial cash commit lost in transport, exact replay, receipt snapshot and copy numbering; full card settlement (4.4s)
+  ✓  16 e2e/checkout.spec.ts:224:1 › Missing owner cash period fails closed in UI; card remains an explicit desk claim (1.1s)
+  ✓  17 e2e/checkout.spec.ts:252:1 › Financial endpoints enforce assistant403 and cross-clinic404; UI hides action; malformed401 clears checkout (1.7s)
+  ✓  18 e2e/checkout.spec.ts:294:1 › Server 503 after committed payment remains uncertain and retries one frozen intent (1.5s)
+  ✓  19 e2e/journey.spec.ts:19:1 › End-to-end fictional patient: dentist UI confirms care, receptionist takes partial payment and receives server-numbered receipt (2.0s)
+  ✓  20 e2e/muse-fixes.spec.ts:45:1 › F1+F2: real dentist reviews active medical alert hash before care and explicitly confirms second matching act (1.7s)
+  ✓  21 e2e/muse-fixes.spec.ts:94:1 › F3: second genuine identical payment needs explicit history confirmation, new immutable key and separate receipt (2.2s)
+
+  21 passed (45.2s)

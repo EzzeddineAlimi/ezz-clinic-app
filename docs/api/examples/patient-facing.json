@@ -16,6 +16,8 @@
       },
       "status": 200,
       "response": {
+        "preparationOnly": true,
+        "paperDelivery": "UNKNOWN",
         "copy": false,
         "copyNo": 0,
         "document": {
@@ -40,7 +42,7 @@
                 {
                   "key": "date",
                   "label": "Date",
-                  "value": "29/10/2026 03:35",
+                  "value": "29/10/2026 22:40",
                   "isolate": true,
                   "emphasis": false
                 },
@@ -110,7 +112,7 @@
                 {
                   "key": "fingerprint",
                   "label": "Empreinte",
-                  "value": "0ab2cd1b5cdc",
+                  "value": "0bdddeed363c",
                   "isolate": true,
                   "emphasis": false
                 }
@@ -133,7 +135,7 @@
                 {
                   "key": "date",
                   "label": "التاريخ",
-                  "value": "29/10/2026 03:35",
+                  "value": "29/10/2026 22:40",
                   "isolate": true,
                   "emphasis": false
                 },
@@ -203,7 +205,7 @@
                 {
                   "key": "fingerprint",
                   "label": "البصمة",
-                  "value": "0ab2cd1b5cdc",
+                  "value": "0bdddeed363c",
                   "isolate": true,
                   "emphasis": false
                 }

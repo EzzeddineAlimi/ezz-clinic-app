@@ -200,12 +200,12 @@ export const printRoutes: Route[] = [
       const r = await tx.maybeOne<{ id: string; number: number; snapshot: ReceiptSnapshot; sha: string }>('SELECT id, number, snapshot, snapshot_sha256 AS sha FROM receipts WHERE id = $1', [params.id!]);
       if (!r) fail('NOT_FOUND', 'Receipt not found');
       await advisoryLock(tx, 'receipt_print', r!.id);
-      const prior = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM receipt_prints WHERE receipt_id = $1', [r!.id]);
-      const copyNo = prior.n;
+      const prior = await tx.one<{ n: number; copies:number }>('SELECT count(*)::int AS n, count(*) FILTER (WHERE is_copy)::int AS copies FROM receipt_prints WHERE receipt_id = $1', [r!.id]);
+      const copyNo = prior.n === 0 ? 0 : prior.copies + 1;
       await tx.query('INSERT INTO receipt_prints (clinic_id, receipt_id, printed_by, is_copy) VALUES ($1,$2,$3,$4)', [actor!.clinicId, r!.id, actor!.staffId, copyNo > 0]);
       await appendAudit(tx, actor!, 'receipt.printed', 'receipt', r!.id, { number: r!.number, copyNo, lang: o.lang, size: o.size });
       const doc = receiptDocument(r!.snapshot, r!.sha, { lang: o.lang, size: o.size, copyNo, timeZone: await clinicTimezone(tx, actor!.clinicId) });
-      return { status: 200, body: { copy: copyNo > 0, copyNo, document: doc, ...(o.format === 'html' ? { html: renderHtml(doc) } : {}) } };
+      return { status: 200, body: { preparationOnly: true, paperDelivery: 'UNKNOWN', copy: copyNo > 0, copyNo, document: doc, ...(o.format === 'html' ? { html: renderHtml(doc) } : {}) } };
     },
   },
   {

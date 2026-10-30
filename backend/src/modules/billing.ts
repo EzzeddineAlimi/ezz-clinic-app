@@ -1,6 +1,7 @@
 /*
  * BILLING module: payments, allocations, gap-free receipts, discounts/write-offs, refunds, voids.
- * Owns tables: receipt_counters, payments, payment_allocations, adjustments, receipts, receipt_prints, view visit_balances.
+ * Owns tables: receipt_counters, payments, payment_allocations, adjustments, receipts, receipt_prints,
+ * payment_intents, payment_intent_outcomes, view visit_balances.
  * Depends on: care (read fee totals), patients (visit lock), audit.
  *
  * Rules (C4/C5, CH-015/CH-016, MF16):
@@ -12,7 +13,7 @@
  *  - discounts/write-offs: dentist or owner only; refunds/voids: owner only, with re-authentication;
  *  - a refund requires an existing credit (so a fee correction or discount by the dentist must come first).
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, type Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, millimes, oneOf, optStr, str, bool, formatMillimes, isUuid } from '../platform/validate.ts';
@@ -105,11 +106,14 @@ export interface RecordPaymentInput {
   visitId: string; amountMillimes: number; tender: 'CASH' | 'CARD'; source: 'DESK' | 'PAPER_OUTAGE';
   cardTerminalRef?: string | null; cardLast4?: string | null; confirmDuplicate?: boolean; issueReceipt: boolean;
   paperSlipEntryId?: string | null;
+  paymentIntentId?: string;
 }
 
 /** Shared by the desk route and the paper-outage import. Caller supplies the transaction. */
 export async function recordPayment(tx: Tx, actor: Actor, input: RecordPaymentInput) {
   const v = await getVisitForUpdate(tx, input.visitId);
+  const pending = await unresolvedIntent(tx, v.id);
+  if (pending && pending.id !== input.paymentIntentId) fail('PAYMENT_INTENT_UNRESOLVED', 'Recover the existing intention before another payment', { intentId: pending.id });
   const bal = await visitBalance(tx, v.id);
   if (!bal.careConfirmed) fail('CARE_NOT_CONFIRMED', 'No dentist-confirmed care for this visit yet; payment cannot be applied');
   if (input.amountMillimes > bal.balanceMillimes) {
@@ -162,16 +166,95 @@ async function returnedOnPayment(tx: Tx, paymentId: string) {
 
 const primaryRole = (actor: Actor, allowed: string[]) => (allowed.find(r => actor.roles.includes(r as never)) ?? actor.roles[0]) as 'OWNER' | 'DENTIST';
 
+interface StoredIntent { id: string; visit_id: string; payload: Record<string, unknown>; ledger_hash: string }
+async function unresolvedIntent(tx: Tx, visitId: string) {
+  const rows = (await tx.query<{ id: string }>(`SELECT i.id FROM payment_intents i
+    WHERE i.visit_id=$1 AND NOT EXISTS (SELECT 1 FROM payment_intent_outcomes o WHERE o.intent_id=i.id)`, [visitId])).rows;
+  if (rows.length > 1) fail('PAYMENT_INTENT_UNRESOLVED', 'Multiple unresolved intentions require review');
+  return rows[0];
+}
+async function recoveryState(tx: Tx, visitId: string) {
+  const balance = await visitBalance(tx, visitId);
+  const ledger = await tx.one<{ care: string[]; payments: string[]; adjustments: string[] }>(`SELECT
+    (SELECT coalesce(jsonb_agg(id ORDER BY id),'[]') FROM care_items WHERE visit_id=$1) AS care,
+    (SELECT coalesce(jsonb_agg(id ORDER BY id),'[]') FROM payments WHERE visit_id=$1) AS payments,
+    (SELECT coalesce(jsonb_agg(id ORDER BY id),'[]') FROM adjustments WHERE visit_id=$1) AS adjustments`, [visitId]);
+  return { balance, recoveryVersion: sha256(canonicalJson({ balance, ledger })), paymentIds: ledger.payments };
+}
+function deskPayload(body: unknown) {
+  const b = asBody(body);
+  const amountMillimes = millimes(b, 'amountMillimes');
+  const tender = oneOf(b, 'tender', ['CASH','CARD'] as const)!;
+  const cardTerminalRef = tender === 'CARD' ? optStr(b, 'cardTerminalRef', { max:40, pattern:/^[A-Za-z0-9-]{1,40}$/ }) : null;
+  const cardLast4 = tender === 'CARD' ? optStr(b, 'cardLast4', { max:4, pattern:/^[0-9]{4}$/ }) : null;
+  return { amountMillimes, tender, cardTerminalRef, cardLast4, confirmDuplicate:bool(b,'confirmDuplicate') };
+}
+async function lockedIntent(tx: Tx, id: string) {
+  if (!isUuid(id)) fail('NOT_FOUND','Payment intention not found');
+  const i = await tx.maybeOne<StoredIntent>('SELECT id,visit_id,payload,ledger_hash FROM payment_intents WHERE id=$1',[id]);
+  if (!i) fail('NOT_FOUND','Payment intention not found');
+  await getVisitForUpdate(tx,i!.visit_id);
+  return i!;
+}
+const recoveryRoutes: Route[] = [
+  { method:'GET', path:'/api/v1/visits/:id/payment-recovery', permission:'payment.read', handler:async({tx,params})=>{
+    // Same aggregate lock as every billing writer: coherent reads, waits for uncertain commits.
+    const v=await getVisitForUpdate(tx,params.id!);
+    await unresolvedIntent(tx,v.id);
+    const state=await recoveryState(tx,v.id);
+    const intentions=(await tx.query(`SELECT i.id,i.payload,i.created_by AS "createdBy",i.created_at AS "createdAt",
+      coalesce(o.status,'PENDING') AS status,o.payment_id AS "paymentId",o.result,o.reason,o.resolved_by AS "resolvedBy"
+      FROM payment_intents i LEFT JOIN payment_intent_outcomes o ON o.intent_id=i.id
+      WHERE i.visit_id=$1 ORDER BY i.created_at,i.id`,[v.id])).rows;
+    return {status:200,body:{...state,intentions,automaticRetry:false}};
+  }},
+  { method:'POST', path:'/api/v1/visits/:id/payment-intents', permission:'payment.record', idempotent:true, handler:async({tx,actor,params,body})=>{
+    const b=asBody(body),payload=deskPayload(b),v=await getVisitForUpdate(tx,params.id!);
+    const pending=await unresolvedIntent(tx,v.id);
+    if(pending) fail('PAYMENT_INTENT_UNRESOLVED','Recover the existing intention before another payment',{intentId:pending.id});
+    const state=await recoveryState(tx,v.id);
+    if (b.recoveryVersion!==state.recoveryVersion || !Array.isArray(b.acknowledgedPaymentIds)
+      || canonicalJson(b.acknowledgedPaymentIds)!==canonicalJson(state.paymentIds))
+      fail('PAYMENT_RECOVERY_STALE','Read and acknowledge the current recovery state before preparing a payment');
+    if(!state.balance.careConfirmed) fail('CARE_NOT_CONFIRMED','Dentist confirmation required');
+    if(payload.amountMillimes>state.balance.balanceMillimes) fail('AMOUNT_EXCEEDS_BALANCE','Payment exceeds balance');
+    const i=await tx.one<{id:string}>(`INSERT INTO payment_intents(clinic_id,visit_id,created_by,ledger_hash,payload)
+      VALUES($1,$2,$3,$4,$5) RETURNING id`,[actor!.clinicId,v.id,actor!.staffId,state.recoveryVersion,payload]);
+    await appendAudit(tx,actor!,'payment.intent_prepared','payment_intent',i.id,{visitId:v.id,ledgerHash:state.recoveryVersion,payloadSha256:sha256(canonicalJson(payload))});
+    return {status:201,body:{intent:{id:i.id,status:'PENDING',payload},paymentRecorded:false}};
+  }},
+  { method:'POST', path:'/api/v1/payment-intents/:id/record', permission:'payment.record', idempotent:true, handler:async({tx,actor,params,body})=>{
+    if(Object.keys(asBody(body)).length) fail('VALIDATION_FAILED','Record accepts an empty object; the stored intention is immutable');
+    const i=await lockedIntent(tx,params.id!);
+    const prior=await tx.maybeOne<{status:string;result:Record<string,unknown>}>('SELECT status,result FROM payment_intent_outcomes WHERE intent_id=$1',[i.id]);
+    if(prior?.status==='CANCELLED') fail('PAYMENT_INTENT_CANCELLED','This intention was cancelled; reconcile before another payment');
+    if(prior) return {status:200,body:{...prior.result,recovered:true}};
+    const state=await recoveryState(tx,i.visit_id);
+    if(state.recoveryVersion!==i.ledger_hash) fail('PAYMENT_RECOVERY_STALE','Ledger changed; reconcile and cancel this intention before a new payment');
+    const result=await recordPayment(tx,actor!,{...deskPayload(i.payload),visitId:i.visit_id,source:'DESK',issueReceipt:true,paymentIntentId:i.id});
+    await tx.query(`INSERT INTO payment_intent_outcomes(intent_id,clinic_id,status,payment_id,result,resolved_by)
+      VALUES($1,$2,'RECORDED',$3,$4,$5)`,[i.id,actor!.clinicId,result.payment.id,result,actor!.staffId]);
+    await appendAudit(tx,actor!,'payment.intent_recorded','payment_intent',i.id,{paymentId:result.payment.id,receiptId:result.receipt!.id});
+    return {status:201,body:result};
+  }},
+  { method:'POST', path:'/api/v1/payment-intents/:id/cancel', permission:'payment.record', idempotent:true, handler:async({tx,actor,params,body})=>{
+    const reason=str(asBody(body),'reason',{min:3,max:300}),i=await lockedIntent(tx,params.id!);
+    const prior=await tx.maybeOne<{status:string}>('SELECT status FROM payment_intent_outcomes WHERE intent_id=$1',[i.id]);
+    if(prior?.status==='RECORDED') fail('CONFLICT','Payment already recorded; cancellation cannot refund or void it');
+    if(prior) return {status:200,body:{status:'CANCELLED',recovered:true}};
+    await tx.query(`INSERT INTO payment_intent_outcomes(intent_id,clinic_id,status,reason,resolved_by)
+      VALUES($1,$2,'CANCELLED',$3,$4)`,[i.id,actor!.clinicId,reason,actor!.staffId]);
+    await appendAudit(tx,actor!,'payment.intent_cancelled','payment_intent',i.id,{reasonSha256:sha256(reason)});
+    return {status:200,body:{status:'CANCELLED',paymentRecorded:false}};
+  }}
+];
+
 export const billingRoutes: Route[] = [
+  ...recoveryRoutes,
   {
     method: 'POST', path: '/api/v1/visits/:id/payments', permission: 'payment.record', idempotent: true,
     handler: async ({ tx, actor, params, body }) => {
-      const b = asBody(body);
-      const amount = millimes(b, 'amountMillimes');
-      const tender = oneOf(b, 'tender', ['CASH', 'CARD'] as const)!; // explicit choice, no default (C-135 AC-PAY-5)
-      const cardTerminalRef = tender === 'CARD' ? optStr(b, 'cardTerminalRef', { max: 40, pattern: /^[A-Za-z0-9-]{1,40}$/ }) : null;
-      const cardLast4 = tender === 'CARD' ? optStr(b, 'cardLast4', { max: 4, pattern: /^[0-9]{4}$/ }) : null;
-      const r = await recordPayment(tx, actor!, { visitId: params.id!, amountMillimes: amount, tender, source: 'DESK', cardTerminalRef, cardLast4, confirmDuplicate: bool(b, 'confirmDuplicate'), issueReceipt: true });
+      const r = await recordPayment(tx, actor!, { ...deskPayload(body), visitId: params.id!, source: 'DESK', issueReceipt: true });
       return { status: 201, body: r };
     },
   },
@@ -187,7 +270,7 @@ export const billingRoutes: Route[] = [
     handler: async ({ tx, params }) => {
       const v = await getVisit(tx, params.id!);
       const rows = (await tx.query(`SELECT p.id, p.amount_millimes AS "amountMillimes", p.tender, p.source, p.recorded_at AS "recordedAt", p.recorded_by AS "recordedBy",
-          r.number AS "receiptNumber", (SELECT coalesce(sum(a.amount_millimes),0)::bigint FROM adjustments a WHERE a.payment_id = p.id) AS "returnedMillimes"
+          r.number AS "receiptNumber", r.id AS "receiptId", r.series AS "receiptSeries", (SELECT coalesce(sum(a.amount_millimes),0)::bigint FROM adjustments a WHERE a.payment_id = p.id) AS "returnedMillimes"
         FROM payments p LEFT JOIN receipts r ON r.payment_id = p.id WHERE p.visit_id = $1 ORDER BY p.recorded_at`, [v.id])).rows;
       return { status: 200, body: { visitId: v.id, payments: rows } };
     },
@@ -208,10 +291,11 @@ export const billingRoutes: Route[] = [
       if (!isUuid(params.id!)) fail('NOT_FOUND', 'Receipt not found');
       const r = await tx.maybeOne<{ id: string; number: number; snapshot: Record<string, unknown> }>('SELECT id, number, snapshot FROM receipts WHERE id = $1', [params.id!]);
       if (!r) fail('NOT_FOUND', 'Receipt not found');
-      const prints = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM receipt_prints WHERE receipt_id = $1', [r!.id]);
+      await advisoryLock(tx, 'receipt_print', r!.id);
+      const prints = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM receipt_prints WHERE receipt_id = $1 AND is_copy', [r!.id]);
       await tx.query('INSERT INTO receipt_prints (clinic_id, receipt_id, printed_by, is_copy) VALUES ($1,$2,$3,true)', [actor!.clinicId, r!.id, actor!.staffId]);
       await appendAudit(tx, actor!, 'receipt.reprinted', 'receipt', r!.id, { number: r!.number, copyNo: prints.n + 1 });
-      return { status: 200, body: { receipt: { ...r!.snapshot, copy: true, copyMark: 'COPIE / نسخة', copyNo: prints.n + 1 } } };
+      return { status: 200, body: { preparationOnly: true, paperDelivery: 'UNKNOWN', receipt: { ...r!.snapshot, copy: true, copyMark: 'COPIE / نسخة', copyNo: prints.n + 1 } } };
     },
   },
   {
