@@ -60,7 +60,7 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
     data: { kind: "ADDENDUM", subjective: "Tentative accueil fictive" },
   });
   expect(denied.status()).toBe(403);
-  await dialog.getByRole("button", { name: "Fermer", exact: true }).click();
+  await dialog.getByRole("button", { name: "Fermer le formulaire", exact: true }).click();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await row.getByRole("button", { name: "الملف السريري" }).click();
