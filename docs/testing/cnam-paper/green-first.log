@@ -1,0 +1,182 @@
+TAP version 13
+# Subtest: CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+ok 1 - CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+  ---
+  duration_ms: 444.547347
+  type: 'test'
+  ...
+# Subtest: CNAM-2 rejects wrong patient, wrong treating dentist, unknown fields and non-integer money
+ok 2 - CNAM-2 rejects wrong patient, wrong treating dentist, unknown fields and non-integer money
+  ---
+  duration_ms: 27.586625
+  type: 'test'
+  ...
+# Subtest: CNAM-3 live auth, role and tenant boundaries include every dossier action and direct RLS
+not ok 3 - CNAM-3 live auth, role and tenant boundaries include every dossier action and direct RLS
+  ---
+  duration_ms: 5.142523
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:42:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:43:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-4 concurrent same-key and lost-key retries recover one draft and one immutable issue
+not ok 4 - CNAM-4 concurrent same-key and lost-key retries recover one draft and one immutable issue
+  ---
+  duration_ms: 20.66985
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:70:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:74:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-5 duplicate act issuance in competing dossiers fails closed under concurrency
+not ok 5 - CNAM-5 duplicate act issuance in competing dossiers fails closed under concurrency
+  ---
+  duration_ms: 20.308728
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:84:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:86:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-6 reasoned dentist correction appends a version; desk/owner/stale changes cannot overwrite history
+not ok 6 - CNAM-6 reasoned dentist correction appends a version; desk/owner/stale changes cannot overwrite history
+  ---
+  duration_ms: 4.60523
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:94:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:95:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-7 care/site changes before issue require a new version, never silently replace a snapshot
+not ok 7 - CNAM-7 care/site changes before issue require a new version, never silently replace a snapshot
+  ---
+  duration_ms: 17.256839
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:106:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:108:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-8 copies have consecutive server markers and do not assert physical printing or delivery
+not ok 8 - CNAM-8 copies have consecutive server markers and do not assert physical printing or delivery
+  ---
+  duration_ms: 20.526503
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:115:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:117:13)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-9 reports require optional follow-up consent and remain non-official, outside money ledgers
+not ok 9 - CNAM-9 reports require optional follow-up consent and remain non-official, outside money ledgers
+  ---
+  duration_ms: 18.683549
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:129:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    create (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:23:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:130:121)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-10 records actual multi-practitioner/multi-session authors and immutable bilingual preparation contracts
+not ok 10 - CNAM-10 records actual multi-practitioner/multi-session authors and immutable bilingual preparation contracts
+  ---
+  duration_ms: 207.147003
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:154:1'
+  failureType: 'testCodeFailure'
+  error: '{"error":{"code":"VALIDATION_FAILED","message":"Value rejected by database constraint","details":{}}}'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    step (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:167:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:171:16)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 2
+# fail 8
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 980.639354

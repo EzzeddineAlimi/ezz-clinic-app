@@ -1,0 +1,1036 @@
+{
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/cnam-paper.test.ts",
+  "steps": [
+    {
+      "file": "cnam-paper",
+      "title": "POST /api/v1/cnam/dossiers (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/cnam/dossiers",
+      "path": "/api/v1/cnam/dossiers",
+      "request": {
+        "patientId": "<id-1>",
+        "lines": [
+          {
+            "careItemId": "<id-2>",
+            "dentistId": "<id-3>",
+            "feeMillimes": 120001
+          },
+          {
+            "careItemId": "<id-4>",
+            "dentistId": "<id-5>",
+            "feeMillimes": 120001
+          }
+        ]
+      },
+      "status": 201,
+      "response": {
+        "dossier": {
+          "id": "<id-6>",
+          "patientId": "<id-1>",
+          "createdBy": "<id-7>",
+          "createdAt": "<timestamp>",
+          "currentVersion": 1,
+          "state": "PREPARING",
+          "documentKind": "LOCAL_PREPARATION_DATA",
+          "officialForm": false,
+          "estimation": {
+            "available": false,
+            "label": "Estimation indisponible",
+            "amountMillimes": null,
+            "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+          },
+          "versions": [
+            {
+              "version": 1,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-8>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-3>",
+                    "careItemId": "<id-2>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-5>",
+                    "careItemId": "<id-4>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist2",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-8>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-1>",
+                  "fileNo": 1,
+                  "nameAr": "مريض افتراضي",
+                  "givenName": "Paper",
+                  "familyName": "Fictional"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": null,
+                "totalInvoicedMillimes": 240002
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": null,
+              "createdBy": "<id-7>",
+              "createdAt": "<timestamp>",
+              "issue": null,
+              "events": []
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "POST /api/v1/cnam/dossiers/:id/issue (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/cnam/dossiers/:id/issue",
+      "path": "/api/v1/cnam/dossiers/<id-6>/issue",
+      "request": {
+        "expectedVersion": 1
+      },
+      "status": 200,
+      "response": {
+        "dossier": {
+          "id": "<id-6>",
+          "patientId": "<id-1>",
+          "createdBy": "<id-7>",
+          "createdAt": "<timestamp>",
+          "currentVersion": 1,
+          "state": "READY_FOR_PAPER_REVIEW",
+          "documentKind": "LOCAL_PREPARATION_DATA",
+          "officialForm": false,
+          "estimation": {
+            "available": false,
+            "label": "Estimation indisponible",
+            "amountMillimes": null,
+            "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+          },
+          "versions": [
+            {
+              "version": 1,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-8>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-3>",
+                    "careItemId": "<id-2>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-5>",
+                    "careItemId": "<id-4>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist2",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-8>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-1>",
+                  "fileNo": 1,
+                  "nameAr": "مريض افتراضي",
+                  "givenName": "Paper",
+                  "familyName": "Fictional"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": null,
+                "totalInvoicedMillimes": 240002
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": null,
+              "createdBy": "<id-7>",
+              "createdAt": "<timestamp>",
+              "issue": {
+                "id": "<id-10>",
+                "version": 1,
+                "sequence": 1,
+                "kind": "ISSUED",
+                "payload": {
+                  "number": "CNAM-<id-6>-v1",
+                  "printing": "NOT_VERIFIED",
+                  "officialForm": false,
+                  "snapshotHash": "<sha256>",
+                  "paperDelivery": "UNKNOWN"
+                },
+                "actorStaffId": "<id-7>",
+                "occurredAt": "<timestamp>"
+              },
+              "events": [
+                {
+                  "id": "<id-10>",
+                  "version": 1,
+                  "sequence": 1,
+                  "kind": "ISSUED",
+                  "payload": {
+                    "number": "CNAM-<id-6>-v1",
+                    "printing": "NOT_VERIFIED",
+                    "officialForm": false,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN"
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "POST /api/v1/cnam/dossiers/:id/copies (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/cnam/dossiers/:id/copies",
+      "path": "/api/v1/cnam/dossiers/<id-6>/copies",
+      "request": {
+        "expectedVersion": 1
+      },
+      "status": 200,
+      "response": {
+        "copy": {
+          "label": "COPY",
+          "printing": "NOT_VERIFIED",
+          "copyNumber": 1,
+          "snapshotHash": "<sha256>",
+          "paperDelivery": "UNKNOWN",
+          "id": "<id-11>",
+          "actorStaffId": "<id-7>",
+          "occurredAt": "<timestamp>"
+        },
+        "snapshot": {
+          "lines": [
+            {
+              "visitId": "<id-8>",
+              "surfaces": null,
+              "toothFdi": 36,
+              "dentistId": "<id-3>",
+              "careItemId": "<id-2>",
+              "confirmedAt": "<timestamp>",
+              "corrections": [],
+              "dentistName": "Fictional dentist",
+              "feeMillimes": 120001,
+              "procedureCode": "FICTIONAL",
+              "procedureLabel": "Fictional local act",
+              "siteAmendmentId": null,
+              "visitScheduledAt": "<timestamp>",
+              "careRecordedLocalDate": "2026-10-30"
+            },
+            {
+              "visitId": "<id-9>",
+              "surfaces": null,
+              "toothFdi": 36,
+              "dentistId": "<id-5>",
+              "careItemId": "<id-4>",
+              "confirmedAt": "<timestamp>",
+              "corrections": [],
+              "dentistName": "Fictional dentist2",
+              "feeMillimes": 120001,
+              "procedureCode": "FICTIONAL",
+              "procedureLabel": "Fictional local act",
+              "siteAmendmentId": null,
+              "visitScheduledAt": "<timestamp>",
+              "careRecordedLocalDate": "2026-10-30"
+            }
+          ],
+          "visits": [
+            {
+              "visitId": "<id-8>",
+              "receipts": [],
+              "paidMillimes": 0,
+              "chargedMillimes": 120001,
+              "reducedMillimes": 0,
+              "returnedMillimes": 0
+            },
+            {
+              "visitId": "<id-9>",
+              "receipts": [],
+              "paidMillimes": 0,
+              "chargedMillimes": 120001,
+              "reducedMillimes": 0,
+              "returnedMillimes": 0
+            }
+          ],
+          "patient": {
+            "id": "<id-1>",
+            "fileNo": 1,
+            "nameAr": "مريض افتراضي",
+            "givenName": "Paper",
+            "familyName": "Fictional"
+          },
+          "timezone": "Africa/Tunis",
+          "warnings": [
+            "OFFICIAL_FORM_NOT_VALIDATED",
+            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+            "CLINIC_BALANCE_OUTSTANDING"
+          ],
+          "affiliation": null,
+          "totalInvoicedMillimes": 240002
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "POST /api/v1/cnam/dossiers/:id/handoff (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/cnam/dossiers/:id/handoff",
+      "path": "/api/v1/cnam/dossiers/<id-6>/handoff",
+      "request": {
+        "expectedVersion": 1,
+        "handedToPatientReported": true
+      },
+      "status": 200,
+      "response": {
+        "dossier": {
+          "id": "<id-6>",
+          "patientId": "<id-1>",
+          "createdBy": "<id-7>",
+          "createdAt": "<timestamp>",
+          "currentVersion": 1,
+          "state": "HANDED_TO_PATIENT",
+          "documentKind": "LOCAL_PREPARATION_DATA",
+          "officialForm": false,
+          "estimation": {
+            "available": false,
+            "label": "Estimation indisponible",
+            "amountMillimes": null,
+            "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+          },
+          "versions": [
+            {
+              "version": 1,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-8>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-3>",
+                    "careItemId": "<id-2>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-5>",
+                    "careItemId": "<id-4>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist2",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-8>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-1>",
+                  "fileNo": 1,
+                  "nameAr": "مريض افتراضي",
+                  "givenName": "Paper",
+                  "familyName": "Fictional"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": null,
+                "totalInvoicedMillimes": 240002
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": null,
+              "createdBy": "<id-7>",
+              "createdAt": "<timestamp>",
+              "issue": {
+                "id": "<id-10>",
+                "version": 1,
+                "sequence": 1,
+                "kind": "ISSUED",
+                "payload": {
+                  "number": "CNAM-<id-6>-v1",
+                  "printing": "NOT_VERIFIED",
+                  "officialForm": false,
+                  "snapshotHash": "<sha256>",
+                  "paperDelivery": "UNKNOWN"
+                },
+                "actorStaffId": "<id-7>",
+                "occurredAt": "<timestamp>"
+              },
+              "events": [
+                {
+                  "id": "<id-10>",
+                  "version": 1,
+                  "sequence": 1,
+                  "kind": "ISSUED",
+                  "payload": {
+                    "number": "CNAM-<id-6>-v1",
+                    "printing": "NOT_VERIFIED",
+                    "officialForm": false,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN"
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                },
+                {
+                  "id": "<id-11>",
+                  "version": 1,
+                  "sequence": 2,
+                  "kind": "COPY_PREPARED",
+                  "payload": {
+                    "label": "COPY",
+                    "printing": "NOT_VERIFIED",
+                    "copyNumber": 1,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN"
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                },
+                {
+                  "id": "<id-12>",
+                  "version": 1,
+                  "sequence": 3,
+                  "kind": "HANDOFF_REPORTED",
+                  "payload": {
+                    "number": "CNAM-<id-6>-v1",
+                    "source": "STAFF_REPORTED",
+                    "independentlyVerified": false
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "POST /api/v1/cnam/dossiers/:id/reports (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/cnam/dossiers/:id/reports",
+      "path": "/api/v1/cnam/dossiers/<id-6>/reports",
+      "request": {
+        "expectedVersion": 1,
+        "status": "SUBMITTED",
+        "source": "STAFF_REPORTED",
+        "consentAcknowledged": true
+      },
+      "status": 201,
+      "response": {
+        "report": {
+          "status": "SUBMITTED",
+          "source": "STAFF_REPORTED",
+          "consentAcknowledged": true,
+          "amountMillimes": null,
+          "note": null,
+          "officiallyVerified": false,
+          "payee": "PATIENT",
+          "id": "<id-13>",
+          "actorStaffId": "<id-7>",
+          "occurredAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "GET /api/v1/cnam/dossiers (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/cnam/dossiers",
+      "path": "/api/v1/cnam/dossiers?patientId=<id-1>",
+      "request": null,
+      "status": 200,
+      "response": {
+        "dossiers": [
+          {
+            "id": "<id-6>",
+            "currentVersion": 1,
+            "state": "HANDED_TO_PATIENT",
+            "createdAt": "<timestamp>"
+          }
+        ],
+        "limit": 100,
+        "estimation": {
+          "available": false,
+          "label": "Estimation indisponible",
+          "amountMillimes": null,
+          "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "GET /api/v1/cnam/dossiers/:id (fictional preparation only)",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/cnam/dossiers/:id",
+      "path": "/api/v1/cnam/dossiers/<id-6>",
+      "request": null,
+      "status": 200,
+      "response": {
+        "dossier": {
+          "id": "<id-6>",
+          "patientId": "<id-1>",
+          "createdBy": "<id-7>",
+          "createdAt": "<timestamp>",
+          "currentVersion": 1,
+          "state": "HANDED_TO_PATIENT",
+          "documentKind": "LOCAL_PREPARATION_DATA",
+          "officialForm": false,
+          "estimation": {
+            "available": false,
+            "label": "Estimation indisponible",
+            "amountMillimes": null,
+            "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+          },
+          "versions": [
+            {
+              "version": 1,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-8>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-3>",
+                    "careItemId": "<id-2>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "surfaces": null,
+                    "toothFdi": 36,
+                    "dentistId": "<id-5>",
+                    "careItemId": "<id-4>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist2",
+                    "feeMillimes": 120001,
+                    "procedureCode": "FICTIONAL",
+                    "procedureLabel": "Fictional local act",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-8>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  },
+                  {
+                    "visitId": "<id-9>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-1>",
+                  "fileNo": 1,
+                  "nameAr": "مريض افتراضي",
+                  "givenName": "Paper",
+                  "familyName": "Fictional"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": null,
+                "totalInvoicedMillimes": 240002
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": null,
+              "createdBy": "<id-7>",
+              "createdAt": "<timestamp>",
+              "issue": {
+                "id": "<id-10>",
+                "version": 1,
+                "sequence": 1,
+                "kind": "ISSUED",
+                "payload": {
+                  "number": "CNAM-<id-6>-v1",
+                  "printing": "NOT_VERIFIED",
+                  "officialForm": false,
+                  "snapshotHash": "<sha256>",
+                  "paperDelivery": "UNKNOWN"
+                },
+                "actorStaffId": "<id-7>",
+                "occurredAt": "<timestamp>"
+              },
+              "events": [
+                {
+                  "id": "<id-10>",
+                  "version": 1,
+                  "sequence": 1,
+                  "kind": "ISSUED",
+                  "payload": {
+                    "number": "CNAM-<id-6>-v1",
+                    "printing": "NOT_VERIFIED",
+                    "officialForm": false,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN"
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                },
+                {
+                  "id": "<id-11>",
+                  "version": 1,
+                  "sequence": 2,
+                  "kind": "COPY_PREPARED",
+                  "payload": {
+                    "label": "COPY",
+                    "printing": "NOT_VERIFIED",
+                    "copyNumber": 1,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN"
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                },
+                {
+                  "id": "<id-12>",
+                  "version": 1,
+                  "sequence": 3,
+                  "kind": "HANDOFF_REPORTED",
+                  "payload": {
+                    "number": "CNAM-<id-6>-v1",
+                    "source": "STAFF_REPORTED",
+                    "independentlyVerified": false
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                },
+                {
+                  "id": "<id-13>",
+                  "version": 1,
+                  "sequence": 4,
+                  "kind": "OUTCOME_REPORTED",
+                  "payload": {
+                    "note": null,
+                    "payee": "PATIENT",
+                    "source": "STAFF_REPORTED",
+                    "status": "SUBMITTED",
+                    "amountMillimes": null,
+                    "officiallyVerified": false,
+                    "consentAcknowledged": true
+                  },
+                  "actorStaffId": "<id-7>",
+                  "occurredAt": "<timestamp>"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "file": "cnam-paper",
+      "title": "Dentist-authored administrative revision",
+      "role": "DENTIST",
+      "method": "POST",
+      "route": "/api/v1/cnam/dossiers/:id/corrections",
+      "path": "/api/v1/cnam/dossiers/<id-14>/corrections",
+      "request": {
+        "patientId": "<id-15>",
+        "lines": [
+          {
+            "careItemId": "<id-16>",
+            "dentistId": "<id-17>",
+            "feeMillimes": 120001
+          }
+        ],
+        "affiliation": {
+          "identifier": "FICTIONAL-CNAM-ONLY",
+          "insuredName": "شخص افتراضي",
+          "scheme": "UNKNOWN",
+          "source": "PATIENT_REPORTED"
+        },
+        "expectedVersion": 2,
+        "reason": "Fictional administrative correction"
+      },
+      "status": 201,
+      "response": {
+        "dossier": {
+          "id": "<id-14>",
+          "patientId": "<id-15>",
+          "createdBy": "<id-18>",
+          "createdAt": "<timestamp>",
+          "currentVersion": 3,
+          "state": "PREPARING",
+          "documentKind": "LOCAL_PREPARATION_DATA",
+          "officialForm": false,
+          "estimation": {
+            "available": false,
+            "label": "Estimation indisponible",
+            "amountMillimes": null,
+            "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+          },
+          "versions": [
+            {
+              "version": 1,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-19>",
+                    "surfaces": null,
+                    "toothFdi": null,
+                    "dentistId": "<id-17>",
+                    "careItemId": "<id-16>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "CHECKUP",
+                    "procedureLabel": "Fictional checkup",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-19>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-15>",
+                  "fileNo": 1,
+                  "nameAr": null,
+                  "givenName": "Amel",
+                  "familyName": "Fictif"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": {
+                  "scheme": "UNKNOWN",
+                  "source": "PATIENT_REPORTED",
+                  "identifier": "FICTIONAL-CNAM-ONLY",
+                  "insuredName": "شخص افتراضي",
+                  "officiallyVerified": false
+                },
+                "totalInvoicedMillimes": 120001
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": null,
+              "createdBy": "<id-18>",
+              "createdAt": "<timestamp>",
+              "issue": {
+                "id": "<id-20>",
+                "version": 1,
+                "sequence": 1,
+                "kind": "ISSUED",
+                "payload": {
+                  "number": "CNAM-<id-14>-v1",
+                  "printing": "NOT_VERIFIED",
+                  "officialForm": false,
+                  "snapshotHash": "<sha256>",
+                  "paperDelivery": "UNKNOWN"
+                },
+                "actorStaffId": "<id-18>",
+                "occurredAt": "<timestamp>"
+              },
+              "events": [
+                {
+                  "id": "<id-20>",
+                  "version": 1,
+                  "sequence": 1,
+                  "kind": "ISSUED",
+                  "payload": {
+                    "number": "CNAM-<id-14>-v1",
+                    "printing": "NOT_VERIFIED",
+                    "officialForm": false,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN"
+                  },
+                  "actorStaffId": "<id-18>",
+                  "occurredAt": "<timestamp>"
+                }
+              ]
+            },
+            {
+              "version": 2,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-19>",
+                    "surfaces": null,
+                    "toothFdi": null,
+                    "dentistId": "<id-17>",
+                    "careItemId": "<id-16>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "CHECKUP",
+                    "procedureLabel": "Fictional checkup",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-19>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-15>",
+                  "fileNo": 1,
+                  "nameAr": null,
+                  "givenName": "Amel",
+                  "familyName": "Fictif"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": null,
+                "totalInvoicedMillimes": 120001
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": "Fictional affiliation transcription correction",
+              "createdBy": "<id-17>",
+              "createdAt": "<timestamp>",
+              "issue": null,
+              "events": []
+            },
+            {
+              "version": 3,
+              "snapshot": {
+                "lines": [
+                  {
+                    "visitId": "<id-19>",
+                    "surfaces": null,
+                    "toothFdi": null,
+                    "dentistId": "<id-17>",
+                    "careItemId": "<id-16>",
+                    "confirmedAt": "<timestamp>",
+                    "corrections": [],
+                    "dentistName": "Fictional dentist",
+                    "feeMillimes": 120001,
+                    "procedureCode": "CHECKUP",
+                    "procedureLabel": "Fictional checkup",
+                    "siteAmendmentId": null,
+                    "visitScheduledAt": "<timestamp>",
+                    "careRecordedLocalDate": "2026-10-30"
+                  }
+                ],
+                "visits": [
+                  {
+                    "visitId": "<id-19>",
+                    "receipts": [],
+                    "paidMillimes": 0,
+                    "chargedMillimes": 120001,
+                    "reducedMillimes": 0,
+                    "returnedMillimes": 0
+                  }
+                ],
+                "patient": {
+                  "id": "<id-15>",
+                  "fileNo": 1,
+                  "nameAr": null,
+                  "givenName": "Amel",
+                  "familyName": "Fictif"
+                },
+                "timezone": "Africa/Tunis",
+                "warnings": [
+                  "OFFICIAL_FORM_NOT_VALIDATED",
+                  "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                  "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                  "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                  "CLINIC_BALANCE_OUTSTANDING"
+                ],
+                "affiliation": {
+                  "scheme": "UNKNOWN",
+                  "source": "PATIENT_REPORTED",
+                  "identifier": "FICTIONAL-CNAM-ONLY",
+                  "insuredName": "شخص افتراضي",
+                  "officiallyVerified": false
+                },
+                "totalInvoicedMillimes": 120001
+              },
+              "snapshotHash": "<sha256>",
+              "correctionReason": "Fictional administrative correction",
+              "createdBy": "<id-17>",
+              "createdAt": "<timestamp>",
+              "issue": null,
+              "events": []
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

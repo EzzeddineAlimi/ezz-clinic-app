@@ -34,6 +34,9 @@
       "name": "clinical-notes"
     },
     {
+      "name": "cnam"
+    },
+    {
       "name": "day-board"
     },
     {
@@ -18407,6 +18410,3371 @@
         "x-ezz-permission": "stock.manage",
         "x-ezz-roles": [
           "OWNER"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers": {
+      "post": {
+        "operationId": "postCnamDossiers",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "POST /api/v1/cnam/dossiers (fictional preparation only)",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "careItemId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "dentistId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "feeMillimes": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "patientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              },
+              "example": {
+                "patientId": "<id-1>",
+                "lines": [
+                  {
+                    "careItemId": "<id-2>",
+                    "dentistId": "<id-3>",
+                    "feeMillimes": 120001
+                  },
+                  {
+                    "careItemId": "<id-4>",
+                    "dentistId": "<id-5>",
+                    "feeMillimes": 120001
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "POST /api/v1/cnam/dossiers (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dossier": {
+                      "type": "object",
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "currentVersion": {
+                          "type": "integer"
+                        },
+                        "documentKind": {
+                          "type": "string"
+                        },
+                        "estimation": {
+                          "type": "object",
+                          "properties": {
+                            "amountMillimes": {
+                              "type": "null"
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "officialForm": {
+                          "type": "boolean"
+                        },
+                        "patientId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "versions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "correctionReason": {
+                                "type": "null"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdBy": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "events": {
+                                "type": "array"
+                              },
+                              "issue": {
+                                "type": "null"
+                              },
+                              "snapshot": {
+                                "type": "object",
+                                "properties": {
+                                  "affiliation": {
+                                    "type": "null"
+                                  },
+                                  "lines": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "careItemId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "careRecordedLocalDate": {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        "confirmedAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "corrections": {
+                                          "type": "array"
+                                        },
+                                        "dentistId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "dentistName": {
+                                          "type": "string"
+                                        },
+                                        "feeMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "procedureCode": {
+                                          "type": "string"
+                                        },
+                                        "procedureLabel": {
+                                          "type": "string"
+                                        },
+                                        "siteAmendmentId": {
+                                          "type": "null"
+                                        },
+                                        "surfaces": {
+                                          "type": "null"
+                                        },
+                                        "toothFdi": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "visitScheduledAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "patient": {
+                                    "type": "object",
+                                    "properties": {
+                                      "familyName": {
+                                        "type": "string"
+                                      },
+                                      "fileNo": {
+                                        "type": "integer"
+                                      },
+                                      "givenName": {
+                                        "type": "string"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "nameAr": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "timezone": {
+                                    "type": "string"
+                                  },
+                                  "totalInvoicedMillimes": {
+                                    "type": "integer"
+                                  },
+                                  "visits": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "chargedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "paidMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "receipts": {
+                                          "type": "array"
+                                        },
+                                        "reducedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "returnedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "warnings": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "snapshotHash": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{64}$"
+                              },
+                              "version": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "dossier": {
+                    "id": "<id-6>",
+                    "patientId": "<id-1>",
+                    "createdBy": "<id-7>",
+                    "createdAt": "<timestamp>",
+                    "currentVersion": 1,
+                    "state": "PREPARING",
+                    "documentKind": "LOCAL_PREPARATION_DATA",
+                    "officialForm": false,
+                    "estimation": {
+                      "available": false,
+                      "label": "Estimation indisponible",
+                      "amountMillimes": null,
+                      "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+                    },
+                    "versions": [
+                      {
+                        "version": 1,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-8>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-3>",
+                              "careItemId": "<id-2>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-5>",
+                              "careItemId": "<id-4>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist2",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-8>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-1>",
+                            "fileNo": 1,
+                            "nameAr": "مريض افتراضي",
+                            "givenName": "Paper",
+                            "familyName": "Fictional"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": null,
+                          "totalInvoicedMillimes": 240002
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": null,
+                        "createdBy": "<id-7>",
+                        "createdAt": "<timestamp>",
+                        "issue": null,
+                        "events": []
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.prepare",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      },
+      "get": {
+        "operationId": "getCnamDossiers",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "GET /api/v1/cnam/dossiers (fictional preparation only)",
+        "parameters": [
+          {
+            "name": "patientId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-ezz-observed-in-examples": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GET /api/v1/cnam/dossiers (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dossiers": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "currentVersion": {
+                            "type": "integer"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "state": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "estimation": {
+                      "type": "object",
+                      "properties": {
+                        "amountMillimes": {
+                          "type": "null"
+                        },
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "dossiers": [
+                    {
+                      "id": "<id-6>",
+                      "currentVersion": 1,
+                      "state": "HANDED_TO_PATIENT",
+                      "createdAt": "<timestamp>"
+                    }
+                  ],
+                  "limit": 100,
+                  "estimation": {
+                    "available": false,
+                    "label": "Estimation indisponible",
+                    "amountMillimes": null,
+                    "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.read",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "none",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers/{id}": {
+      "get": {
+        "operationId": "getCnamDossiersById",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "GET /api/v1/cnam/dossiers/:id (fictional preparation only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GET /api/v1/cnam/dossiers/:id (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dossier": {
+                      "type": "object",
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "currentVersion": {
+                          "type": "integer"
+                        },
+                        "documentKind": {
+                          "type": "string"
+                        },
+                        "estimation": {
+                          "type": "object",
+                          "properties": {
+                            "amountMillimes": {
+                              "type": "null"
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "officialForm": {
+                          "type": "boolean"
+                        },
+                        "patientId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "versions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "correctionReason": {
+                                "type": "null"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdBy": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "events": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actorStaffId": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "kind": {
+                                      "type": "string"
+                                    },
+                                    "occurredAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "payload": {
+                                      "type": "object",
+                                      "properties": {
+                                        "amountMillimes": {
+                                          "type": "null"
+                                        },
+                                        "consentAcknowledged": {
+                                          "type": "boolean"
+                                        },
+                                        "copyNumber": {
+                                          "type": "integer"
+                                        },
+                                        "independentlyVerified": {
+                                          "type": "boolean"
+                                        },
+                                        "label": {
+                                          "type": "string"
+                                        },
+                                        "note": {
+                                          "type": "null"
+                                        },
+                                        "number": {
+                                          "type": "string"
+                                        },
+                                        "officialForm": {
+                                          "type": "boolean"
+                                        },
+                                        "officiallyVerified": {
+                                          "type": "boolean"
+                                        },
+                                        "paperDelivery": {
+                                          "type": "string"
+                                        },
+                                        "payee": {
+                                          "type": "string"
+                                        },
+                                        "printing": {
+                                          "type": "string"
+                                        },
+                                        "snapshotHash": {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{64}$"
+                                        },
+                                        "source": {
+                                          "type": "string"
+                                        },
+                                        "status": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    "sequence": {
+                                      "type": "integer"
+                                    },
+                                    "version": {
+                                      "type": "integer"
+                                    }
+                                  }
+                                }
+                              },
+                              "issue": {
+                                "type": "object",
+                                "properties": {
+                                  "actorStaffId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "payload": {
+                                    "type": "object",
+                                    "properties": {
+                                      "number": {
+                                        "type": "string"
+                                      },
+                                      "officialForm": {
+                                        "type": "boolean"
+                                      },
+                                      "paperDelivery": {
+                                        "type": "string"
+                                      },
+                                      "printing": {
+                                        "type": "string"
+                                      },
+                                      "snapshotHash": {
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{64}$"
+                                      }
+                                    }
+                                  },
+                                  "sequence": {
+                                    "type": "integer"
+                                  },
+                                  "version": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              "snapshot": {
+                                "type": "object",
+                                "properties": {
+                                  "affiliation": {
+                                    "type": "null"
+                                  },
+                                  "lines": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "careItemId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "careRecordedLocalDate": {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        "confirmedAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "corrections": {
+                                          "type": "array"
+                                        },
+                                        "dentistId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "dentistName": {
+                                          "type": "string"
+                                        },
+                                        "feeMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "procedureCode": {
+                                          "type": "string"
+                                        },
+                                        "procedureLabel": {
+                                          "type": "string"
+                                        },
+                                        "siteAmendmentId": {
+                                          "type": "null"
+                                        },
+                                        "surfaces": {
+                                          "type": "null"
+                                        },
+                                        "toothFdi": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "visitScheduledAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "patient": {
+                                    "type": "object",
+                                    "properties": {
+                                      "familyName": {
+                                        "type": "string"
+                                      },
+                                      "fileNo": {
+                                        "type": "integer"
+                                      },
+                                      "givenName": {
+                                        "type": "string"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "nameAr": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "timezone": {
+                                    "type": "string"
+                                  },
+                                  "totalInvoicedMillimes": {
+                                    "type": "integer"
+                                  },
+                                  "visits": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "chargedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "paidMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "receipts": {
+                                          "type": "array"
+                                        },
+                                        "reducedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "returnedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "warnings": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "snapshotHash": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{64}$"
+                              },
+                              "version": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "dossier": {
+                    "id": "<id-6>",
+                    "patientId": "<id-1>",
+                    "createdBy": "<id-7>",
+                    "createdAt": "<timestamp>",
+                    "currentVersion": 1,
+                    "state": "HANDED_TO_PATIENT",
+                    "documentKind": "LOCAL_PREPARATION_DATA",
+                    "officialForm": false,
+                    "estimation": {
+                      "available": false,
+                      "label": "Estimation indisponible",
+                      "amountMillimes": null,
+                      "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+                    },
+                    "versions": [
+                      {
+                        "version": 1,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-8>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-3>",
+                              "careItemId": "<id-2>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-5>",
+                              "careItemId": "<id-4>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist2",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-8>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-1>",
+                            "fileNo": 1,
+                            "nameAr": "مريض افتراضي",
+                            "givenName": "Paper",
+                            "familyName": "Fictional"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": null,
+                          "totalInvoicedMillimes": 240002
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": null,
+                        "createdBy": "<id-7>",
+                        "createdAt": "<timestamp>",
+                        "issue": {
+                          "id": "<id-10>",
+                          "version": 1,
+                          "sequence": 1,
+                          "kind": "ISSUED",
+                          "payload": {
+                            "number": "CNAM-<id-6>-v1",
+                            "printing": "NOT_VERIFIED",
+                            "officialForm": false,
+                            "snapshotHash": "<sha256>",
+                            "paperDelivery": "UNKNOWN"
+                          },
+                          "actorStaffId": "<id-7>",
+                          "occurredAt": "<timestamp>"
+                        },
+                        "events": [
+                          {
+                            "id": "<id-10>",
+                            "version": 1,
+                            "sequence": 1,
+                            "kind": "ISSUED",
+                            "payload": {
+                              "number": "CNAM-<id-6>-v1",
+                              "printing": "NOT_VERIFIED",
+                              "officialForm": false,
+                              "snapshotHash": "<sha256>",
+                              "paperDelivery": "UNKNOWN"
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          },
+                          {
+                            "id": "<id-11>",
+                            "version": 1,
+                            "sequence": 2,
+                            "kind": "COPY_PREPARED",
+                            "payload": {
+                              "label": "COPY",
+                              "printing": "NOT_VERIFIED",
+                              "copyNumber": 1,
+                              "snapshotHash": "<sha256>",
+                              "paperDelivery": "UNKNOWN"
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          },
+                          {
+                            "id": "<id-12>",
+                            "version": 1,
+                            "sequence": 3,
+                            "kind": "HANDOFF_REPORTED",
+                            "payload": {
+                              "number": "CNAM-<id-6>-v1",
+                              "source": "STAFF_REPORTED",
+                              "independentlyVerified": false
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          },
+                          {
+                            "id": "<id-13>",
+                            "version": 1,
+                            "sequence": 4,
+                            "kind": "OUTCOME_REPORTED",
+                            "payload": {
+                              "note": null,
+                              "payee": "PATIENT",
+                              "source": "STAFF_REPORTED",
+                              "status": "SUBMITTED",
+                              "amountMillimes": null,
+                              "officiallyVerified": false,
+                              "consentAcknowledged": true
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.read",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "none",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers/{id}/corrections": {
+      "post": {
+        "operationId": "postCnamDossiersByIdCorrections",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "Dentist-authored administrative revision",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "affiliation": {
+                    "type": "object",
+                    "properties": {
+                      "identifier": {
+                        "type": "string"
+                      },
+                      "insuredName": {
+                        "type": "string"
+                      },
+                      "scheme": {
+                        "type": "string"
+                      },
+                      "source": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "lines": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "careItemId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "dentistId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "feeMillimes": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "patientId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "patientId": "<id-15>",
+                "lines": [
+                  {
+                    "careItemId": "<id-16>",
+                    "dentistId": "<id-17>",
+                    "feeMillimes": 120001
+                  }
+                ],
+                "affiliation": {
+                  "identifier": "FICTIONAL-CNAM-ONLY",
+                  "insuredName": "شخص افتراضي",
+                  "scheme": "UNKNOWN",
+                  "source": "PATIENT_REPORTED"
+                },
+                "expectedVersion": 2,
+                "reason": "Fictional administrative correction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Dentist-authored administrative revision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dossier": {
+                      "type": "object",
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "currentVersion": {
+                          "type": "integer"
+                        },
+                        "documentKind": {
+                          "type": "string"
+                        },
+                        "estimation": {
+                          "type": "object",
+                          "properties": {
+                            "amountMillimes": {
+                              "type": "null"
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "officialForm": {
+                          "type": "boolean"
+                        },
+                        "patientId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "versions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "correctionReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ]
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdBy": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "events": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actorStaffId": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "kind": {
+                                      "type": "string"
+                                    },
+                                    "occurredAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "payload": {
+                                      "type": "object",
+                                      "properties": {
+                                        "number": {
+                                          "type": "string"
+                                        },
+                                        "officialForm": {
+                                          "type": "boolean"
+                                        },
+                                        "paperDelivery": {
+                                          "type": "string"
+                                        },
+                                        "printing": {
+                                          "type": "string"
+                                        },
+                                        "snapshotHash": {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{64}$"
+                                        }
+                                      }
+                                    },
+                                    "sequence": {
+                                      "type": "integer"
+                                    },
+                                    "version": {
+                                      "type": "integer"
+                                    }
+                                  }
+                                }
+                              },
+                              "issue": {
+                                "type": [
+                                  "object",
+                                  "null"
+                                ],
+                                "properties": {
+                                  "actorStaffId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "payload": {
+                                    "type": "object",
+                                    "properties": {
+                                      "number": {
+                                        "type": "string"
+                                      },
+                                      "officialForm": {
+                                        "type": "boolean"
+                                      },
+                                      "paperDelivery": {
+                                        "type": "string"
+                                      },
+                                      "printing": {
+                                        "type": "string"
+                                      },
+                                      "snapshotHash": {
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{64}$"
+                                      }
+                                    }
+                                  },
+                                  "sequence": {
+                                    "type": "integer"
+                                  },
+                                  "version": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              "snapshot": {
+                                "type": "object",
+                                "properties": {
+                                  "affiliation": {
+                                    "type": [
+                                      "object",
+                                      "null"
+                                    ],
+                                    "properties": {
+                                      "identifier": {
+                                        "type": "string"
+                                      },
+                                      "insuredName": {
+                                        "type": "string"
+                                      },
+                                      "officiallyVerified": {
+                                        "type": "boolean"
+                                      },
+                                      "scheme": {
+                                        "type": "string"
+                                      },
+                                      "source": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "lines": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "careItemId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "careRecordedLocalDate": {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        "confirmedAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "corrections": {
+                                          "type": "array"
+                                        },
+                                        "dentistId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "dentistName": {
+                                          "type": "string"
+                                        },
+                                        "feeMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "procedureCode": {
+                                          "type": "string"
+                                        },
+                                        "procedureLabel": {
+                                          "type": "string"
+                                        },
+                                        "siteAmendmentId": {
+                                          "type": "null"
+                                        },
+                                        "surfaces": {
+                                          "type": "null"
+                                        },
+                                        "toothFdi": {
+                                          "type": "null"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "visitScheduledAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "patient": {
+                                    "type": "object",
+                                    "properties": {
+                                      "familyName": {
+                                        "type": "string"
+                                      },
+                                      "fileNo": {
+                                        "type": "integer"
+                                      },
+                                      "givenName": {
+                                        "type": "string"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "nameAr": {
+                                        "type": "null"
+                                      }
+                                    }
+                                  },
+                                  "timezone": {
+                                    "type": "string"
+                                  },
+                                  "totalInvoicedMillimes": {
+                                    "type": "integer"
+                                  },
+                                  "visits": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "chargedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "paidMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "receipts": {
+                                          "type": "array"
+                                        },
+                                        "reducedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "returnedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "warnings": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "snapshotHash": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{64}$"
+                              },
+                              "version": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "dossier": {
+                    "id": "<id-14>",
+                    "patientId": "<id-15>",
+                    "createdBy": "<id-18>",
+                    "createdAt": "<timestamp>",
+                    "currentVersion": 3,
+                    "state": "PREPARING",
+                    "documentKind": "LOCAL_PREPARATION_DATA",
+                    "officialForm": false,
+                    "estimation": {
+                      "available": false,
+                      "label": "Estimation indisponible",
+                      "amountMillimes": null,
+                      "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+                    },
+                    "versions": [
+                      {
+                        "version": 1,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-19>",
+                              "surfaces": null,
+                              "toothFdi": null,
+                              "dentistId": "<id-17>",
+                              "careItemId": "<id-16>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "CHECKUP",
+                              "procedureLabel": "Fictional checkup",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-19>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-15>",
+                            "fileNo": 1,
+                            "nameAr": null,
+                            "givenName": "Amel",
+                            "familyName": "Fictif"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": {
+                            "scheme": "UNKNOWN",
+                            "source": "PATIENT_REPORTED",
+                            "identifier": "FICTIONAL-CNAM-ONLY",
+                            "insuredName": "شخص افتراضي",
+                            "officiallyVerified": false
+                          },
+                          "totalInvoicedMillimes": 120001
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": null,
+                        "createdBy": "<id-18>",
+                        "createdAt": "<timestamp>",
+                        "issue": {
+                          "id": "<id-20>",
+                          "version": 1,
+                          "sequence": 1,
+                          "kind": "ISSUED",
+                          "payload": {
+                            "number": "CNAM-<id-14>-v1",
+                            "printing": "NOT_VERIFIED",
+                            "officialForm": false,
+                            "snapshotHash": "<sha256>",
+                            "paperDelivery": "UNKNOWN"
+                          },
+                          "actorStaffId": "<id-18>",
+                          "occurredAt": "<timestamp>"
+                        },
+                        "events": [
+                          {
+                            "id": "<id-20>",
+                            "version": 1,
+                            "sequence": 1,
+                            "kind": "ISSUED",
+                            "payload": {
+                              "number": "CNAM-<id-14>-v1",
+                              "printing": "NOT_VERIFIED",
+                              "officialForm": false,
+                              "snapshotHash": "<sha256>",
+                              "paperDelivery": "UNKNOWN"
+                            },
+                            "actorStaffId": "<id-18>",
+                            "occurredAt": "<timestamp>"
+                          }
+                        ]
+                      },
+                      {
+                        "version": 2,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-19>",
+                              "surfaces": null,
+                              "toothFdi": null,
+                              "dentistId": "<id-17>",
+                              "careItemId": "<id-16>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "CHECKUP",
+                              "procedureLabel": "Fictional checkup",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-19>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-15>",
+                            "fileNo": 1,
+                            "nameAr": null,
+                            "givenName": "Amel",
+                            "familyName": "Fictif"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": null,
+                          "totalInvoicedMillimes": 120001
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": "Fictional affiliation transcription correction",
+                        "createdBy": "<id-17>",
+                        "createdAt": "<timestamp>",
+                        "issue": null,
+                        "events": []
+                      },
+                      {
+                        "version": 3,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-19>",
+                              "surfaces": null,
+                              "toothFdi": null,
+                              "dentistId": "<id-17>",
+                              "careItemId": "<id-16>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "CHECKUP",
+                              "procedureLabel": "Fictional checkup",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-19>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-15>",
+                            "fileNo": 1,
+                            "nameAr": null,
+                            "givenName": "Amel",
+                            "familyName": "Fictif"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": {
+                            "scheme": "UNKNOWN",
+                            "source": "PATIENT_REPORTED",
+                            "identifier": "FICTIONAL-CNAM-ONLY",
+                            "insuredName": "شخص افتراضي",
+                            "officiallyVerified": false
+                          },
+                          "totalInvoicedMillimes": 120001
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": "Fictional administrative correction",
+                        "createdBy": "<id-17>",
+                        "createdAt": "<timestamp>",
+                        "issue": null,
+                        "events": []
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.correct",
+        "x-ezz-roles": [
+          "DENTIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers/{id}/issue": {
+      "post": {
+        "operationId": "postCnamDossiersByIdIssue",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "POST /api/v1/cnam/dossiers/:id/issue (fictional preparation only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "expectedVersion": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "POST /api/v1/cnam/dossiers/:id/issue (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dossier": {
+                      "type": "object",
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "currentVersion": {
+                          "type": "integer"
+                        },
+                        "documentKind": {
+                          "type": "string"
+                        },
+                        "estimation": {
+                          "type": "object",
+                          "properties": {
+                            "amountMillimes": {
+                              "type": "null"
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "officialForm": {
+                          "type": "boolean"
+                        },
+                        "patientId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "versions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "correctionReason": {
+                                "type": "null"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdBy": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "events": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actorStaffId": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "kind": {
+                                      "type": "string"
+                                    },
+                                    "occurredAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "payload": {
+                                      "type": "object",
+                                      "properties": {
+                                        "number": {
+                                          "type": "string"
+                                        },
+                                        "officialForm": {
+                                          "type": "boolean"
+                                        },
+                                        "paperDelivery": {
+                                          "type": "string"
+                                        },
+                                        "printing": {
+                                          "type": "string"
+                                        },
+                                        "snapshotHash": {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{64}$"
+                                        }
+                                      }
+                                    },
+                                    "sequence": {
+                                      "type": "integer"
+                                    },
+                                    "version": {
+                                      "type": "integer"
+                                    }
+                                  }
+                                }
+                              },
+                              "issue": {
+                                "type": "object",
+                                "properties": {
+                                  "actorStaffId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "payload": {
+                                    "type": "object",
+                                    "properties": {
+                                      "number": {
+                                        "type": "string"
+                                      },
+                                      "officialForm": {
+                                        "type": "boolean"
+                                      },
+                                      "paperDelivery": {
+                                        "type": "string"
+                                      },
+                                      "printing": {
+                                        "type": "string"
+                                      },
+                                      "snapshotHash": {
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{64}$"
+                                      }
+                                    }
+                                  },
+                                  "sequence": {
+                                    "type": "integer"
+                                  },
+                                  "version": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              "snapshot": {
+                                "type": "object",
+                                "properties": {
+                                  "affiliation": {
+                                    "type": "null"
+                                  },
+                                  "lines": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "careItemId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "careRecordedLocalDate": {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        "confirmedAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "corrections": {
+                                          "type": "array"
+                                        },
+                                        "dentistId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "dentistName": {
+                                          "type": "string"
+                                        },
+                                        "feeMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "procedureCode": {
+                                          "type": "string"
+                                        },
+                                        "procedureLabel": {
+                                          "type": "string"
+                                        },
+                                        "siteAmendmentId": {
+                                          "type": "null"
+                                        },
+                                        "surfaces": {
+                                          "type": "null"
+                                        },
+                                        "toothFdi": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "visitScheduledAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "patient": {
+                                    "type": "object",
+                                    "properties": {
+                                      "familyName": {
+                                        "type": "string"
+                                      },
+                                      "fileNo": {
+                                        "type": "integer"
+                                      },
+                                      "givenName": {
+                                        "type": "string"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "nameAr": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "timezone": {
+                                    "type": "string"
+                                  },
+                                  "totalInvoicedMillimes": {
+                                    "type": "integer"
+                                  },
+                                  "visits": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "chargedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "paidMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "receipts": {
+                                          "type": "array"
+                                        },
+                                        "reducedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "returnedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "warnings": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "snapshotHash": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{64}$"
+                              },
+                              "version": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "dossier": {
+                    "id": "<id-6>",
+                    "patientId": "<id-1>",
+                    "createdBy": "<id-7>",
+                    "createdAt": "<timestamp>",
+                    "currentVersion": 1,
+                    "state": "READY_FOR_PAPER_REVIEW",
+                    "documentKind": "LOCAL_PREPARATION_DATA",
+                    "officialForm": false,
+                    "estimation": {
+                      "available": false,
+                      "label": "Estimation indisponible",
+                      "amountMillimes": null,
+                      "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+                    },
+                    "versions": [
+                      {
+                        "version": 1,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-8>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-3>",
+                              "careItemId": "<id-2>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-5>",
+                              "careItemId": "<id-4>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist2",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-8>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-1>",
+                            "fileNo": 1,
+                            "nameAr": "مريض افتراضي",
+                            "givenName": "Paper",
+                            "familyName": "Fictional"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": null,
+                          "totalInvoicedMillimes": 240002
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": null,
+                        "createdBy": "<id-7>",
+                        "createdAt": "<timestamp>",
+                        "issue": {
+                          "id": "<id-10>",
+                          "version": 1,
+                          "sequence": 1,
+                          "kind": "ISSUED",
+                          "payload": {
+                            "number": "CNAM-<id-6>-v1",
+                            "printing": "NOT_VERIFIED",
+                            "officialForm": false,
+                            "snapshotHash": "<sha256>",
+                            "paperDelivery": "UNKNOWN"
+                          },
+                          "actorStaffId": "<id-7>",
+                          "occurredAt": "<timestamp>"
+                        },
+                        "events": [
+                          {
+                            "id": "<id-10>",
+                            "version": 1,
+                            "sequence": 1,
+                            "kind": "ISSUED",
+                            "payload": {
+                              "number": "CNAM-<id-6>-v1",
+                              "printing": "NOT_VERIFIED",
+                              "officialForm": false,
+                              "snapshotHash": "<sha256>",
+                              "paperDelivery": "UNKNOWN"
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.prepare",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers/{id}/copies": {
+      "post": {
+        "operationId": "postCnamDossiersByIdCopies",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "POST /api/v1/cnam/dossiers/:id/copies (fictional preparation only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "example": {
+                "expectedVersion": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "POST /api/v1/cnam/dossiers/:id/copies (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "copy": {
+                      "type": "object",
+                      "properties": {
+                        "actorStaffId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "copyNumber": {
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "label": {
+                          "type": "string"
+                        },
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "paperDelivery": {
+                          "type": "string"
+                        },
+                        "printing": {
+                          "type": "string"
+                        },
+                        "snapshotHash": {
+                          "type": "string",
+                          "pattern": "^[0-9a-f]{64}$"
+                        }
+                      }
+                    },
+                    "snapshot": {
+                      "type": "object",
+                      "properties": {
+                        "affiliation": {
+                          "type": "null"
+                        },
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "careItemId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "careRecordedLocalDate": {
+                                "type": "string",
+                                "format": "date"
+                              },
+                              "confirmedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "corrections": {
+                                "type": "array"
+                              },
+                              "dentistId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "dentistName": {
+                                "type": "string"
+                              },
+                              "feeMillimes": {
+                                "type": "integer"
+                              },
+                              "procedureCode": {
+                                "type": "string"
+                              },
+                              "procedureLabel": {
+                                "type": "string"
+                              },
+                              "siteAmendmentId": {
+                                "type": "null"
+                              },
+                              "surfaces": {
+                                "type": "null"
+                              },
+                              "toothFdi": {
+                                "type": "integer"
+                              },
+                              "visitId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "visitScheduledAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        },
+                        "patient": {
+                          "type": "object",
+                          "properties": {
+                            "familyName": {
+                              "type": "string"
+                            },
+                            "fileNo": {
+                              "type": "integer"
+                            },
+                            "givenName": {
+                              "type": "string"
+                            },
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "nameAr": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "timezone": {
+                          "type": "string"
+                        },
+                        "totalInvoicedMillimes": {
+                          "type": "integer"
+                        },
+                        "visits": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "chargedMillimes": {
+                                "type": "integer"
+                              },
+                              "paidMillimes": {
+                                "type": "integer"
+                              },
+                              "receipts": {
+                                "type": "array"
+                              },
+                              "reducedMillimes": {
+                                "type": "integer"
+                              },
+                              "returnedMillimes": {
+                                "type": "integer"
+                              },
+                              "visitId": {
+                                "type": "string",
+                                "format": "uuid"
+                              }
+                            }
+                          }
+                        },
+                        "warnings": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "copy": {
+                    "label": "COPY",
+                    "printing": "NOT_VERIFIED",
+                    "copyNumber": 1,
+                    "snapshotHash": "<sha256>",
+                    "paperDelivery": "UNKNOWN",
+                    "id": "<id-11>",
+                    "actorStaffId": "<id-7>",
+                    "occurredAt": "<timestamp>"
+                  },
+                  "snapshot": {
+                    "lines": [
+                      {
+                        "visitId": "<id-8>",
+                        "surfaces": null,
+                        "toothFdi": 36,
+                        "dentistId": "<id-3>",
+                        "careItemId": "<id-2>",
+                        "confirmedAt": "<timestamp>",
+                        "corrections": [],
+                        "dentistName": "Fictional dentist",
+                        "feeMillimes": 120001,
+                        "procedureCode": "FICTIONAL",
+                        "procedureLabel": "Fictional local act",
+                        "siteAmendmentId": null,
+                        "visitScheduledAt": "<timestamp>",
+                        "careRecordedLocalDate": "2026-10-30"
+                      },
+                      {
+                        "visitId": "<id-9>",
+                        "surfaces": null,
+                        "toothFdi": 36,
+                        "dentistId": "<id-5>",
+                        "careItemId": "<id-4>",
+                        "confirmedAt": "<timestamp>",
+                        "corrections": [],
+                        "dentistName": "Fictional dentist2",
+                        "feeMillimes": 120001,
+                        "procedureCode": "FICTIONAL",
+                        "procedureLabel": "Fictional local act",
+                        "siteAmendmentId": null,
+                        "visitScheduledAt": "<timestamp>",
+                        "careRecordedLocalDate": "2026-10-30"
+                      }
+                    ],
+                    "visits": [
+                      {
+                        "visitId": "<id-8>",
+                        "receipts": [],
+                        "paidMillimes": 0,
+                        "chargedMillimes": 120001,
+                        "reducedMillimes": 0,
+                        "returnedMillimes": 0
+                      },
+                      {
+                        "visitId": "<id-9>",
+                        "receipts": [],
+                        "paidMillimes": 0,
+                        "chargedMillimes": 120001,
+                        "reducedMillimes": 0,
+                        "returnedMillimes": 0
+                      }
+                    ],
+                    "patient": {
+                      "id": "<id-1>",
+                      "fileNo": 1,
+                      "nameAr": "مريض افتراضي",
+                      "givenName": "Paper",
+                      "familyName": "Fictional"
+                    },
+                    "timezone": "Africa/Tunis",
+                    "warnings": [
+                      "OFFICIAL_FORM_NOT_VALIDATED",
+                      "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                      "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                      "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                      "CLINIC_BALANCE_OUTSTANDING"
+                    ],
+                    "affiliation": null,
+                    "totalInvoicedMillimes": 240002
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.prepare",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers/{id}/handoff": {
+      "post": {
+        "operationId": "postCnamDossiersByIdHandoff",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "POST /api/v1/cnam/dossiers/:id/handoff (fictional preparation only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "handedToPatientReported": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "example": {
+                "expectedVersion": 1,
+                "handedToPatientReported": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "POST /api/v1/cnam/dossiers/:id/handoff (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "dossier": {
+                      "type": "object",
+                      "properties": {
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "currentVersion": {
+                          "type": "integer"
+                        },
+                        "documentKind": {
+                          "type": "string"
+                        },
+                        "estimation": {
+                          "type": "object",
+                          "properties": {
+                            "amountMillimes": {
+                              "type": "null"
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "label": {
+                              "type": "string"
+                            },
+                            "reason": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "officialForm": {
+                          "type": "boolean"
+                        },
+                        "patientId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "versions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "correctionReason": {
+                                "type": "null"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdBy": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "events": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "actorStaffId": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "id": {
+                                      "type": "string",
+                                      "format": "uuid"
+                                    },
+                                    "kind": {
+                                      "type": "string"
+                                    },
+                                    "occurredAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    },
+                                    "payload": {
+                                      "type": "object",
+                                      "properties": {
+                                        "copyNumber": {
+                                          "type": "integer"
+                                        },
+                                        "independentlyVerified": {
+                                          "type": "boolean"
+                                        },
+                                        "label": {
+                                          "type": "string"
+                                        },
+                                        "number": {
+                                          "type": "string"
+                                        },
+                                        "officialForm": {
+                                          "type": "boolean"
+                                        },
+                                        "paperDelivery": {
+                                          "type": "string"
+                                        },
+                                        "printing": {
+                                          "type": "string"
+                                        },
+                                        "snapshotHash": {
+                                          "type": "string",
+                                          "pattern": "^[0-9a-f]{64}$"
+                                        },
+                                        "source": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    "sequence": {
+                                      "type": "integer"
+                                    },
+                                    "version": {
+                                      "type": "integer"
+                                    }
+                                  }
+                                }
+                              },
+                              "issue": {
+                                "type": "object",
+                                "properties": {
+                                  "actorStaffId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "kind": {
+                                    "type": "string"
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "payload": {
+                                    "type": "object",
+                                    "properties": {
+                                      "number": {
+                                        "type": "string"
+                                      },
+                                      "officialForm": {
+                                        "type": "boolean"
+                                      },
+                                      "paperDelivery": {
+                                        "type": "string"
+                                      },
+                                      "printing": {
+                                        "type": "string"
+                                      },
+                                      "snapshotHash": {
+                                        "type": "string",
+                                        "pattern": "^[0-9a-f]{64}$"
+                                      }
+                                    }
+                                  },
+                                  "sequence": {
+                                    "type": "integer"
+                                  },
+                                  "version": {
+                                    "type": "integer"
+                                  }
+                                }
+                              },
+                              "snapshot": {
+                                "type": "object",
+                                "properties": {
+                                  "affiliation": {
+                                    "type": "null"
+                                  },
+                                  "lines": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "careItemId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "careRecordedLocalDate": {
+                                          "type": "string",
+                                          "format": "date"
+                                        },
+                                        "confirmedAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        },
+                                        "corrections": {
+                                          "type": "array"
+                                        },
+                                        "dentistId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "dentistName": {
+                                          "type": "string"
+                                        },
+                                        "feeMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "procedureCode": {
+                                          "type": "string"
+                                        },
+                                        "procedureLabel": {
+                                          "type": "string"
+                                        },
+                                        "siteAmendmentId": {
+                                          "type": "null"
+                                        },
+                                        "surfaces": {
+                                          "type": "null"
+                                        },
+                                        "toothFdi": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        },
+                                        "visitScheduledAt": {
+                                          "type": "string",
+                                          "format": "date-time"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "patient": {
+                                    "type": "object",
+                                    "properties": {
+                                      "familyName": {
+                                        "type": "string"
+                                      },
+                                      "fileNo": {
+                                        "type": "integer"
+                                      },
+                                      "givenName": {
+                                        "type": "string"
+                                      },
+                                      "id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                      },
+                                      "nameAr": {
+                                        "type": "string"
+                                      }
+                                    }
+                                  },
+                                  "timezone": {
+                                    "type": "string"
+                                  },
+                                  "totalInvoicedMillimes": {
+                                    "type": "integer"
+                                  },
+                                  "visits": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "object",
+                                      "properties": {
+                                        "chargedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "paidMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "receipts": {
+                                          "type": "array"
+                                        },
+                                        "reducedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "returnedMillimes": {
+                                          "type": "integer"
+                                        },
+                                        "visitId": {
+                                          "type": "string",
+                                          "format": "uuid"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "warnings": {
+                                    "type": "array",
+                                    "items": {
+                                      "type": "string"
+                                    }
+                                  }
+                                }
+                              },
+                              "snapshotHash": {
+                                "type": "string",
+                                "pattern": "^[0-9a-f]{64}$"
+                              },
+                              "version": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "dossier": {
+                    "id": "<id-6>",
+                    "patientId": "<id-1>",
+                    "createdBy": "<id-7>",
+                    "createdAt": "<timestamp>",
+                    "currentVersion": 1,
+                    "state": "HANDED_TO_PATIENT",
+                    "documentKind": "LOCAL_PREPARATION_DATA",
+                    "officialForm": false,
+                    "estimation": {
+                      "available": false,
+                      "label": "Estimation indisponible",
+                      "amountMillimes": null,
+                      "reason": "CURRENT_PRIMARY_RULES_NOT_VALIDATED"
+                    },
+                    "versions": [
+                      {
+                        "version": 1,
+                        "snapshot": {
+                          "lines": [
+                            {
+                              "visitId": "<id-8>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-3>",
+                              "careItemId": "<id-2>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "surfaces": null,
+                              "toothFdi": 36,
+                              "dentistId": "<id-5>",
+                              "careItemId": "<id-4>",
+                              "confirmedAt": "<timestamp>",
+                              "corrections": [],
+                              "dentistName": "Fictional dentist2",
+                              "feeMillimes": 120001,
+                              "procedureCode": "FICTIONAL",
+                              "procedureLabel": "Fictional local act",
+                              "siteAmendmentId": null,
+                              "visitScheduledAt": "<timestamp>",
+                              "careRecordedLocalDate": "2026-10-30"
+                            }
+                          ],
+                          "visits": [
+                            {
+                              "visitId": "<id-8>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            },
+                            {
+                              "visitId": "<id-9>",
+                              "receipts": [],
+                              "paidMillimes": 0,
+                              "chargedMillimes": 120001,
+                              "reducedMillimes": 0,
+                              "returnedMillimes": 0
+                            }
+                          ],
+                          "patient": {
+                            "id": "<id-1>",
+                            "fileNo": 1,
+                            "nameAr": "مريض افتراضي",
+                            "givenName": "Paper",
+                            "familyName": "Fictional"
+                          },
+                          "timezone": "Africa/Tunis",
+                          "warnings": [
+                            "OFFICIAL_FORM_NOT_VALIDATED",
+                            "WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED",
+                            "CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES",
+                            "ELIGIBILITY_AND_DEADLINE_UNVERIFIED",
+                            "CLINIC_BALANCE_OUTSTANDING"
+                          ],
+                          "affiliation": null,
+                          "totalInvoicedMillimes": 240002
+                        },
+                        "snapshotHash": "<sha256>",
+                        "correctionReason": null,
+                        "createdBy": "<id-7>",
+                        "createdAt": "<timestamp>",
+                        "issue": {
+                          "id": "<id-10>",
+                          "version": 1,
+                          "sequence": 1,
+                          "kind": "ISSUED",
+                          "payload": {
+                            "number": "CNAM-<id-6>-v1",
+                            "printing": "NOT_VERIFIED",
+                            "officialForm": false,
+                            "snapshotHash": "<sha256>",
+                            "paperDelivery": "UNKNOWN"
+                          },
+                          "actorStaffId": "<id-7>",
+                          "occurredAt": "<timestamp>"
+                        },
+                        "events": [
+                          {
+                            "id": "<id-10>",
+                            "version": 1,
+                            "sequence": 1,
+                            "kind": "ISSUED",
+                            "payload": {
+                              "number": "CNAM-<id-6>-v1",
+                              "printing": "NOT_VERIFIED",
+                              "officialForm": false,
+                              "snapshotHash": "<sha256>",
+                              "paperDelivery": "UNKNOWN"
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          },
+                          {
+                            "id": "<id-11>",
+                            "version": 1,
+                            "sequence": 2,
+                            "kind": "COPY_PREPARED",
+                            "payload": {
+                              "label": "COPY",
+                              "printing": "NOT_VERIFIED",
+                              "copyNumber": 1,
+                              "snapshotHash": "<sha256>",
+                              "paperDelivery": "UNKNOWN"
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          },
+                          {
+                            "id": "<id-12>",
+                            "version": 1,
+                            "sequence": 3,
+                            "kind": "HANDOFF_REPORTED",
+                            "payload": {
+                              "number": "CNAM-<id-6>-v1",
+                              "source": "STAFF_REPORTED",
+                              "independentlyVerified": false
+                            },
+                            "actorStaffId": "<id-7>",
+                            "occurredAt": "<timestamp>"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.prepare",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/cnam/dossiers/{id}/reports": {
+      "post": {
+        "operationId": "postCnamDossiersByIdReports",
+        "tags": [
+          "cnam"
+        ],
+        "summary": "POST /api/v1/cnam/dossiers/:id/reports (fictional preparation only)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "consentAcknowledged": {
+                    "type": "boolean"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "expectedVersion": 1,
+                "status": "SUBMITTED",
+                "source": "STAFF_REPORTED",
+                "consentAcknowledged": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "POST /api/v1/cnam/dossiers/:id/reports (fictional preparation only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "report": {
+                      "type": "object",
+                      "properties": {
+                        "actorStaffId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "amountMillimes": {
+                          "type": "null"
+                        },
+                        "consentAcknowledged": {
+                          "type": "boolean"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "note": {
+                          "type": "null"
+                        },
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "officiallyVerified": {
+                          "type": "boolean"
+                        },
+                        "payee": {
+                          "type": "string"
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "report": {
+                    "status": "SUBMITTED",
+                    "source": "STAFF_REPORTED",
+                    "consentAcknowledged": true,
+                    "amountMillimes": null,
+                    "note": null,
+                    "officiallyVerified": false,
+                    "payee": "PATIENT",
+                    "id": "<id-13>",
+                    "actorStaffId": "<id-7>",
+                    "occurredAt": "<timestamp>"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "cnam.prepare",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
         ],
         "x-ezz-reauth": false,
         "x-ezz-idempotency-key": "required",

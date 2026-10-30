@@ -17,6 +17,9 @@ Enforced server-side on every request; identity comes only from the session. Rou
 | `care.confirm` | — | yes | — | — |
 | `care.correct` | — | yes | — | — |
 | `care.read` | yes | yes | yes | — |
+| `cnam.read` | yes | yes | yes | — |
+| `cnam.prepare` | yes | yes | yes | — |
+| `cnam.correct` | — | yes | — | — |
 | `care.amend_site` | — | yes | — | — |
 | `clinical.read` | — | yes | — | — |
 | `clinical.write` | — | yes | — | — |

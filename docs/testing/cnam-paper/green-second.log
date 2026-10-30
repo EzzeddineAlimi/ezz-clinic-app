@@ -1,0 +1,389 @@
+TAP version 13
+# Subtest: CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+ok 1 - CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+  ---
+  duration_ms: 429.893353
+  type: 'test'
+  ...
+# Subtest: CNAM-2 rejects wrong patient, wrong treating dentist, unknown fields and non-integer money
+ok 2 - CNAM-2 rejects wrong patient, wrong treating dentist, unknown fields and non-integer money
+  ---
+  duration_ms: 30.794061
+  type: 'test'
+  ...
+# Subtest: CNAM-3 live auth, role and tenant boundaries include every dossier action and direct RLS
+ok 3 - CNAM-3 live auth, role and tenant boundaries include every dossier action and direct RLS
+  ---
+  duration_ms: 204.519016
+  type: 'test'
+  ...
+# Subtest: CNAM-4 concurrent same-key and lost-key retries recover one draft and one immutable issue
+not ok 4 - CNAM-4 concurrent same-key and lost-key retries recover one draft and one immutable issue
+  ---
+  duration_ms: 17.545647
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:70:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      {
+        dossier: {
+          createdAt: '2026-10-30T07:17:11.042Z',
+          createdBy: '37e77c9b-9f21-465d-9a2b-a4feef143ff0',
+          currentVersion: 1,
+    ...
+        recoveredExisting: true,
+    -   replayed: true
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    dossier:
+      id: '0e9189c6-a7e2-4e12-87e0-046a0e3ddc42'
+      state: 'PREPARING'
+      versions:
+        0:
+          issue: ~
+          events:
+          version: 1
+          snapshot:
+            lines:
+              0:
+                visitId: 'cd992c01-7202-4e8b-9b22-5b0b32aedf63'
+                surfaces: ~
+                toothFdi: ~
+                dentistId: 'e34543d0-9be2-4659-8494-da057a4232a3'
+                careItemId: '05c76583-c815-4406-b2ce-b20a92e46b2c'
+                confirmedAt: '2026-10-30T07:17:10.968Z'
+                corrections:
+                dentistName: 'Fictional dentist'
+                feeMillimes: 120001
+                procedureCode: 'CHECKUP'
+                procedureLabel: 'Fictional checkup'
+                siteAmendmentId: ~
+                treatmentLocalDate: '2026-10-30'
+            visits:
+              0:
+                visitId: 'cd992c01-7202-4e8b-9b22-5b0b32aedf63'
+                receipts:
+                paidMillimes: 0
+                chargedMillimes: 120001
+                reducedMillimes: 0
+                returnedMillimes: 0
+            patient:
+              id: '6a35fc52-f670-49b8-a7c7-5f45994baefb'
+              fileNo: 1
+              nameAr: ~
+              givenName: 'Amel'
+              familyName: 'Fictif'
+            timezone: 'Africa/Tunis'
+            warnings:
+              0: 'OFFICIAL_FORM_NOT_VALIDATED'
+              1: 'WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED'
+              2: 'CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES'
+              3: 'ELIGIBILITY_AND_DEADLINE_UNVERIFIED'
+              4: 'CLINIC_BALANCE_OUTSTANDING'
+            affiliation:
+              scheme: 'UNKNOWN'
+              source: 'PATIENT_REPORTED'
+              identifier: 'FICTIONAL-CNAM-ONLY'
+              insuredName: 'شخص افتراضي'
+              officiallyVerified: false
+            totalInvoicedMillimes: 120001
+          createdAt: '2026-10-30T07:17:11.042Z'
+          createdBy: '37e77c9b-9f21-465d-9a2b-a4feef143ff0'
+          snapshotHash: '3461e25aaec9841441b8c8c5381d371b165b0468bc395d2f0d668b815dd58392'
+          correctionReason: ~
+      createdAt: '2026-10-30T07:17:11.042Z'
+      createdBy: '37e77c9b-9f21-465d-9a2b-a4feef143ff0'
+      patientId: '6a35fc52-f670-49b8-a7c7-5f45994baefb'
+      estimation:
+        label: 'Estimation indisponible'
+        reason: 'CURRENT_PRIMARY_RULES_NOT_VALIDATED'
+        available: false
+        amountMillimes: ~
+      documentKind: 'LOCAL_PREPARATION_DATA'
+      officialForm: false
+      currentVersion: 1
+    recoveredExisting: true
+    replayed: true
+  actual:
+    dossier:
+      id: '0e9189c6-a7e2-4e12-87e0-046a0e3ddc42'
+      patientId: '6a35fc52-f670-49b8-a7c7-5f45994baefb'
+      createdBy: '37e77c9b-9f21-465d-9a2b-a4feef143ff0'
+      createdAt: '2026-10-30T07:17:11.042Z'
+      currentVersion: 1
+      state: 'PREPARING'
+      documentKind: 'LOCAL_PREPARATION_DATA'
+      officialForm: false
+      estimation:
+        available: false
+        label: 'Estimation indisponible'
+        amountMillimes: ~
+        reason: 'CURRENT_PRIMARY_RULES_NOT_VALIDATED'
+      versions:
+        0:
+          version: 1
+          snapshot:
+            lines:
+              0:
+                visitId: 'cd992c01-7202-4e8b-9b22-5b0b32aedf63'
+                surfaces: ~
+                toothFdi: ~
+                dentistId: 'e34543d0-9be2-4659-8494-da057a4232a3'
+                careItemId: '05c76583-c815-4406-b2ce-b20a92e46b2c'
+                confirmedAt: '2026-10-30T07:17:10.968Z'
+                corrections:
+                dentistName: 'Fictional dentist'
+                feeMillimes: 120001
+                procedureCode: 'CHECKUP'
+                procedureLabel: 'Fictional checkup'
+                siteAmendmentId: ~
+                treatmentLocalDate: '2026-10-30'
+            visits:
+              0:
+                visitId: 'cd992c01-7202-4e8b-9b22-5b0b32aedf63'
+                receipts:
+                paidMillimes: 0
+                chargedMillimes: 120001
+                reducedMillimes: 0
+                returnedMillimes: 0
+            patient:
+              id: '6a35fc52-f670-49b8-a7c7-5f45994baefb'
+              fileNo: 1
+              nameAr: ~
+              givenName: 'Amel'
+              familyName: 'Fictif'
+            timezone: 'Africa/Tunis'
+            warnings:
+              0: 'OFFICIAL_FORM_NOT_VALIDATED'
+              1: 'WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED'
+              2: 'CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES'
+              3: 'ELIGIBILITY_AND_DEADLINE_UNVERIFIED'
+              4: 'CLINIC_BALANCE_OUTSTANDING'
+            affiliation:
+              scheme: 'UNKNOWN'
+              source: 'PATIENT_REPORTED'
+              identifier: 'FICTIONAL-CNAM-ONLY'
+              insuredName: 'شخص افتراضي'
+              officiallyVerified: false
+            totalInvoicedMillimes: 120001
+          snapshotHash: '3461e25aaec9841441b8c8c5381d371b165b0468bc395d2f0d668b815dd58392'
+          correctionReason: ~
+          createdBy: '37e77c9b-9f21-465d-9a2b-a4feef143ff0'
+          createdAt: '2026-10-30T07:17:11.042Z'
+          issue: ~
+          events:
+    recoveredExisting: true
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:73:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-5 duplicate act issuance in competing dossiers fails closed under concurrency
+ok 5 - CNAM-5 duplicate act issuance in competing dossiers fails closed under concurrency
+  ---
+  duration_ms: 66.800239
+  type: 'test'
+  ...
+# Subtest: CNAM-6 reasoned dentist correction appends a version; desk/owner/stale changes cannot overwrite history
+ok 6 - CNAM-6 reasoned dentist correction appends a version; desk/owner/stale changes cannot overwrite history
+  ---
+  duration_ms: 38.411681
+  type: 'test'
+  ...
+# Subtest: CNAM-7 care/site changes before issue require a new version, never silently replace a snapshot
+not ok 7 - CNAM-7 care/site changes before issue require a new version, never silently replace a snapshot
+  ---
+  duration_ms: 34.281
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:106:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    400 !== 409
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 409
+  actual: 400
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:112:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-8 copies have consecutive server markers and do not assert physical printing or delivery
+not ok 8 - CNAM-8 copies have consecutive server markers and do not assert physical printing or delivery
+  ---
+  duration_ms: 48.460338
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:115:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    ... Skipped lines
+    
+      {
+        copy: {
+          actorStaffId: '37e77c9b-9f21-465d-9a2b-a4feef143ff0',
+          copyNumber: 1,
+          id: 'bafd3b86-f79f-480e-97fb-df924f3ff771',
+    ...
+        },
+    -   replayed: true,
+        snapshot: {
+          affiliation: {
+            identifier: 'FICTIONAL-CNAM-ONLY',
+            insuredName: 'شخص افتراضي',
+            officiallyVerified: false,
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    copy:
+      id: 'bafd3b86-f79f-480e-97fb-df924f3ff771'
+      label: 'COPY'
+      printing: 'NOT_VERIFIED'
+      copyNumber: 1
+      occurredAt: '2026-10-30T07:17:11.437Z'
+      actorStaffId: '37e77c9b-9f21-465d-9a2b-a4feef143ff0'
+      snapshotHash: '5e663454d68682b1770e027348e6aa3b3ebd2fa0bc4833595275e136eed8cb6a'
+      paperDelivery: 'UNKNOWN'
+    snapshot:
+      lines:
+        0:
+          visitId: '90e77f78-1917-474f-ba8c-8dafe24de1af'
+          surfaces: ~
+          toothFdi: ~
+          dentistId: 'e34543d0-9be2-4659-8494-da057a4232a3'
+          careItemId: 'ae48e2c1-3b55-4678-a49c-c8374baf00c1'
+          confirmedAt: '2026-10-30T07:17:11.400Z'
+          corrections:
+          dentistName: 'Fictional dentist'
+          feeMillimes: 120001
+          procedureCode: 'CHECKUP'
+          procedureLabel: 'Fictional checkup'
+          siteAmendmentId: ~
+          treatmentLocalDate: '2026-10-30'
+      visits:
+        0:
+          visitId: '90e77f78-1917-474f-ba8c-8dafe24de1af'
+          receipts:
+          paidMillimes: 0
+          chargedMillimes: 120001
+          reducedMillimes: 0
+          returnedMillimes: 0
+      patient:
+        id: '6a35fc52-f670-49b8-a7c7-5f45994baefb'
+        fileNo: 1
+        nameAr: ~
+        givenName: 'Amel'
+        familyName: 'Fictif'
+      timezone: 'Africa/Tunis'
+      warnings:
+        0: 'OFFICIAL_FORM_NOT_VALIDATED'
+        1: 'WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED'
+        2: 'CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES'
+        3: 'ELIGIBILITY_AND_DEADLINE_UNVERIFIED'
+        4: 'CLINIC_BALANCE_OUTSTANDING'
+      affiliation:
+        scheme: 'UNKNOWN'
+        source: 'PATIENT_REPORTED'
+        identifier: 'FICTIONAL-CNAM-ONLY'
+        insuredName: 'شخص افتراضي'
+        officiallyVerified: false
+      totalInvoicedMillimes: 120001
+    replayed: true
+  actual:
+    copy:
+      label: 'COPY'
+      printing: 'NOT_VERIFIED'
+      copyNumber: 1
+      snapshotHash: '5e663454d68682b1770e027348e6aa3b3ebd2fa0bc4833595275e136eed8cb6a'
+      paperDelivery: 'UNKNOWN'
+      id: 'bafd3b86-f79f-480e-97fb-df924f3ff771'
+      actorStaffId: '37e77c9b-9f21-465d-9a2b-a4feef143ff0'
+      occurredAt: '2026-10-30T07:17:11.437Z'
+    snapshot:
+      lines:
+        0:
+          visitId: '90e77f78-1917-474f-ba8c-8dafe24de1af'
+          surfaces: ~
+          toothFdi: ~
+          dentistId: 'e34543d0-9be2-4659-8494-da057a4232a3'
+          careItemId: 'ae48e2c1-3b55-4678-a49c-c8374baf00c1'
+          confirmedAt: '2026-10-30T07:17:11.400Z'
+          corrections:
+          dentistName: 'Fictional dentist'
+          feeMillimes: 120001
+          procedureCode: 'CHECKUP'
+          procedureLabel: 'Fictional checkup'
+          siteAmendmentId: ~
+          treatmentLocalDate: '2026-10-30'
+      visits:
+        0:
+          visitId: '90e77f78-1917-474f-ba8c-8dafe24de1af'
+          receipts:
+          paidMillimes: 0
+          chargedMillimes: 120001
+          reducedMillimes: 0
+          returnedMillimes: 0
+      patient:
+        id: '6a35fc52-f670-49b8-a7c7-5f45994baefb'
+        fileNo: 1
+        nameAr: ~
+        givenName: 'Amel'
+        familyName: 'Fictif'
+      timezone: 'Africa/Tunis'
+      warnings:
+        0: 'OFFICIAL_FORM_NOT_VALIDATED'
+        1: 'WET_DENTIST_SIGNATURE_AND_STAMP_REQUIRED'
+        2: 'CODES_ARE_LOCAL_NOT_VERIFIED_CNAM_CODES'
+        3: 'ELIGIBILITY_AND_DEADLINE_UNVERIFIED'
+        4: 'CLINIC_BALANCE_OUTSTANDING'
+      affiliation:
+        scheme: 'UNKNOWN'
+        source: 'PATIENT_REPORTED'
+        identifier: 'FICTIONAL-CNAM-ONLY'
+        insuredName: 'شخص افتراضي'
+        officiallyVerified: false
+      totalInvoicedMillimes: 120001
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:122:88)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CNAM-9 reports require optional follow-up consent and remain non-official, outside money ledgers
+ok 9 - CNAM-9 reports require optional follow-up consent and remain non-official, outside money ledgers
+  ---
+  duration_ms: 60.495032
+  type: 'test'
+  ...
+# Subtest: CNAM-10 records actual multi-practitioner/multi-session authors and immutable bilingual preparation contracts
+ok 10 - CNAM-10 records actual multi-practitioner/multi-session authors and immutable bilingual preparation contracts
+  ---
+  duration_ms: 274.412127
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 7
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1386.94931
