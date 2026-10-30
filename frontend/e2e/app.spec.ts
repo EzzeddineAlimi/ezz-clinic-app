@@ -802,6 +802,7 @@ test("UX12 Muse F1: filtered-empty never claims empty day; clear filters restore
   await expect(page.getByText("Une page blanche pour cette journée.")).toHaveCount(0);
   await expect(count).toContainText("0 / " + total);
   await page.getByRole("button", { name: "Effacer les filtres" }).click();
+  await expect(search).toBeFocused();
   await expect(search).toHaveValue("");
   await expect(rows).toHaveCount(total);
   await expect(count).not.toContainText("/");
@@ -816,6 +817,7 @@ test("UX12 Muse F1: filtered-empty never claims empty day; clear filters restore
   await expect(page.getByText("لا توجد مواعيد تطابق عوامل التصفية.")).toBeVisible();
   await expect(count).toContainText("0 / " + total);
   await page.getByRole("button", { name: "مسح عوامل التصفية" }).click();
+  await expect(page.getByRole("searchbox", { name: "تصفية حسب الاسم أو رقم الملف" })).toBeFocused();
   await expect(rows).toHaveCount(total);
   await expect(page.getByRole("combobox", { name: "الطبيب", exact: true })).toHaveValue("all");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -860,7 +862,14 @@ test("UX12 follow-on: booking picker requires a focus-managed nested identity di
       ds[0]!.getAttribute("aria-labelledby") !== ds[1]!.getAttribute("aria-labelledby") &&
       ds[1]!.contains(document.activeElement);
   })).toBe(true);
-  await verify.getByRole("button", { name: "Fermer", exact: true }).click();
+  const verifyClose = verify.getByRole("button", { name: "Fermer", exact: true });
+  const verifyConfirm = verify.getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ });
+  await verifyClose.focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(verifyConfirm).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(verifyClose).toBeFocused();
+  await verifyClose.click();
   await expect(dialogs).toHaveCount(1);
   await scheduling.locator(".picker-results button").filter({ hasText: "PickerFirst" + suffix }).click();
   await dialogs.last().getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ }).click();
