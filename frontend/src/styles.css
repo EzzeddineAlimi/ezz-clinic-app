@@ -12,7 +12,8 @@ body {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button {
@@ -24,7 +25,8 @@ button:disabled {
 }
 button,
 input,
-select {
+select,
+textarea {
   min-height: 44px;
 }
 button {
@@ -33,7 +35,8 @@ button {
   color: inherit;
 }
 input,
-select {
+select,
+textarea {
   border: 1px solid var(--line);
   border-radius: 9px;
   padding: 11px 13px;
@@ -43,8 +46,12 @@ select {
   min-width: 0;
 }
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--teal);
+}
+textarea {
+  resize: vertical;
 }
 :focus-visible {
   outline: 3px solid #bd7545;
@@ -980,6 +987,18 @@ dialog::backdrop {
 .patient-context + p {
   margin: 12px 0 24px;
   font-size: 11px;
+}
+.visit-status-form .patient-context {
+  display: block;
+  margin-bottom: 18px;
+}
+.visit-status-form .patient-context p {
+  margin-top: 6px;
+}
+.visit-status-form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 .search-row {
   display: flex;
