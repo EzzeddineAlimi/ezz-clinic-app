@@ -29,7 +29,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [unresolved, setUnresolved] = useState<ClinicalMutation | null>(null);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
-  const [mode, setMode] = useState<"notes" | "findings" | "plans">("notes");
+  const [mode, setMode] = useState<"overview" | "notes" | "findings" | "plans">("notes");
   const [addendumTargetId, setAddendumTargetId] = useState<string | null>(null);
   const [signedLocally, setSignedLocally] = useState(false);
   const signedAgainst = useRef<typeof chart.data>(undefined);
@@ -45,13 +45,14 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   // The toggle is disabled while saving/loading; focus only after a fresh chart has rendered.
   useEffect(() => {
     const pending = focusAfterAddendum.current;
-    if (!pending || !chart.data || chart.data === pending.against ||
-        chart.loading || chart.error || saving) return;
+    if (!pending) return;
+    if (chart.error) { focusAfterAddendum.current = null; return; }
+    if (!chart.data || chart.data === pending.against || chart.loading || saving) return;
+    const eligible = chart.data.notes.some(n => n.id === pending.targetId &&
+      !n.enteredInError && n.integrity !== "CONTENT_HASH_MISMATCH");
     const toggle = addendumToggleRef.current;
-    if (toggle && !toggle.disabled) {
-      toggle.focus();
-      focusAfterAddendum.current = null;
-    }
+    if (eligible && toggle && !toggle.disabled) toggle.focus();
+    focusAfterAddendum.current = null;
   }, [chart.data, chart.loading, chart.error, saving]);
   async function runClinicalWrite(
     action: ClinicalMutation, form?: HTMLFormElement,
@@ -183,10 +184,20 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
             {data.medical.activeAlerts.length > 0 &&
               <p className="warning" role="alert">{t.warning} · {data.medical.activeAlerts.length}</p>}
             <nav className="clinical-nav" aria-label={t.title}>
+              <button type="button" aria-pressed={mode === "overview"} onClick={() => setMode("overview")}>{t.overview}</button>
               <button type="button" aria-pressed={mode === "notes"} onClick={() => setMode("notes")}>{t.note} ({data.notes.length})</button>
               <button type="button" aria-pressed={mode === "findings"} onClick={() => setMode("findings")}>{t.findings} ({data.findings.length})</button>
               <button type="button" aria-pressed={mode === "plans"} onClick={() => setMode("plans")}>{t.plan} ({data.planItems.length})</button>
             </nav>
+            {mode === "overview" && (
+              <section className="clinical-entry" data-testid="clinical-overview">
+                <h3>{t.overview}</h3>
+                <p><strong>{t.visitStatus}:</strong> {t.visitStatuses[data.visit.status as keyof typeof t.visitStatuses] ?? data.visit.status}</p>
+                <p><strong>{t.assignedDentist}:</strong> <bdi>{visit.dentist?.name ?? t.unassigned}</bdi></p>
+                <p><strong>{t.medicalAlerts}:</strong> <bdi>{data.medical.activeAlerts.length}</bdi></p>
+                <p className="warning">{t.overviewHint}</p>
+              </section>
+            )}
             {mode === "notes" && <>
               {data.notes.length === 0 && !initialNoteSigned && <p>{t.empty}</p>}
               {data.notes.map(n => (
@@ -203,7 +214,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                       ref={addendumTargetId === n.id || focusAfterAddendum.current?.targetId === n.id
                         ? addendumToggleRef : undefined}
                       aria-expanded={addendumTargetId === n.id}
-                      onClick={() => setAddendumTargetId(addendumTargetId === n.id ? null : n.id)}>
+                      onClick={() => {
+                        if (focusAfterAddendum.current?.targetId !== n.id) focusAfterAddendum.current = null;
+                        setAddendumTargetId(addendumTargetId === n.id ? null : n.id);
+                      }}>
                       {t.addendum}
                     </button>
                   )}
@@ -264,8 +278,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
               {data.planItems.length === 0 && <p>{t.empty}</p>}
               {data.planItems.map(p => <article className="clinical-entry" key={p.id}>
                 <strong><bdi>{p.procedureCode} · {p.procedureLabel}</bdi></strong>
-                <p>{t.tooth}: {p.toothFdi ?? "—"} · {p.status}</p>
-                <p>{p.estimatedFeeMillimes === null ? "—" : amount(p.estimatedFeeMillimes)}</p>
+                <p>{t.tooth}: {p.toothFdi ?? "—"} · <span data-testid="plan-status">{t.planStatuses[p.status]}</span></p>
+                <p>{t.planEstimate}: <bdi>{p.estimatedFeeMillimes === null ? "—" : amount(p.estimatedFeeMillimes)}</bdi></p>
                 {(p.status === "PROPOSED" || p.status === "ACCEPTED") && (
                   <PlanStatusForm lang={lang} status={p.status}
                     disabled={!editable || intent.uncertain}
