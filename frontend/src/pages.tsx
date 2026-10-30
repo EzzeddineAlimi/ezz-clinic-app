@@ -332,7 +332,7 @@ export function PatientDirectory({
         </div>
       )}
       {verifyPatient && (
-        <Modal title={w.patientSafety} w={w} close={() => setVerifyPatient(undefined)}>
+        <Modal title={w.patientSafety} w={w} busy={false} close={() => setVerifyPatient(undefined)}>
           <p role="alert">{w.identityCheck}</p>
           <div className="patient-context">
             <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
