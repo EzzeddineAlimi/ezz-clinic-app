@@ -38,6 +38,10 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   // Never reveal the expected amount in the count view, including after browser reload.
   await expect(cash.getByTestId("cash-expected")).toHaveCount(0);
   await expect(cash.getByTestId("cash-difference")).toHaveCount(0);
+  await test.info().attach("owner-fr-blind-count-before-reveal", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
 
   const attempts = Number(await cash.getByTestId("cash-attempt-count").textContent());
   await cash.getByTestId("cash-count-amount").fill("17.250");
@@ -70,6 +74,10 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await expect(cash.getByTestId("cash-attempt-history")).toContainText("Contrôle logiciel uniquement");
   await expect(cash.getByTestId("cash-attempt-history").locator("time").last()).toContainText("UTC");
   await expect(cash.getByTestId("cash-counted")).toHaveText("17.000 TND");
+  await test.info().attach("owner-fr-complete-count-audit", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
 
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
