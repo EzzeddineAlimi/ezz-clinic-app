@@ -28,11 +28,11 @@ Prompt:
 
 > Runable, independently perform a **read-only UI/UX audit of the CURRENT EZZ Clinic application**, not the old prototype ZIP. Current GitHub `main` is `406c5dd1fd16dd543f2c0b9a3a601af33ae6568b`. Inspect frontend source plus existing actual fictional Playwright screenshot files in `docs/images/sprint2/` and `docs/images/sprint3b/`, design-brief branch `gpt/design-a-role-ux-spec`, and GitHub issue #58. If the private fictional Codespaces preview is not available, state that explicitly and use only available source/screenshot evidence. Compare real screen behavior to Concept A for receptionist, dentist, owner. Audit IA, spacing, hierarchy, labels, form complexity, navigation, error/empty/loading/retry, contrast, keyboard, 390px/320px, Arabic RTL, paper print and truthfulness of financial/clinical states. Give a screenshot-by-screenshot critique with filenames and reproducible issues, a concise prioritized screen inventory, an order for implementing visual tokens/shell without breaking tests, and 8–12 acceptance assertions. Identify exact existing components/selectors when possible. Do not alter repo/Sheet or claim browser access not actually obtained. Send result as Runable-UX-A to founder, or write in `UX_COUNCIL` if genuinely supported. No paid runs or deployments.
 
-## Optional fourth reviewer — spouse's Muse, first-time user perspective
+## Optional fourth reviewer — Muse Ons, independent first-time user perspective
 
-**Status:** manual opt-in only, contingent on the account owner's consent. GPT has no access to this Muse account and has not messaged it. This reviewer complements rather than duplicates the existing primary Muse's adversarial security audit.
+**Name: Muse Ons. Tracking ID: `MUSE-UX-B`. Status:** manual opt-in only, contingent on the account owner's consent. GPT has no access to this Muse account and has not messaged it. This reviewer complements rather than duplicates the existing primary Muse's adversarial security audit.
 
-Prompt for the founder to share (with the spouse's approval):
+Prompt for the founder to share with Muse Ons (with the account owner's approval):
 
 > Please act as an independent **first-time usability researcher**. You know nothing about our EZZ Clinic project. We are designing a French/Arabic dental-clinic application with three separate workspaces: a receptionist taking appointments and payments, a dentist seeing patients and signing clinical records, and an owner reconciling cash. Our proposed look is clean white/deep teal, but do not assume the features or layouts are correct. Only use fictional screenshots/mockups and a public design brief: `https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/58` and, if accessible, `docs/design/role-workspaces-v1.md` on PR #59.
 >
