@@ -1,13 +1,13 @@
 # Clinic day-board and patient flow (B12)
 
-This is backend only. The visual UI belongs to Astra (B09).
+**Historical B12 backend-slice document.** The receptionist frontend was subsequently merged through PR #43. The current UI is in `frontend/`; UX-12 refinements are still draft PRs. This B12 record is not an authoritative current UI delivery checklist.
 
 ## Clinic-local days
 
 - A clinic's day is its **local** calendar day. The timezone comes from `clinics.settings.timezone`, and the default is `Africa/Tunis`. This is a configuration default, not a hosting or legal decision.
 - `GET /api/v1/visits?day=` and `GET /api/v1/day-board?day=` both use the clinic-local day. Before B12, the visit list sliced days in UTC, so a 00:30 appointment in Tunis showed up on the previous day's list (RED test T-DAY-1).
 - An invalid timezone setting returns a 409 that names the setting. It never falls back silently to UTC (T-DAY-12).
-- There is no API to change the timezone yet. It is set at clinic bootstrap, and an owner settings route is a later package.
+- **B12 historical state:** the timezone originally came only from clinic bootstrap. **Current merged state:** the OWNER-only `POST /api/v1/clinic/settings` route supports timezone changes with reauthentication and impact confirmation; consult `docs/product/clinic-settings.md` and its tests for the actual contract.
 
 ## `GET /api/v1/day-board`
 
