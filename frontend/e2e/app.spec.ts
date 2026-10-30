@@ -786,6 +786,41 @@ test("UX12 follow-on: receptionist dayboard filters by patient, file and dentist
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test("UX12 Muse F1: filtered-empty never claims empty day; clear filters restores all in FR/AR 390px", async ({ page }) => {
+  await login(page);
+  const rows = page.locator(".visit-row");
+  const total = await rows.count();
+  expect(total).toBeGreaterThan(0);
+  const count = page.getByTestId("dayboard-result-count");
+  await expect(count).toContainText(String(total));
+  await expect(count).not.toContainText("/");
+
+  const search = page.getByRole("searchbox", { name: "Filtrer par nom ou numéro de dossier" });
+  await search.fill("NoMatchingFictionalPatientZZ");
+  await expect(rows).toHaveCount(0);
+  await expect(page.getByText("Aucun rendez-vous ne correspond aux filtres.")).toBeVisible();
+  await expect(page.getByText("Une page blanche pour cette journée.")).toHaveCount(0);
+  await expect(count).toContainText("0 / " + total);
+  await page.getByRole("button", { name: "Effacer les filtres" }).click();
+  await expect(search).toHaveValue("");
+  await expect(rows).toHaveCount(total);
+  await expect(count).not.toContainText("/");
+
+  const dentist = page.getByRole("combobox", { name: "Praticien", exact: true });
+  await dentist.selectOption({ index: 1 });
+  await search.fill("NoMatchingFictionalPatientZZ");
+  await expect(rows).toHaveCount(0);
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.getByText("لا توجد مواعيد تطابق عوامل التصفية.")).toBeVisible();
+  await expect(count).toContainText("0 / " + total);
+  await page.getByRole("button", { name: "مسح عوامل التصفية" }).click();
+  await expect(rows).toHaveCount(total);
+  await expect(page.getByRole("combobox", { name: "الطبيب", exact: true })).toHaveValue("all");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("UX12 follow-on: booking picker requires a focus-managed nested identity dialog", async ({ page }) => {
   const session = await login(page);
   const headers = () => ({
