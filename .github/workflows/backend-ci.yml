@@ -5,7 +5,7 @@ on:
   pull_request:
     paths: ['backend/**', '.github/workflows/backend-ci.yml']
   push:
-    branches: ['opus55/**']
+    branches: ['main', 'opus55/**']
     paths: ['backend/**', '.github/workflows/backend-ci.yml']
 
 permissions:
