@@ -68,18 +68,22 @@ export function PatientPicker({
         </div>
       )}
       {verifyPatient && (
-        <div role="group" className="patient-context" aria-label={w.identityCheck}>
+        <Modal title={w.patientSafety} w={w} busy={false} close={() => setVerifyPatient(undefined)}>
           <p role="alert">{w.identityCheck}</p>
-          <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
-          {verifyPatient.dateOfBirth && <p>{w.dob}: <bdi>{verifyPatient.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
-          {verifyPatient.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifyPatient.phoneLast4}</bdi></p>}
-          <button type="button" className="primary" onClick={() => {
-            const confirmed = verifyPatient;
-            setVerifyPatient(undefined);
-            select(confirmed);
-          }}>{w.confirmFile} · #{verifyPatient.fileNo}</button>
-          <button type="button" className="secondary" onClick={() => setVerifyPatient(undefined)}>{w.cancel}</button>
-        </div>
+          <div className="patient-context">
+            <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
+            {verifyPatient.dateOfBirth && <p>{w.dob}: <bdi>{verifyPatient.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
+            {verifyPatient.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifyPatient.phoneLast4}</bdi></p>}
+          </div>
+          <div className="form-footer">
+            <button type="button" className="secondary" onClick={() => setVerifyPatient(undefined)}>{w.cancel}</button>
+            <button type="button" className="primary" onClick={() => {
+              const confirmed = verifyPatient;
+              setVerifyPatient(undefined);
+              select(confirmed);
+            }}>{w.confirmFile} · #{verifyPatient.fileNo}</button>
+          </div>
+        </Modal>
       )}
     </div>
   );
