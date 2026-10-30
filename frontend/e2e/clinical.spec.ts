@@ -79,6 +79,10 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(details).toContainText("Anticoagulant fictif signalé");
   await expect(details).toContainText("Vérifié par le dentiste");
   await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
+  await test.info().attach("dentist-fr-medical-alert-details", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
   await dialog.getByRole("button",{name:/Plan de traitement/}).click();
   await expect(dialog).toContainText("FICPLAN");
   await expect(dialog).toContainText("Estimation du plan (non facturée): 150.000 TND");
