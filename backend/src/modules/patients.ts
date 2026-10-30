@@ -95,9 +95,25 @@ export const patientRoutes: Route[] = [
     method: 'GET', path: '/api/v1/patients', permission: 'patient.read',
     handler: async ({ tx, query }) => {
       const q = (query.get('q') ?? '').trim().slice(0, 80);
-      const rows = (await tx.query(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName", name_ar AS "nameAr", contact_preference AS "contactPreference"
-        FROM patients WHERE $1 = '' OR lower(family_name) LIKE lower($1) || '%' OR lower(given_name) LIKE lower($1) || '%' OR file_no::text = $1 OR phone = $1
-        ORDER BY family_name, given_name LIMIT 50`, [q])).rows;
+      // Literal substring matching (not LIKE) prevents user-supplied %/_ wildcard expansion.
+      // Keep Arabic name searchable and tolerate spaces/punctuation in a phone search.
+      // DOB and last four phone digits aid same-name identity checks; never expose full phone here.
+      const rows = (await tx.query(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName",
+          name_ar AS "nameAr", contact_preference AS "contactPreference",
+          date_of_birth::text AS "dateOfBirth",
+          CASE WHEN phone IS NULL THEN NULL
+               ELSE right(regexp_replace(phone, '[^0-9]', '', 'g'), 4) END AS "phoneLast4"
+        FROM patients
+        WHERE $1 = ''
+           OR strpos(lower(family_name), lower($1)) > 0
+           OR strpos(lower(given_name), lower($1)) > 0
+           OR strpos(lower(given_name || ' ' || family_name), lower($1)) > 0
+           OR strpos(coalesce(name_ar, ''), $1) > 0
+           OR file_no::text = $1
+           OR (length(regexp_replace($1, '[^0-9]', '', 'g')) >= 6
+               AND regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') =
+                   regexp_replace($1, '[^0-9]', '', 'g'))
+        ORDER BY family_name, given_name, file_no LIMIT 50`, [q])).rows;
       return { status: 200, body: { patients: rows } };
     },
   },
