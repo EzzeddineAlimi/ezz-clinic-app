@@ -6,7 +6,7 @@ import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
 import type { Words, Lang } from "./i18n.ts";
 import { nameOf } from "./forms.tsx";
-import { Empty, ErrorBox, Icon, Loading, useResource } from "./ui.tsx";
+import { Empty, ErrorBox, Icon, Loading, Modal, useResource } from "./ui.tsx";
 export function DayBoard({
   board,
   w,
@@ -227,12 +227,18 @@ export function PatientDirectory({
 }) {
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
+  const [verifyPatient, setVerifyPatient] = useState<Patient>();
   const resource = useResource(
     useCallback(
       (signal: AbortSignal) => api.patients(search, signal),
       [api, search],
     ),
   );
+  const sameVisibleName = (p: Patient) =>
+    (resource.data?.patients ?? []).filter(other =>
+      nameOf(other).normalize("NFKC").toLocaleLowerCase() ===
+      nameOf(p).normalize("NFKC").toLocaleLowerCase(),
+    ).length > 1;
   const contact: Record<string, string> = {
     IN_PERSON: w.inPerson,
     NONE: w.none,
@@ -301,6 +307,12 @@ export function PatientDirectory({
                     </>
                   )}
                 </span>
+                {(p.dateOfBirth || p.phoneLast4) && (
+                  <small className="patient-identity-hints">
+                    {p.dateOfBirth && <span>{w.dob}: <bdi>{p.dateOfBirth.split("-").reverse().join("/")}</bdi></span>}
+                    {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
+                  </small>
+                )}
               </div>
               <span className="contact-label">
                 {contact[p.contactPreference] ?? p.contactPreference}
@@ -309,7 +321,7 @@ export function PatientDirectory({
                 <button
                   className="secondary"
                   disabled={!scheduleReady}
-                  onClick={() => schedule(p)}
+                  onClick={() => sameVisibleName(p) ? setVerifyPatient(p) : schedule(p)}
                 >
                   {w.scheduleFor}
                   <Icon name="arrow" size={16} />
@@ -318,6 +330,24 @@ export function PatientDirectory({
             </article>
           ))}
         </div>
+      )}
+      {verifyPatient && (
+        <Modal title={w.patientSafety} w={w} close={() => setVerifyPatient(undefined)}>
+          <p role="alert">{w.identityCheck}</p>
+          <div className="patient-context">
+            <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
+            {verifyPatient.dateOfBirth && <p>{w.dob}: <bdi>{verifyPatient.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
+            {verifyPatient.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifyPatient.phoneLast4}</bdi></p>}
+          </div>
+          <div className="form-footer">
+            <button type="button" className="secondary" onClick={() => setVerifyPatient(undefined)}>{w.cancel}</button>
+            <button type="button" className="primary" onClick={() => {
+              const confirmed = verifyPatient;
+              setVerifyPatient(undefined);
+              schedule(confirmed);
+            }}>{w.confirmFile} · #{verifyPatient.fileNo}</button>
+          </div>
+        </Modal>
       )}
     </section>
   );
