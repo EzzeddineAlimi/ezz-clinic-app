@@ -41,7 +41,8 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
   expect(original.kind).toBe("NOTE");
   await expect(initial).toHaveCount(0);
   await expect(dialog.getByText("Note initiale déjà signée.", { exact: false })).toBeVisible();
-  await dialog.getByRole("button", { name: "Ajouter un complément" }).click();
+  const addendumToggle = dialog.getByRole("button", { name: "Ajouter un complément" });
+  await addendumToggle.click();
   const addendum = dialog.getByTestId("clinical-addendum-form");
   await addendum.getByLabel("Évaluation").fill("Précision fictive ajoutée après signature");
   const posted = page.waitForResponse(r => r.url().endsWith("/clinical-notes/" + original.id + "/addenda") &&
@@ -52,6 +53,7 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
   const { note: added } = await response.json() as { note: { kind: string; parentNoteId: string } };
   expect(added.kind).toBe("ADDENDUM");
   expect(added.parentNoteId).toBe(original.id);
+  await expect(addendumToggle).toBeFocused();
   await expect(dialog.getByText("Précision fictive ajoutée après signature")).toBeVisible();
   await expect(dialog.getByText("Symptômes fictifs d'essai")).toBeVisible();
   await expect(dialog.getByTestId("clinical-initial-note-form")).toHaveCount(0);
@@ -90,18 +92,18 @@ test("UX13 struck initial SOAP remains visible but permits a new signed note (Ar
   const { visit } = await visitResponse.json() as { visit: { id: string } };
   const dentist = await login(page, "dentist");
   const auth = { Authorization: "Bearer " + dentist.token, "Idempotency-Key": crypto.randomUUID() };
-  const originalResponse = await page.request.post("/api/v1/visits/" + visit.id + "/clinical-notes", {
-    headers: auth,
-    data: { subjective: "Texte initial fictif à conserver" },
-  });
-  expect(originalResponse.status()).toBe(201);
-  const { note: original } = await originalResponse.json() as { note: { id: string } };
   await page.getByLabel("Date des rendez-vous", { exact: true }).fill("2098-01-19");
   const row = page.locator(".visit-row").filter({ hasText: name });
   await expect(row).toBeVisible();
   await row.getByRole("button", { name: "Dossier clinique" }).click();
-  await expect(page.getByRole("dialog").getByTestId("clinical-initial-note-form")).toHaveCount(0);
-  await page.getByRole("dialog").getByRole("button", { name: "Fermer le formulaire" }).click();
+  const frenchDialog = page.getByRole("dialog");
+  const firstNote = frenchDialog.getByTestId("clinical-initial-note-form");
+  await firstNote.getByLabel("Subjectif").fill("Texte initial fictif à conserver");
+  const firstSigned = page.waitForResponse(r => r.url().endsWith("/clinical-notes") &&
+    r.request().method() === "POST" && r.status() === 201);
+  await firstNote.getByRole("button", { name: "Signer et enregistrer" }).click();
+  const { note: original } = await (await firstSigned).json() as { note: { id: string } };
+  await expect(firstNote).toHaveCount(0);
 
   const strike = await page.request.post("/api/v1/clinical-notes/" + original.id + "/addenda", {
     headers: { Authorization: "Bearer " + dentist.token, "Idempotency-Key": crypto.randomUUID() },
@@ -113,6 +115,11 @@ test("UX13 struck initial SOAP remains visible but permits a new signed note (Ar
     data: { kind: "ADDENDUM", subjective: "Ne doit pas être accepté" },
   });
   expect(rejectedAddendum.status()).toBe(409);
+  // Same open dialog, out-of-band strike: Refresh must reconcile signedLocally.
+  await frenchDialog.getByRole("button", { name: "Actualiser" }).click();
+  await expect(frenchDialog.getByTestId("clinical-initial-note-form")).toBeVisible();
+  await expect(frenchDialog.getByText("Texte initial fictif à conserver")).toBeVisible();
+  await frenchDialog.getByRole("button", { name: "Fermer le formulaire" }).click();
 
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
