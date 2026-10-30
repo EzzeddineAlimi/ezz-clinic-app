@@ -46,6 +46,8 @@ export const cashText = {
     firstCount: "Premier comptage — aucun motif de recomptage",
     recountDetail: "Motif du recomptage",
     recordedBy: "Identifiant du compteur (audit logiciel)",
+    submittedAt: "Horodatage enregistré (serveur)",
+    independenceDetail: "Détail du contrôle logiciel (sans preuve physique)",
     afterWarning: "Des espèces ont été enregistrées après le dernier comptage. Elles ne sont pas incluses dans l’écart affiché et sont reportées sur la période suivante.",
     refreshing: "Relire les données serveur",
     uncertain: "État incertain après la demande. Ne soumettez rien d'autre avant la relecture du serveur.",
@@ -96,6 +98,8 @@ export const cashText = {
     firstCount: "الجرد الأول — لا يوجد سبب لإعادة الجرد",
     recountDetail: "سبب إعادة الجرد",
     recordedBy: "معرّف الشخص الذي أجرى الجرد (سجل النظام)",
+    submittedAt: "وقت تسجيل الجرد (الخادم)",
+    independenceDetail: "تفاصيل الفحص البرمجي (لا يثبت الجرد الفعلي)",
     afterWarning: "سُجّلت مبالغ نقدية بعد آخر جرد. لا تدخل في الفارق المعروض وتُرحّل إلى الفترة التالية.",
     refreshing: "إعادة القراءة من الخادم",
     uncertain: "النتيجة غير مؤكدة. لا تسجل عملية أخرى قبل مراجعة حالة الخادم.",
@@ -315,7 +319,9 @@ export function OwnerCashControl({ api, lang, w }: { api: Api; lang: Lang; w: Wo
                         </dl>
                         <p>{t.recountDetail}: {attempt.recountReason ?? t.firstCount}</p>
                         <p>{t.recordedBy}: <bdi>{attempt.countedBy}</bdi></p>
+                        <p>{t.submittedAt}: <time dateTime={attempt.submittedAt}><bdi>{attempt.submittedAt}</bdi></time></p>
                         <p>{t.evidence}: {attempt.counterIndependent ? t.evidenceSoftware : t.evidenceStaff}</p>
+                        <p>{t.independenceDetail}: <bdi>{attempt.independenceNotes}</bdi></p>
                       </li>
                     ))}
                   </ol>
