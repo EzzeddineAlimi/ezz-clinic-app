@@ -8,7 +8,7 @@
  * only a DENTIST can mark a visit COMPLETED; NO_SHOW only once the appointment time has passed (B12).
  * Days are CLINIC-LOCAL (clinic setting "timezone", settings module), never UTC (B12, R73-C).
  */
-import type { Tx } from '../platform/db.ts';
+import { advisoryLock, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from '../platform/validate.ts';
@@ -133,6 +133,8 @@ export const patientRoutes: Route[] = [
         const d = await tx.maybeOne(`SELECT 1 FROM staff s JOIN staff_roles r ON r.staff_id = s.id AND r.role = 'DENTIST' WHERE s.id = $1 AND s.active`, [dentistId]);
         if (!d) fail('VALIDATION_FAILED', 'dentistId is not an active dentist of this clinic', { field: 'dentistId' });
       }
+      // Serialize check + insert for this clinic/dentist, including an empty calendar.
+      if (dentistId) await advisoryLock(tx, 'visit_schedule', actor!.clinicId + ':' + dentistId);
       // Overlap warning for the same dentist (C-135 AC-APP-3), never silent.
       const overlap = dentistId ? await tx.query(`SELECT id FROM visits WHERE dentist_id = $1 AND status NOT IN ('CANCELLED','NO_SHOW')
           AND tstzrange(scheduled_at, scheduled_at + make_interval(mins => duration_min)) && tstzrange($2::timestamptz, $2::timestamptz + make_interval(mins => $3))`, [dentistId, scheduledAt, duration]) : { rowCount: 0, rows: [] };

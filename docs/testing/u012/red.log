@@ -1,0 +1,42 @@
+TAP version 13
+# Subtest: U012 two concurrent bookings cannot both silently claim the same dentist interval
+not ok 1 - U012 two concurrent bookings cannot both silently claim the same dentist interval
+  ---
+  duration_ms: 611.132507
+  type: 'test'
+  location: '/workspace/ezz-u012/backend/test/u012-booking-concurrency.test.ts:8:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    [{"status":201,"body":{"visit":{"id":"fd8767d5-401a-44e5-9e2c-8efb770ca9de","patientId":"4f013634-1077-42ba-85e5-e2b7a3ab5db6","scheduledAt":"2027-01-12T09:00:00.000Z","dentistId":"e93f2a54-8fa8-437d-9672-0aa23ca17c18","durationMin":30,"status":"SCHEDULED"}}},{"status":201,"body":{"visit":{"id":"caf090a8-fe64-4286-9194-68f8efb35395","patientId":"4f013634-1077-42ba-85e5-e2b7a3ab5db6","scheduledAt":"2027-01-12T09:00:00.000Z","dentistId":"e93f2a54-8fa8-437d-9672-0aa23ca17c18","durationMin":30,"status":"SCHEDULED"}}}]
+    + actual - expected
+    
+      [
+        201,
+    +   201
+    -   409
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 201
+    1: 409
+  actual:
+    0: 201
+    1: 201
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-u012/backend/test/u012-booking-concurrency.test.ts:29:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 793.652981
