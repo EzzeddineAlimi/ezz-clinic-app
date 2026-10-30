@@ -3,7 +3,9 @@ import type { FormEvent } from "react";
 import { Api, ApiError } from "./api.ts";
 import { amount } from "./billing.ts";
 import { parseDrawerMillimes } from "./cash-contracts.ts";
+import { cashIndependenceNotes } from "./cash-evidence.ts";
 import type { Lang, Words } from "./i18n.ts";
+import { clinicPaymentTime } from "./time.ts";
 import { ErrorBox, Loading, useResource } from "./ui.tsx";
 
 export const cashText = {
@@ -319,9 +321,9 @@ export function OwnerCashControl({ api, lang, w }: { api: Api; lang: Lang; w: Wo
                         </dl>
                         <p>{t.recountDetail}: {attempt.recountReason ?? t.firstCount}</p>
                         <p>{t.recordedBy}: <bdi>{attempt.countedBy}</bdi></p>
-                        <p>{t.submittedAt}: <time dateTime={attempt.submittedAt}><bdi>{attempt.submittedAt}</bdi></time></p>
+                        <p>{t.submittedAt}: <time dateTime={attempt.submittedAt}><bdi>{clinicPaymentTime(attempt.submittedAt, lang, "UTC")} UTC</bdi></time></p>
                         <p>{t.evidence}: {attempt.counterIndependent ? t.evidenceSoftware : t.evidenceStaff}</p>
-                        <p>{t.independenceDetail}: <bdi>{attempt.independenceNotes}</bdi></p>
+                        <p>{t.independenceDetail}: <bdi>{cashIndependenceNotes(attempt.independenceNotes, lang)}</bdi></p>
                       </li>
                     ))}
                   </ol>
