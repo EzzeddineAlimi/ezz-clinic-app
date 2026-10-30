@@ -71,3 +71,66 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   expect(axe.violations).toEqual([]);
 });
+
+
+test("UX13 struck initial SOAP remains visible but permits a new signed note (Arabic 390px)", async ({ page }) => {
+  const desk = await login(page, "desk");
+  const name = "UxStruck" + crypto.randomUUID().slice(0, 8);
+  const patient = await page.request.post("/api/v1/patients", {
+    headers: { Authorization: "Bearer " + desk.token, "Idempotency-Key": crypto.randomUUID() },
+    data: { familyName: name, givenName: "Fictif", isSynthetic: true },
+  });
+  expect(patient.status()).toBe(201);
+  const { patient: created } = await patient.json() as { patient: { id: string } };
+  const visitResponse = await page.request.post("/api/v1/visits", {
+    headers: { Authorization: "Bearer " + desk.token, "Idempotency-Key": crypto.randomUUID() },
+    data: { patientId: created.id, scheduledAt: "2098-01-19T09:00:00+01:00" },
+  });
+  expect(visitResponse.status()).toBe(201);
+  const { visit } = await visitResponse.json() as { visit: { id: string } };
+  const dentist = await login(page, "dentist");
+  const auth = { Authorization: "Bearer " + dentist.token, "Idempotency-Key": crypto.randomUUID() };
+  const originalResponse = await page.request.post("/api/v1/visits/" + visit.id + "/clinical-notes", {
+    headers: auth,
+    data: { subjective: "Texte initial fictif à conserver" },
+  });
+  expect(originalResponse.status()).toBe(201);
+  const { note: original } = await originalResponse.json() as { note: { id: string } };
+  await page.getByLabel("Date des rendez-vous", { exact: true }).fill("2098-01-19");
+  const row = page.locator(".visit-row").filter({ hasText: name });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Dossier clinique" }).click();
+  await expect(page.getByRole("dialog").getByTestId("clinical-initial-note-form")).toHaveCount(0);
+  await page.getByRole("dialog").getByRole("button", { name: "Fermer le formulaire" }).click();
+
+  const strike = await page.request.post("/api/v1/clinical-notes/" + original.id + "/addenda", {
+    headers: { Authorization: "Bearer " + dentist.token, "Idempotency-Key": crypto.randomUUID() },
+    data: { kind: "ENTERED_IN_ERROR", reason: "Note initiale attribuée par erreur" },
+  });
+  expect(strike.status()).toBe(201);
+  const rejectedAddendum = await page.request.post("/api/v1/clinical-notes/" + original.id + "/addenda", {
+    headers: { Authorization: "Bearer " + dentist.token, "Idempotency-Key": crypto.randomUUID() },
+    data: { kind: "ADDENDUM", subjective: "Ne doit pas être accepté" },
+  });
+  expect(rejectedAddendum.status()).toBe(409);
+
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await row.getByRole("button", { name: "الملف السريري" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByText("إدخال تم تصنيفه كخطأ", { exact: false })).toBeVisible();
+  await expect(dialog.getByText("Texte initial fictif à conserver")).toBeVisible();
+  const replacement = dialog.getByTestId("clinical-initial-note-form");
+  await expect(replacement).toBeVisible();
+  await replacement.getByLabel("ذاتي").fill("ملاحظة بديلة تجريبية");
+  const signed = page.waitForResponse(r => r.url().endsWith("/clinical-notes") &&
+    r.request().method() === "POST" && r.status() === 201);
+  await replacement.getByRole("button", { name: "توقيع وتسجيل" }).click();
+  const { note: newNote } = await (await signed).json() as { note: { id: string; kind: string } };
+  expect(newNote.kind).toBe("NOTE");
+  expect(newNote.id).not.toBe(original.id);
+  await expect(dialog.getByTestId("clinical-initial-note-form")).toHaveCount(0);
+  await expect(dialog.getByText("ملاحظة بديلة تجريبية")).toBeVisible();
+  await expect(dialog.getByText("Texte initial fictif à conserver")).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
