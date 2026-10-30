@@ -197,12 +197,14 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                 <p><strong>{t.medicalAlerts}:</strong> <bdi>{data.medical.activeAlerts.length}</bdi></p>
                 {data.medical.activeAlerts.length > 0 && (
                   <ul data-testid="clinical-alert-details">
-                    {data.medical.activeAlerts.map(alert => (
+                    {[...data.medical.activeAlerts].sort((a, b) =>
+                      (a.severity === "CRITICAL" ? 0 : 1) - (b.severity === "CRITICAL" ? 0 : 1)
+                    ).map(alert => (
                       <li key={alert.id}>
                         <strong><bdi>{alert.code}</bdi></strong>
                         {" · "}{alert.severity === "CRITICAL" ? t.alertCritical : t.alertCaution}
                         {" · "}{alert.source === "PATIENT_DECLARED" ? t.alertDeclared : t.alertVerified}
-                        {alert.detail && <p><bdi>{alert.detail}</bdi></p>}
+                        {alert.detail ? <p><bdi>{alert.detail}</bdi></p> : <p className="muted">{t.alertDetailMissing}</p>}
                       </li>
                     ))}
                   </ul>
