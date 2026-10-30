@@ -2,7 +2,7 @@ import { Checkout } from "./checkout.tsx";
 import { VisitStatusModal } from "./visit-status.tsx";
 import { ClinicalWorkspace } from "./clinical-workspace.tsx";
 import { clinicalText } from "./clinical-text.ts";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
 import type { Words, Lang } from "./i18n.ts";
@@ -35,13 +35,19 @@ export function DayBoard({
 }) {
   const [filter, setFilter] = useState("all");
   const [patientQuery, setPatientQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
   const [dentistId, setDentistId] = useState("all");
   const dentists = [...new Map(board.visits.flatMap(v =>
     v.dentist ? [[v.dentist.id, v.dentist] as const] : [],
   )).values()].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
   const query = patientNameKey(patientQuery.trim());
   const hasFilters = filter !== "all" || patientQuery.trim().length > 0 || dentistId !== "all";
-  const clearFilters = () => { setFilter("all"); setPatientQuery(""); setDentistId("all"); };
+  const clearFilters = () => {
+    setFilter("all");
+    setPatientQuery("");
+    setDentistId("all");
+    searchRef.current?.focus();
+  };
   const visits = board.visits.filter(v =>
     (filter === "all" || v.status === filter) &&
     (dentistId === "all" || v.dentist?.id === dentistId) &&
@@ -54,7 +60,7 @@ export function DayBoard({
     <>
       <div className="dayboard-filters">
         <label>{w.boardSearch}
-          <input type="search" value={patientQuery} maxLength={80}
+          <input ref={searchRef} type="search" value={patientQuery} maxLength={80}
             onChange={e => setPatientQuery(e.target.value)} />
         </label>
         <label>{w.dentist}
