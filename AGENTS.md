@@ -12,6 +12,8 @@
 - Reuse scripts and CI for repeated deterministic operations. Introduce a new script only when repetition is demonstrated and maintaining it is worthwhile.
 
 ## Use AI context deliberately
+- Start at `docs/INDEX.md` to locate current domain authorities; read only the relevant source documents and current code. Treat accepted product scope, implemented behavior, and release readiness as different claims. Draft PRs and historical handoffs are not merged functionality.
+- When a change affects an accepted workflow, API, permission, schema, UX state, environment, security control or release gate, update the corresponding authoritative document in the same PR; regenerate generated contracts rather than hand-editing them. Record unresolved conflicts, not speculative decisions.
 - Reuse stable repository instructions, precise file paths, current API contracts, diff ranges, and evidence links instead of repeatedly pasting the same project history.
 - Keep one focused task per session; start a new session for an unrelated task and compact long sessions around the active task. Do not keep stale context just to chase cache hits.
 - Use expensive reasoning for difficult architecture/security questions, and cheaper models for bounded routine work **when selected by the operator**. This file cannot switch models or guarantee vendor cache hits.
