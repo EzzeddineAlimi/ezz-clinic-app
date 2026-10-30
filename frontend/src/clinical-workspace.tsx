@@ -12,7 +12,7 @@ import { nameOf } from "./forms.tsx";
 import { amount } from "./billing.ts";
 
 type ClinicalMutation = {
-  kind: "finding" | "plan" | "status"; targetId: string;
+  kind: "finding" | "plan" | "status" | "addendum"; targetId: string;
   body: Record<string, unknown>; key: string;
 };
 
@@ -30,6 +30,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
   const [mode, setMode] = useState<"notes" | "findings" | "plans">("notes");
+  const [addendumTargetId, setAddendumTargetId] = useState<string | null>(null);
+  const [signedLocally, setSignedLocally] = useState(false);
   async function runClinicalWrite(
     action: ClinicalMutation, form?: HTMLFormElement,
   ): Promise<void> {
@@ -44,6 +46,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         await api.recordChartFinding(action.targetId, action.body, action.key);
       } else if (action.kind === "plan") {
         await api.addTreatmentPlanItem(action.targetId, action.body, action.key);
+      } else if (action.kind === "addendum") {
+        await api.addClinicalAddendum(action.targetId, action.body, action.key);
       } else {
         const body = action.body as {
           status: "ACCEPTED" | "DECLINED" | "CANCELLED";
@@ -52,6 +56,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         await api.transitionTreatmentPlanItem(action.targetId, body, action.key);
       }
       setUnresolved(null);
+      if (action.kind === "addendum") setAddendumTargetId(null);
       if (form?.isConnected) form.reset();
       setNotice(lang === "fr" ? "Écriture clinique enregistrée." : "تم تسجيل التغيير السريري.");
       chart.refresh();
@@ -109,6 +114,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
     setError(undefined);
     try {
       await api.signClinicalNote(visit.id, intent.payload(body), intent.key);
+      setSignedLocally(true); // A successful write must never expose another initial-sign action while refreshing.
       setIntent(new WriteIntent());
       setNotice(lang === "fr" ? "Note signée et enregistrée." : "تم توقيع وتسجيل الملاحظة.");
       form.reset();
@@ -122,6 +128,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
     } finally { setSaving(false); lock.current = false; }
   }
   const data = chart.data;
+  const initialNoteSigned = signedLocally || !!data?.notes.some(n => n.kind === "NOTE");
+  const soapSections = ["subjective", "objective", "assessment", "plan"] as const;
+  const soapLabels = { subjective: t.subjective, objective: t.objective,
+    assessment: t.assessment, plan: t.planSection };
   const editable = !!data && !chart.loading && !chart.error && !saving && !unresolved &&
     !["CANCELLED", "NO_SHOW"].includes(data.visit.status);
   return (
@@ -153,27 +163,58 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
               <button type="button" aria-pressed={mode === "plans"} onClick={() => setMode("plans")}>{t.plan} ({data.planItems.length})</button>
             </nav>
             {mode === "notes" && <>
-              {data.notes.length === 0 && <p>{t.empty}</p>}
+              {data.notes.length === 0 && !initialNoteSigned && <p>{t.empty}</p>}
               {data.notes.map(n => (
                 <article className="clinical-entry" key={n.id}>
-                  <strong>{n.kind} · <bdi>{n.signedByName}</bdi></strong>
-                  <small><bdi>{n.signedAt}</bdi></small>
+                  <strong>{t.noteKinds[n.kind]} · <bdi>{n.signedByName}</bdi></strong>
+                  <small>{t.signedStatus} · <bdi>{n.signedAt}</bdi></small>
                   {n.integrity === "CONTENT_HASH_MISMATCH" && <p role="alert" className="error-box">{t.warning}</p>}
-                  {n.enteredInError && <p className="warning">{n.enteredInError.reason}</p>}
-                  {(["subjective","objective","assessment","plan"] as const).map(k =>
-                    n[k] && <p key={k}><bdi>{n[k]}</bdi></p>)}
+                  {n.enteredInError && <p className="warning">{t.struck}: <bdi>{n.enteredInError.reason}</bdi></p>}
+                  {soapSections.map(k =>
+                    n[k] && <p key={k}><strong>{soapLabels[k]}:</strong> <bdi>{n[k]}</bdi></p>)}
+                  {(n.kind === "NOTE" || n.kind === "LATE_ENTRY") &&
+                    !n.enteredInError && n.integrity !== "CONTENT_HASH_MISMATCH" && (
+                    <button type="button" className="secondary" disabled={!editable || intent.uncertain}
+                      aria-expanded={addendumTargetId === n.id}
+                      onClick={() => setAddendumTargetId(addendumTargetId === n.id ? null : n.id)}>
+                      {t.addendum}
+                    </button>
+                  )}
+                  {addendumTargetId === n.id && (
+                    <form data-testid="clinical-addendum-form" className="cash-form"
+                      onSubmit={e => fromForm(e, "addendum", n.id, fields => {
+                        const sections = Object.fromEntries(soapSections.map(k =>
+                          [k, String(fields.get(k) ?? "").trim()])) as Record<typeof soapSections[number], string>;
+                        if (!nonemptyNote(sections)) throw new ApiError("VALIDATION_FAILED");
+                        const reason = String(fields.get("reason") ?? "").trim();
+                        return { kind: "ADDENDUM", ...sections, ...(reason ? { reason } : {}) };
+                      })}>
+                      <p className="muted">{t.addendumHint}</p>
+                      <fieldset disabled={!editable || intent.uncertain}>
+                        {soapSections.map(k => (
+                          <label key={k}>{soapLabels[k]}<textarea name={k} maxLength={4000} rows={2} /></label>
+                        ))}
+                        <label>{t.reason}<input name="reason" maxLength={300} /></label>
+                      </fieldset>
+                      <button className="primary" type="submit" disabled={!editable || intent.uncertain}>
+                        {saving ? t.saving : t.signAddendum}
+                      </button>
+                    </form>
+                  )}
                 </article>
               ))}
-              <form className="cash-form" onSubmit={e => void sign(e)}>
-                <fieldset disabled={!editable || intent.uncertain}>
-                  {(["subjective","objective","assessment","plan"] as const).map(k => (
-                    <label key={k}>{k}<textarea name={k} maxLength={4000} rows={2} /></label>
-                  ))}
-                </fieldset>
-                <button className="primary" type="submit" disabled={!editable}>
-                  {saving ? t.saving : intent.uncertain ? t.retry : t.sign}
-                </button>
-              </form>
+              {initialNoteSigned ? <p role="status" className="muted">{t.initialSigned}</p> : (
+                <form data-testid="clinical-initial-note-form" className="cash-form" onSubmit={e => void sign(e)}>
+                  <fieldset disabled={!editable || intent.uncertain}>
+                    {soapSections.map(k => (
+                      <label key={k}>{soapLabels[k]}<textarea name={k} maxLength={4000} rows={2} /></label>
+                    ))}
+                  </fieldset>
+                  <button className="primary" type="submit" disabled={!editable}>
+                    {saving ? t.saving : intent.uncertain ? t.retry : t.sign}
+                  </button>
+                </form>
+              )}
             </>}
             {mode === "findings" && <>
               {data.findings.length === 0 && <p>{t.empty}</p>}
