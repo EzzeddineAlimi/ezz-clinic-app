@@ -1,0 +1,94 @@
+# UI/UX Pro Max — EZZ Clinic full-spectrum adoption assessment
+
+**Status:** verified source review and controlled implementation contract; NOT a completed UI change, live app audit, clinical acceptance, or authority to merge.  
+**Upstream pin:** [nextlevelbuilder/ui-ux-pro-max-skill @ `28b3b8dee8c976df4fa3e94aed4e092ad43fcb03`](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/tree/28b3b8dee8c976df4fa3e94aed4e092ad43fcb03), inspected 2026-10-30.  
+**Clinic main pin:** [`742f6c7ecf65e8da3fb01d8d6942fe9b95906f46`](https://github.com/EzzeddineAlimi/ezz-clinic-app/tree/742f6c7ecf65e8da3fb01d8d6942fe9b95906f46); re-read main and PR stack before any implementation.  
+**Existing authority:** root `AGENTS.md`, `docs/INDEX.md`, `docs/design/role-workspaces-v1.md`, [UX issue #58](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/58), Mission Control accepted scope and current server contracts.
+
+## Decision and coverage boundary
+
+**Adopt measurable UI/UX best practices as the standard, including where they necessitate correcting existing UX PRs.** Preserve the founder-approved **Concept A: Clean Professional** visual direction unless new measured evidence and an explicit visual decision justify change. The goal is a single coherent accessible system, not locking in existing defects. Clinical authority, patient identity, payment idempotency, blind cash counts, provenance, fictional-data isolation, and independent review are stricter than any third-party template.
+
+The upstream Git tree has **831 entries**; many are duplicates of the canonical `src/ui-ux-pro-max` skill in `.claude` and `cli/assets`, generated data, fixtures, images/fonts, other creative skills, translations and optional Claude website-stack tooling. We assessed the tree and relevant **instruction/reference families**, reviewed substantive canonical files and sampled the matching CSV records. **We did not execute or manually validate every one of 1,934 font rows or every binary/duplicate**, so do not represent this as byte-by-byte verification of all 831 entries. No upstream executable was run and no clinical screenshot was re-captured in this review.
+
+## Source inventory: assessed separately, not ignored
+
+| Upstream family | Exact source examples | Disposition for EZZ |
+|---|---|---|
+| Skill contract and query workflow | `.claude/skills/ui-ux-pro-max/SKILL.md`; `src/ui-ux-pro-max/templates/base/skill-content.md`; `references/quick-reference.md` | **Adopt:** detect stack, search one outcome, check matching category/result, retry once, never pretend an empty result is proof; project instructions override suggestions |
+| Complete 10 UX categories | `references/quick-reference.md` and `data/ux-guidelines.csv` | **Adopt/verify:** accessibility, touch, performance, style, layout, text/color, motion, forms, navigation, charts |
+| Native/mobile polish checklist | `references/pro-rules.md`, `data/app-interface.csv` | **Adapt to mobile web only:** safe areas, scalable content, meaningful icons, touch feedback; native iOS/Android units not web targets |
+| Product/style/color/reasoning | `products.csv`, `styles.csv`, `colors.csv`, `ui-reasoning.csv` | **Reference, do not auto-apply:** generator is heuristic and sometimes internally contradictory |
+| Typography/font sources/licensing | `typography.csv`, `google-fonts.csv`, `google-font-licenses.json` | **Optional reference:** Arabic+French character coverage, font loading/layout shift, privacy and licenses must be verified before adding |
+| SVG icon catalogue | `icons.csv`, `phosphor-icons-upstream.json` | **Reference only:** reuse existing `frontend/src/ui.tsx` `Icon` and test accessible button names; no extra icon package unless justified |
+| Charts/analytics | `charts.csv` | **Selective:** owner dashboards only with exact evidence-backed values; give tables, clear units, and provenance |
+| Motion/GSAP | `motion.csv` | **Reject new runtime animations/dependencies:** feedback/focus/reduced-motion only in money/medical workflow; no parallax/stagger/marketing choreography |
+| React performance | `react-performance.csv`, `data/stacks/react.csv` | **Adopt after evidence:** stable keys, effect cleanup, measured memoization/list performance, semantic forms |
+| Other 21 stack datasets | `data/stacks/*.csv` | **Not applicable:** EZZ stack is React 19.2/Vite/TypeScript, not Next.js/shadcn/Flutter/SwiftUI |
+| Landing-page templates | `landing.csv` | **Not applicable** to authenticated clinic pages; do not use testimonials/hero/pricing layouts on medical or checkout views |
+| Catalog and tests | `catalog-summary.json`, `data-provenance.json`, `scripts/{core,search,design_system,reasoning_contract,validate_data}.py`, `scripts/tests/*` | **Reference:** searchable database, deterministic rule grammar, catalog validation and source quality checks. Tests in upstream do not establish EZZ accessibility |
+| CLI installer / assistant templates | `cli/src/commands/{init,update}.ts`, `cli/src/utils/{template,extract,github}.ts`, `templates/platforms/codex.json` | **Do not blind-install:** installer writes agent files, data/scripts and extra bundled subskills; can remove legacy files; pin/review and dry-run before separate tool-install PR |
+| Optional website design stack | `stack/README.md`, `stack/docs/{SETUP,STACK,WORKFLOW}.md`, `stack/scripts/design-audit.mjs`, `stack/.github/workflows/design-review.yml` | **Adopt verification loop only:** plan → build → screenshot → review; existing Playwright/axe/PG16 EZZ harness takes precedence. No Claude-only plugin stack, shadcn MCP, or browser MCP required |
+| Other creative skills, image examples, localization | `.claude/skills/{banner-design,brand,design,design-system,slides,ui-styling}`, gallery/examples, translated READMEs, binary fonts | **Out of active clinic V1 scope:** don't import or ship decorative examples, font binaries or unrelated creative tooling |
+| Licensing/security/provenance | `LICENSE` (MIT), `SECURITY.md`, `.github/workflows/*`, `CONTRIBUTING.md` | **Read before vendoring:** retain MIT notice if copying substantial source; audit supply chain and avoid making an upstream installer a CI/runtime dependency |
+
+**Upstream catalog snapshot:** `catalog-summary.json` says 79 searchable styles (50 active; 9 deprecated), 192 products/palettes/reasoning profiles, 74 font pairings, 1,934 Google Fonts, 105 curated icons, 119 UX rules, 17 GSAP presets, 25 chart types, 22 stacks and 1,271 stack guidelines. These are *catalog metadata*, not independently demonstrated product suitability.
+
+### Concrete conflict in upstream recommendations
+
+The `Healthcare App` product row prescribes **Neumorphism + Accessible & Ethical**, while the same repository's `Neumorphism` style row explicitly says **do not use for complex apps, critical accessibility or data-heavy dashboards**. A `Medical Clinic` color row offers an alternate cyan/teal palette. The reasoning row also says `wcag-aaa-compliance` as a generic **constraint**, not a measurable certification. **Resolution:** use the approved high-contrast, light/teal, minimal operational style and validate each component; don't copy whole proposed styles/palettes or falsely claim WCAG AAA.
+
+## Ten categories: decision for actual EZZ workflows
+
+| Upstream priority/category | EZZ-specific adoption and verification |
+|---|---|
+| 1. Accessibility — CRITICAL | Audit text/nontext contrast, focus visible and not hidden, headings/skip link, dialog/keyboard focus, meaningful SVG name/ARIA state, translated form errors, 200% zoom, French/Arabic screen reader labeling, patient ID number isolation. Axe alone is not complete proof |
+| 2. Touch/interaction — CRITICAL | Comfortable web touch targets and separation, one obvious action, loading/disabled state, prevention of duplicate payment resubmit, tap+keyboard access, avoid hover-only actions; do not misapply iOS pt/Android dp as mandatory web px |
+| 3. Performance — HIGH | Measure real page load, large lists and layout shift before adding memoization/virtualization; reserve sizes, avoid third-party scripts and fonts; do not slow receptionist with animations |
+| 4. Style — HIGH | Keep Clean Professional identity, one icon system, clear severity/evidence badges with text not color only, no emoji nav, no translucent low-contrast medical dialogs |
+| 5. Layout/responsive — HIGH | Desktop primary, mobile functional; 320/360/390/768/1024/1440/1920, landscape, scroll/zoom, RTL mirroring, safe-area inset for fixed controls, no clipped long Arabic labels or TND values |
+| 6. Typography/color — MEDIUM | Retain token source; improve minimum legibility based on rendered use and WCAG checks, avoid tiny required metadata, tabular integers/three decimal places, language-aware font metrics, no raw hex in new components |
+| 7. Animation — MEDIUM | Only feedback that clarifies state transitions, CSS reduced-motion path, no heavy GSAP dependency; never defer financial submission resolution behind animations |
+| 8. Forms/feedback — MEDIUM | Persistent visible labels, errors close to field plus focus summary, preserve values, explicit uncertainty/recovery, disabled semantics, no double-submit, avoid automatic retry of money/medical writes |
+| 9. Navigation — HIGH | Predictable back + maintained filter state, visible active role/workspace, one level of primary navigation, deep links only where existing auth/clinic scoping makes them safe |
+| 10. Charts/data — LOW | Owner-first exception table for cash/settlement with evidence labels and actual time period, accessible values and table fallback; don't invent real-time sources, counts or "theft detected" certainty |
+
+**Clinic-specific overrides that upstream generic rules do not cover:** patient identity ambiguity; clinician-authored notes and medical alerts; planned versus performed care; receipt numbering and frozen payment intent after uncertain response; cash blind count before any expected value; staff-reported card tender versus external settlement; paper-first outage; no patient-phone assumption; FR/Arabic RTL in all risk states.
+
+## Current EZZ implementation evidence
+
+**Existing foundation to preserve:**
+- `frontend/package.json`: React `19.2.0`, ReactDOM `19.2.0`, Zod `4.6.7`; Vite, strict TypeScript build, `@playwright/test` and `@axe-core/playwright`. No need to install Next.js, Tailwind or shadcn.
+- `frontend/src/tokens.css`: seven simple brand variables (canvas, ink, teal, muted, line, sans, serif). `frontend/src/ui.tsx`: shared SVG Icon, Loading, ErrorBox, Empty, Modal and Language; basic focus restoration already implemented. `frontend/src/App.tsx`: document `dir` flips for Arabic; `styles.css`: RTL-specific layout and reduced-motion handling.
+- Existing `frontend/e2e/reception-forms-accessibility.spec.ts` runs modal keyboard/axe checks at 320/390/720; `frontend/e2e/app.spec.ts` includes real app screenshots and axe on core fictional screens. Extend these; don't replace with marketing-site heuristic tests.
+- `frontend/src/styles.css`: global `font-size:15px`, some 8–13px body/metadata labels, hard-coded component colors and long CSS file. **Candidate design-system improvement, not automatic accessibility violation**: test critical information at 200% zoom and measured contrast first.
+- CSS main `--ink:#233b33` on `--canvas:#f6f7f2` = **11.179:1**, `--muted:#59675d` on canvas = **5.537:1**, `--teal:#194e41` on white = **9.513:1**. Two independent sRGB luminance calculations agreed. These particular pairs already exceed WCAG 4.5:1 normal text ratio; do not change brand hues simply because catalog offers another palette. Focus accent `#bd7545` on white = **3.624:1** (the contrast of outline against its *actual* adjacent surfaces requires a real rendering test).
+- `docs/design/role-workspaces-v1.md` explicitly prioritizes receptionist dayboard, dentist overview and owner blind count. Independent Muse Ons report `docs/design/reviews/muse-ons-ux-b.md` flagged unsafe **mockup** affordances (pay during in-progress care; sign already-signed note; duplicate arrival button). **Not verified as merged main defects.**
+
+**Concurrent work:** UX-12, UX-13 and UX-14 have stacked draft PRs; for example [#88](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/88) displays dentist-only alerts on a stack above [#85](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/85) cash audit improvements. Never overwrite their work. But best-practice regressions must be corrected even if doing so requires rebasing/reconciling these PRs. The team should find the actual merge-base and exact SHAs before touching them.
+
+## One controlled implementation sequence (no duplicate architecture)
+
+1. **Baseline and evidence (UX #58):** on the actual relevant UX PR/head, run real-PG16 fictional app and take 320/390/1440 desktop/phone FR+Arabic screenshots of: login, receptionist dayboard/search/booking/checkout recovery, dentist signed SOAP/alerts/performed care, owner blind-count pre-submit and review post-submit. Record role, viewport, head SHA, UI state and failures. Include keyboard, text scaling 200%, axe, RTL, mobile landscape and print checks. No speculative bugfix.
+2. **Shared design-system correction (one narrowly owned UX integration PR):** retain approved light/teal palette; expand `tokens.css` with semantic foreground/surface/status/focus/spacing/type/density aliases *only when actual components need them*; adjust `styles.css` and shared `ui.tsx` incrementally for verified typography, button hit targets, accessible states, labeled errors, safe dialogs and Arabic overflow. Avoid external component libraries/fonts/motion engines.
+3. **Reconcile UX-12 → UX-13 → UX-14 in ancestry order:** existing active owners preserve clinical/cash decisions; fix any verified cross-cutting accessibility defects once in shared components; adjust each role workflow minimally. No unsafe rebase/merge based on outdated CI.
+4. **Regression proof:** tests should assert *risk states*, not just ideal pictures: wrong-patient ambiguity; doctor-only care confirmation; signed note read-only; uncertain payment no repeat-submit; blind cash hidden expected balance; status/source for card/cash evidence; Arabic numeric/bidi rendering; permission errors. Check actual task path speed and mistake prevention before claiming UX improved.
+5. **Review and promotion:** every PR requires exact-head checks and independent review for clinical, payment, money, privacy, authorization or acceptance changes. Route accessibility/visual findings into the existing [UX issue #58](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/58) and current Mission Control UX lane; do not create a second competing roadmap. Production gate [#72](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/72), branch protection [#68](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/68), 61-feature acceptance [#69](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/69) remain separate.
+
+## Third-party installer and browser-audit safeguards
+
+- Upstream `uipro init --ai codex` targets `.agents/skills/ui-ux-pro-max/` (not EZZ runtime code), but current `cli/src/utils/template.ts` also copies bundled subskills and may delete legacy installation paths. `--force` overwrites. **Do not run unattended `npm install -g` or `uipro init --force` in the clinic repo.** A safer future tooling change must pin a tested upstream revision, dry-run and inspect the manifest, then submit only required files through a small separately reviewed PR. No need for a GitHub token in a repo containing private clinic settings.
+- Optional `stack/scripts/design-audit.mjs` checks seven viewport tiers and heuristic focus/overflow/img sizing/contrast/tap targets. It is **not a substitute** for authenticated role/state-aware real-API screenshots, axe and independent human/AI review. Prefer adding missing checks to existing EZZ Playwright tests instead of copying the external stack.
+- Upstream MIT text must be retained in any substantially copied code. This audit references guidance rather than vendoring it. No upstream dependency is added.
+
+## Definition of done — not yet met
+
+- [ ] Actual UI baseline captured and screenshot-reviewed on exact PR SHA across all critical role/state/language/viewport combinations.
+- [ ] All critical/high issues have theory + direct reproducing evidence, minimal code fix and red/green regression test.
+- [ ] Shared tokens/components updated consistently; no new unapproved styling defaults or dependency bloat.
+- [ ] French/Arabic and 200% zoom, keyboard, contrast, touch, print, reduced-motion, native browser back/focus and overflow tested.
+- [ ] Real-API Playwright/axe frontend unit/build and exact-head CI pass; unrun checks reported as not run.
+- [ ] Independent UX and adversarial medical/money review with explicit resolution of blockers.
+- [ ] Founder UX approval and acceptance evidence recorded; **no production-use claims**.
+
+**Next action:** existing UX-12/13/14 owners and reviewer lane should consume this contract from the branch/PR after review, then execute baseline → shared system → incremental journey repairs. This document is not a substitute for running those checks.
