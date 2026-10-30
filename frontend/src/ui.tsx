@@ -190,9 +190,12 @@ export function Modal({
         : null;
     d.showModal();
     return () => {
+      const parentDialog = d.parentElement?.closest("dialog");
       d.close();
       queueMicrotask(() => {
         if (opener?.isConnected) opener.focus();
+        else if (parentDialog?.open)
+          parentDialog.querySelector<HTMLElement>("input:not(:disabled), button:not(:disabled)")?.focus();
         else document.querySelector<HTMLElement>("#main")?.focus();
       });
     };
