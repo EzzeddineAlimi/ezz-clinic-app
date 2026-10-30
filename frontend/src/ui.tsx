@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ApiError } from "./api.ts";
 import type { Lang, Words } from "./i18n.ts";
@@ -181,6 +181,7 @@ export function Modal({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const d = ref.current!;
     const opener =
@@ -199,7 +200,7 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
         const elements = [
@@ -230,7 +231,7 @@ export function Modal({
       <div className="modal-head">
         <div>
           <p className="eyebrow">EZZ CLINIC</p>
-          <h2 id="dialog-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
         </div>
         <button
           className="icon-button"
