@@ -110,7 +110,7 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   expect((await balance.json()).balance.chargedMillimes).toBe(0);
 
   await dialog.getByRole("button",{name:/Notes signées/}).click();
-  await dialog.getByLabel("subjective").fill("Contexte fictif");
+  await dialog.getByLabel("Subjectif").fill("Contexte fictif");
   const signed=page.waitForResponse(r=>r.url().endsWith("/visits/"+visitId+"/clinical-notes") && r.status()===201);
   await dialog.getByRole("button",{name:"Signer et enregistrer"}).click();
   const saved=await (await signed).json();
