@@ -61,10 +61,10 @@ for (const language of ["fr", "ar"] as const) {
     page.on("request", (r) => {
       if (r.method() === "POST" && r.url().endsWith("/api/v1/visits")) posted++;
     });
-    await dialog.getByRole("button", {
+    // The real form prevents a patientless write by disabling submit.
+    await expect(dialog.getByRole("button", {
       name: language === "ar" ? "تسجيل الموعد" : "Enregistrer le rendez-vous",
-    }).click();
-    await expect(dialog.getByRole("alert")).toBeVisible();
+    })).toBeDisabled();
     expect(posted).toBe(0);
     await dialog.getByRole("button", { name: /Karim Chaabane/ }).click();
     await expect(dialog.getByText(language === "ar" ? "المريض المحدد" : "Patient sélectionné")).toBeVisible();
