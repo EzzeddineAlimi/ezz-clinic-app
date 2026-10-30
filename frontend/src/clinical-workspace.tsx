@@ -34,6 +34,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [signedLocally, setSignedLocally] = useState(false);
   const signedAgainst = useRef<typeof chart.data>(undefined);
   const addendumToggleRef = useRef<HTMLButtonElement>(null);
+  const focusAfterAddendum = useRef<{ targetId: string; against: typeof chart.data } | null>(null);
   // Only a newly fetched authoritative chart can release the local post-sign guard.
   useEffect(() => {
     if (signedLocally && chart.data && chart.data !== signedAgainst.current &&
@@ -41,6 +42,17 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
       setSignedLocally(false);
     }
   }, [chart.data, signedLocally]);
+  // The toggle is disabled while saving/loading; focus only after a fresh chart has rendered.
+  useEffect(() => {
+    const pending = focusAfterAddendum.current;
+    if (!pending || !chart.data || chart.data === pending.against ||
+        chart.loading || chart.error || saving) return;
+    const toggle = addendumToggleRef.current;
+    if (toggle && !toggle.disabled) {
+      toggle.focus();
+      focusAfterAddendum.current = null;
+    }
+  }, [chart.data, chart.loading, chart.error, saving]);
   async function runClinicalWrite(
     action: ClinicalMutation, form?: HTMLFormElement,
   ): Promise<void> {
@@ -66,7 +78,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
       }
       setUnresolved(null);
       if (action.kind === "addendum") {
-        addendumToggleRef.current?.focus(); // The submitted form is about to unmount.
+        focusAfterAddendum.current = { targetId: action.targetId, against: chart.data };
         setAddendumTargetId(null);
       }
       if (form?.isConnected) form.reset();
@@ -188,7 +200,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                   {(n.kind === "NOTE" || n.kind === "LATE_ENTRY") &&
                     !n.enteredInError && n.integrity !== "CONTENT_HASH_MISMATCH" && (
                     <button type="button" className="secondary" disabled={!editable || intent.uncertain}
-                      ref={addendumTargetId === n.id ? addendumToggleRef : undefined}
+                      ref={addendumTargetId === n.id || focusAfterAddendum.current?.targetId === n.id
+                        ? addendumToggleRef : undefined}
                       aria-expanded={addendumTargetId === n.id}
                       onClick={() => setAddendumTargetId(addendumTargetId === n.id ? null : n.id)}>
                       {t.addendum}
