@@ -677,7 +677,18 @@ test("UX12 review: Arabic-only duplicate triggers verification, normalized searc
   await page.getByRole("button", { name: "Patients", exact: true }).click();
   await page.getByPlaceholder("Nom, numéro de dossier ou téléphone").fill("احمد سليم " + suffix);
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+
   await expect(page.locator(".patient-row")).toHaveCount(2);
+  const listResponse = await page.request.get("/api/v1/patients?q=" + encodeURIComponent("احمد سليم " + suffix), {
+    headers: { Authorization: "Bearer " + session.token },
+  });
+  expect(listResponse.status()).toBe(200);
+  const listed = (await listResponse.json() as {
+    patients: Array<{ birthYear: string | null; dateOfBirth?: string }>;
+  }).patients;
+  expect(listed).toHaveLength(2);
+  expect(listed.map(p => p.birthYear).sort()).toEqual(["1982", "1994"]);
+  expect(listed.every(p => !Object.hasOwn(p, "dateOfBirth"))).toBe(true);
   const row = page.locator(".patient-row").filter({ hasText: "ArabicFictionalA" + suffix });
   await expect(row).toContainText("Année de naissance");
   await expect(row).toContainText("1982");
@@ -689,6 +700,71 @@ test("UX12 review: Arabic-only duplicate triggers verification, normalized searc
   await verify.getByRole("button", { name: "Fermer", exact: true }).click();
 });
 
+
+
+test("UX12 privacy: failed selected patient detail never opens identity confirmation or schedules", async ({ page }) => {
+  const session = await login(page);
+  const suffix = crypto.randomUUID().slice(0, 8);
+  const headers = () => ({ Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() });
+  const first = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: {
+      familyName: "PrivateFirst" + suffix, givenName: "Fictif",
+      nameAr: "اسم مشترك " + suffix, dateOfBirth: "1981-02-03", isSynthetic: true,
+    },
+  });
+  expect(first.status()).toBe(201);
+  const second = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: {
+      familyName: "PrivateSecond" + suffix, givenName: "Fictif",
+      nameAr: "اسم مشترك " + suffix, dateOfBirth: "1992-03-04",
+      confirmNotDuplicate: true, isSynthetic: true,
+    },
+  });
+  expect(second.status()).toBe(201);
+  await page.getByRole("button", { name: "Patients", exact: true }).click();
+  await page.getByPlaceholder("Nom, numéro de dossier ou téléphone").fill(suffix);
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.locator(".patient-row")).toHaveCount(2);
+  await page.route("**/api/v1/patients/*", route => route.abort("failed"));
+  await page.locator(".patient-row").first().getByRole("button", { name: "Planifier", exact: true }).click();
+  await expect(page.locator(".error-box")).toContainText("Connexion indisponible");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Patient sélectionné")).toHaveCount(0);
+});
+
+test("UX12 status: typed documented-visit rejection explains the blocked desk action", async ({ page }) => {
+  const session = await login(page);
+  const name = "TypedConflict" + crypto.randomUUID().slice(0, 7);
+  const headers = () => ({ Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() });
+  const created = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: { familyName: name, givenName: "Fictif", isSynthetic: true },
+  });
+  expect(created.status()).toBe(201);
+  const patientId = (await created.json() as { patient: { id: string } }).patient.id;
+  const scheduled = await page.request.post("/api/v1/visits", {
+    headers: headers(), data: { patientId, scheduledAt: "2098-01-19T09:00:00+01:00" },
+  });
+  expect(scheduled.status()).toBe(201);
+  await page.getByLabel("Date des rendez-vous", { exact: true }).fill("2098-01-19");
+  const row = page.locator(".visit-row").filter({ hasText: name });
+  await expect(row).toBeVisible();
+  await page.route("**/api/v1/visits/*/status", route =>
+    route.fulfill({
+      status: 409,
+      contentType: "application/json",
+      body: JSON.stringify({ error: {
+        code: "CONFLICT", message: "Visit documented",
+        details: { reason: "VISIT_HAS_DOCUMENTED_CARE" },
+      } }),
+    }),
+  );
+  await row.getByRole("button", { name: "Annuler le rendez-vous" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Motif de ce changement *").fill("Annulation fictive");
+  await dialog.getByRole("button", { name: "Confirmer le changement" }).click();
+  await expect(dialog).toContainText("Le praticien a déjà enregistré des soins");
+  await expect(dialog).toBeVisible();
+});
 
 test("UX12 follow-on: receptionist dayboard filters by patient, file and dentist in FR/AR mobile", async ({ page }) => {
   await login(page);
