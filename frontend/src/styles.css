@@ -1353,6 +1353,12 @@ dialog::backdrop {
 .cash-form > label { display: grid; gap: 7px; font-size: 13px; }
 .cash-form > button { justify-self: start; }
 .cash-view-tabs { display: flex; gap: 10px; margin-block: 24px; flex-wrap: wrap; }
+.cash-attempt-list { list-style: none; display: grid; gap: 12px; padding: 0; margin-block: 14px 24px; }
+.cash-attempt { border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; overflow-wrap: anywhere; }
+.cash-attempt h4 { margin: 0 0 10px; }
+.cash-attempt p { margin-block: 10px 0; }
+.cash-attempt .cash-figures { margin-block: 10px; }
+
 .cash-figures { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-block: 18px; padding: 20px; border-radius: 13px; background: #f4f7f4; }
 .cash-figures dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 650; text-align: end; }
 .cash-figures dt { min-width: 0; }
