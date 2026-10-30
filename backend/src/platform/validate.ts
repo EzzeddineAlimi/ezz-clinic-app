@@ -100,7 +100,11 @@ export function isoDate(b: Body, key: string, optional = false): string | null {
   const v = b[key];
   if ((v === undefined || v === null) && optional) return null;
   const s = str(b, key, { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
-  if (Number.isNaN(new Date(s + 'T00:00:00Z').getTime())) fail('VALIDATION_FAILED', `${key} must be a valid date`, { field: key });
+  // Date parses impossible calendar days by rolling into the next month (e.g. Feb 30 -> Mar 2).
+  // Compare the canonical ISO date to reject patient DOBs/clinical dates that never existed.
+  const parsed = new Date(s + 'T00:00:00Z');
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== s)
+    fail('VALIDATION_FAILED', `${key} must be a valid date`, { field: key });
   return s;
 }
 
