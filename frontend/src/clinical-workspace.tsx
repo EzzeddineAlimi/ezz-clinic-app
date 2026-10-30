@@ -204,7 +204,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                         <strong><bdi>{alert.code}</bdi></strong>
                         {" · "}{alert.severity === "CRITICAL" ? t.alertCritical : t.alertCaution}
                         {" · "}{alert.source === "PATIENT_DECLARED" ? t.alertDeclared : t.alertVerified}
-                        {alert.detail ? <p><bdi>{alert.detail}</bdi></p> : <p className="muted">{t.alertDetailMissing}</p>}
+                        {alert.detail ? <p><bdi>{alert.detail}</bdi></p> : <p className="warning" data-testid="clinical-alert-missing-detail">{t.alertDetailMissing}</p>}
                       </li>
                     ))}
                   </ul>
