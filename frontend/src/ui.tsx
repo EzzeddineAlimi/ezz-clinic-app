@@ -237,6 +237,7 @@ export function Modal({
           <h2 id={titleId}>{title}</h2>
         </div>
         <button
+          type="button"
           className="icon-button"
           aria-label={w.close}
           disabled={busy}
