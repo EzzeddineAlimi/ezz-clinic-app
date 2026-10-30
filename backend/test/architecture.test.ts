@@ -13,7 +13,8 @@ const SRC = SOURCE_DIR; // TypeScript sources, also when this test runs compiled
 const ALLOWED: Record<string, string[]> = {
   audit: [],
   identity: ['audit', 'settings'],
-  patients: ['audit', 'settings'],
+  patients: ['audit', 'settings', 'patient-name'],
+  'patient-name': [],
   workbench: [],
   care: ['audit', 'patients', 'medical'],
   medical: ['audit', 'patients', 'settings'],
@@ -25,7 +26,7 @@ const ALLOWED: Record<string, string[]> = {
   paper: ['audit', 'billing', 'settings'],
   exceptions: ['audit', 'card', 'paper', 'integrity', 'settings', 'lab'],
   review: ['integrity', 'settings'],
-  dayboard: ['identity', 'settings'],
+  dayboard: ['identity', 'settings', 'patient-name'],
   print: ['audit', 'settings'],
   checkpoints: ['audit', 'print', 'settings'],
   settings: ['audit'],
@@ -33,7 +34,7 @@ const ALLOWED: Record<string, string[]> = {
   lab: ['audit', 'patients', 'settings'],
   stock: ['audit', 'settings'],
 };
-const importsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '\.\/([a-z]+)\.ts'/g)].map(m => m[1]!);
+const importsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '\.\/([a-z-]+)\.ts'/g)].map(m => m[1]!);
 
 test('ARCH-1 module dependency graph matches the declared map (no hidden coupling, no cycles)', () => {
   const files = readdirSync(join(SRC, 'modules')).filter(f => f.endsWith('.ts'));
@@ -61,11 +62,24 @@ test('ARCH-3 money safety: no parseFloat / Math.round / toFixed on amounts in se
 });
 
 test('ARCH-4 SQL values are parameterised: no ${...} interpolation inside SQL strings except whitelisted identifiers', () => {
+  // Name-key interpolation is permitted only for these static SQL expressions.
+  // All user-entered name values remain $n parameters, never SQL fragments.
+  const safeNameKeys = new Set([
+    'family_name', 'given_name', 'name_ar',
+    'p.family_name', 'p.given_name', 'p.name_ar',
+    'o.family_name', 'o.given_name', 'o.name_ar',
+    'other.family_name', 'other.given_name', 'other.name_ar',
+    '$1::text', '$2::text', '$5::text',
+    "given_name || ' ' || family_name", "coalesce(name_ar, '')",
+  ]);
   for (const f of readdirSync(join(SRC, 'modules'))) {
     const text = readFileSync(join(SRC, 'modules', f), 'utf8');
     for (const m of text.matchAll(/`((?:SELECT|INSERT|UPDATE|DELETE)[^`]*)`/g)) {
       for (const expr of m[1]!.matchAll(/\$\{([^}]*)\}/g)) {
-        const ok = /^(table|lock|input\.paperSlipEntryId \? .*)$/.test(expr[1]!.trim());
+        const raw = expr[1]!.trim();
+        const nameArg = /^nameKey\("([^"]+)"\)$/.exec(raw);
+        const ok = /^(table|lock|input\.paperSlipEntryId \? .*)$/.test(raw) ||
+          (nameArg !== null && safeNameKeys.has(nameArg[1]!));
         assert.ok(ok, `${f}: interpolated SQL expression \${${expr[1]}}`);
       }
     }
