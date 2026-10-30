@@ -8,6 +8,7 @@ import type { DurableIntent } from "./recovery.ts";
 import { historyMatchesRecovery } from "./recovery.ts";
 import { ErrorBox, Loading, Modal, useResource } from "./ui.tsx";
 import { nameOf } from "./forms.tsx";
+import { clinicPaymentTime } from "./time.ts";
 
 const text = {
   fr: {
@@ -98,16 +99,6 @@ const text = {
   },
 };
 
-/** Display local clinic time; never raw ISO UTC in RTL/mobile payment history. */
-function clinicPaymentTime(value: string, lang: "fr" | "ar"): string {
-  const when = new Date(value);
-  if (!Number.isFinite(when.getTime())) return "—";
-  return new Intl.DateTimeFormat(lang === "ar" ? "ar-TN-u-nu-latn" : "fr-TN", {
-    timeZone: "Africa/Tunis", day: "2-digit", month: "2-digit",
-    year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
-  }).format(when);
-}
-
 function isUnknown(error: unknown) {
   return error instanceof ApiError &&
     (error.code === "NETWORK" || error.code === "INVALID_RESPONSE" ||
@@ -117,11 +108,13 @@ function isUnknown(error: unknown) {
 export function Checkout({
   api,
   visit,
+  timezone,
   w,
   close,
 }: {
   api: Api;
   visit: Visit;
+  timezone: string;
   w: Words;
   close: () => void;
 }) {
@@ -393,7 +386,7 @@ export function Checkout({
           <ul>
             {data.data.history.payments.map(p => (
               <li key={p.id}>
-                <bdi>{amount(p.amountMillimes)} · {p.tender === "CASH" ? t.cash : t.card} · {p.receiptNumber ?? "—"}</bdi> · <bdi dir="ltr">{clinicPaymentTime(p.recordedAt, lang)}</bdi>
+                <bdi>{amount(p.amountMillimes)} · {p.tender === "CASH" ? t.cash : t.card} · {p.receiptNumber ?? "—"}</bdi> · <bdi dir="ltr">{clinicPaymentTime(p.recordedAt, lang, timezone)}</bdi>
                 {p.receiptId && (
                   <> <button className="secondary compact" onClick={() => setReceiptId(p.receiptId!)}>{t.openReceipt}</button></>
                 )}
@@ -409,7 +402,7 @@ export function Checkout({
               <ul>
                 {pendingIntents.map(i => <li key={i.id}>
                   <bdi>{i.id} · {amount(i.payload.amountMillimes)} · {i.payload.tender}
-                    · {clinicPaymentTime(i.createdAt, lang)} · {i.createdBy}</bdi>
+                    · {clinicPaymentTime(i.createdAt, lang, timezone)} · {i.createdBy}</bdi>
                 </li>)}
               </ul>
             </section>
