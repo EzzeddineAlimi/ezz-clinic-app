@@ -58,7 +58,7 @@ export function VisitStatusModal({
       busy={pending}
       close={exit}
     >
-      <form onSubmit={(event) => void submit(event)}>
+      <form className="visit-status-form" onSubmit={(event) => void submit(event)}>
         <div className="patient-context">
           <strong><bdi>{nameOf(visit.patient)}</bdi> · {w.file} <bdi>#{visit.patient.fileNo}</bdi></strong>
           <p><bdi>{visit.localTime}</bdi> · {w[visit.status]} → {w[status]}</p>
