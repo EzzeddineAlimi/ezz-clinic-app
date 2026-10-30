@@ -10,7 +10,7 @@ function luminance(rgb: string): number {
     const linear = channel <= 0.04045
       ? channel / 12.92
       : ((channel + 0.055) / 1.055) ** 2.4;
-    return sum + linear * [0.2126, 0.7152, 0.0722][i - 1];
+    return sum + linear * [0.2126, 0.7152, 0.0722][i - 1]!;
   }, 0);
 }
 function contrast(a: string, b: string): number {
