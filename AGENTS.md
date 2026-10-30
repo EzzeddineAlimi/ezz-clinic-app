@@ -23,4 +23,5 @@
 - For applicable backend changes run `npm --prefix backend run typecheck`, `npm --prefix backend test`, and `npm --prefix backend run test:dist` with PostgreSQL 16 and the required test environment.
 - For applicable frontend changes run `npm --prefix frontend test` and `npm --prefix frontend run build`; run `npm --prefix frontend run test:e2e` against the configured fictional real-API environment when affected. Leave GitHub Actions as the authoritative CI check on the exact PR head.
 - Report exact commit/PR SHA, scope, commands **actually run**, pass/fail/skip, remaining risks, and reviewer action. Never claim unrun tests passed.
+- The blueprint includes lint and formatting checks, but current backend/frontend manifests have no `lint`/`format:check` scripts. Explicitly report them **NOT CONFIGURED**, not PASS, until a small independently reviewed tooling/CI change establishes real commands. Avoid mass reformatting unrelated files.
 - Persist durable outcomes and handoffs in GitHub PRs/docs and the approved Mission Control lane—not solely in a local agent workspace. Avoid duplicating old evidence; link it by immutable SHA.

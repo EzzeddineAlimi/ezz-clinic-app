@@ -8,8 +8,12 @@
 - Server-side identity/clinic, patient safety, money, financial custody and privacy impacts:
 - Docs impacted (or "none — reason"), generated contracts regenerated if applicable:
 
+## Definition of done and operational impact
+- Acceptance IDs and demonstrable user outcome; baseline/target metric (if relevant, do not invent actuals):
+- Failure / rollback or paper fallback, migrations and operational observability impact:
+
 ## Verification
-- Commands **actually run**, versions, environment, PASS/FAIL/SKIP:
+- Commands **actually run**: tests, lint/format **only if scripts exist**, typecheck, build, versions and environment; PASS/FAIL/SKIP/NOT AVAILABLE (don't fabricate a lint run):
 - RED evidence / reproduction before bug fix, and GREEN after:
 - Exact-head GitHub CI (or "not run / skipped", with reason):
 - Independent reviewer and exact SHA reviewed; unresolved findings:

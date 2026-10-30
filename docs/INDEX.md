@@ -29,6 +29,8 @@
 | Observability | [Security status](security/security-status.md), owner audit/integrity code and [issue #72](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/72) | Logs and hash chains exist; live alerting/on-call not verified |
 | Roadmap / changes | Mission Control `UX_BATCH_COMMAND`, `CODEX_ENGINEERING`, [PRs](https://github.com/EzzeddineAlimi/ezz-clinic-app/pulls), [issues](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues) | PR history is a development record, not a clinical release changelog |
 
+> **Coverage is not completion.** [The 17-area blueprint maturity check](engineering/blueprint-adoption-2026-10-30.md#second-pass-coverage-assessment-of-the-17-blueprint-areas) distinguishes documented-for-development, partial, and production-gated material. In particular, no repository `lint`/formatter script exists yet; no agent may report a lint pass that did not run.
+
 ## Update-on-change contract
 
 1. **Before coding:** identify the exact current base/head, accepted feature IDs and relevant specification, existing implementation, known active owner/PR, failure theory if fixing a bug, and independent evidence. Do not invent business rules or reuse stale handoff status.
