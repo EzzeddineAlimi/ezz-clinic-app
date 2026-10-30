@@ -77,8 +77,12 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(details).toContainText("Allergie au latex fictive");
   await expect(details).toContainText("ANTICOAGULANT_DOAC");
   await expect(details.locator("li").first()).toContainText("ALLERGY_LATEX");
-   await expect(details.locator("li").nth(1)).toContainText("ANTICOAGULANT_DOAC");
-   await expect(details.locator("li").nth(1)).toContainText("Détail non renseigné");
+  await expect(details.locator("li").nth(1)).toContainText("ANTICOAGULANT_DOAC");
+  const missingDetail = details.getByTestId("clinical-alert-missing-detail");
+  await expect(missingDetail).toHaveCount(1);
+  await expect(missingDetail).toBeVisible();
+  await expect(missingDetail).toHaveText("Détail non renseigné");
+  await expect(missingDetail).toHaveCSS("background-color", "rgb(255, 243, 232)");
   await expect(details).toContainText("Vérifié par le dentiste");
   await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
   await test.info().attach("dentist-fr-medical-alert-details", {
@@ -162,7 +166,11 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("Allergie au latex fictive");
   await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("تحقّق منه طبيب الأسنان");
   await expect(arabicOverview.getByTestId("clinical-alert-details").locator("li").first()).toContainText("ALLERGY_LATEX");
-  await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("التفاصيل غير مسجّلة");
+  const arabicMissingDetail = arabicOverview.getByTestId("clinical-alert-missing-detail");
+  await expect(arabicMissingDetail).toHaveCount(1);
+  await expect(arabicMissingDetail).toBeVisible();
+  await expect(arabicMissingDetail).toHaveText("التفاصيل غير مسجّلة");
+  await expect(arabicMissingDetail).toHaveCSS("background-color", "rgb(255, 243, 232)");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dentist-ar-390-critical-first-null-detail", {
