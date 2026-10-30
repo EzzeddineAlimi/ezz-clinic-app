@@ -47,8 +47,8 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   expect(plan.status()).toBe(201);
   // Two dentist-authored alerts prove details are available only inside clinical.read.
   for (const alert of [
+    { code: "ANTICOAGULANT_DOAC", severity: "CAUTION", detail: null },
     { code: "ALLERGY_LATEX", severity: "CRITICAL", detail: "Allergie au latex fictive" },
-    { code: "ANTICOAGULANT_DOAC", severity: "CAUTION", detail: "Anticoagulant fictif signalé" },
   ]) {
     const recorded = await request.post("/api/v1/patients/" + patientId + "/medical-alerts", {
       headers: { Authorization: "Bearer " + dentist, "Idempotency-Key": crypto.randomUUID() },
@@ -76,7 +76,9 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(details).toContainText("ALLERGY_LATEX");
   await expect(details).toContainText("Allergie au latex fictive");
   await expect(details).toContainText("ANTICOAGULANT_DOAC");
-  await expect(details).toContainText("Anticoagulant fictif signalé");
+  await expect(details.locator("li").first()).toContainText("ALLERGY_LATEX");
+   await expect(details.locator("li").nth(1)).toContainText("ANTICOAGULANT_DOAC");
+   await expect(details.locator("li").nth(1)).toContainText("Détail non renseigné");
   await expect(details).toContainText("Vérifié par le dentiste");
   await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
   await test.info().attach("dentist-fr-medical-alert-details", {
@@ -159,5 +161,7 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(arabicOverview).toContainText("التنبيهات الطبية النشطة");
   await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("Allergie au latex fictive");
   await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("تحقّق منه طبيب الأسنان");
+  await expect(arabicOverview.getByTestId("clinical-alert-details").locator("li").first()).toContainText("ALLERGY_LATEX");
+  await expect(arabicOverview.getByTestId("clinical-alert-details")).toContainText("التفاصيل غير مسجّلة");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
