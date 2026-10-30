@@ -8,6 +8,7 @@ import type { Lang, Words } from "./i18n.ts";
 import { dateLabel, shiftDay } from "./time.ts";
 import { Registration, Scheduling, nameOf } from "./forms.tsx";
 import { CareConfirmation } from "./care.tsx";
+import { OwnerCashControl, cashText } from "./owner-cash.tsx";
 import {
   Brand,
   ErrorBox,
@@ -103,7 +104,7 @@ function Workspace({
   setLang: (lang: Lang) => void;
   logout: () => void;
 }) {
-  const [tab, setTab] = useState<"agenda" | "patients">("agenda"),
+  const [tab, setTab] = useState<"agenda" | "patients" | "cash">("agenda"),
     [day, setDay] = useState(""),
     [modal, setModal] = useState<"register" | "schedule" | "care" | null>(null),
     [selected, setSelected] = useState<Patient>(),
@@ -160,6 +161,13 @@ function Workspace({
             <Icon name="people" />
             {w.patients}
           </button>
+          {auth.session.staff.roles.includes("OWNER") && (
+            <button aria-current={tab === "cash" ? "page" : undefined}
+              onClick={() => setTab("cash")}>
+              <Icon name="check" />
+              {cashText[lang].tab}
+            </button>
+          )}
         </nav>
         <div className="sidebar-bottom">
           <div className="profile">
@@ -185,7 +193,7 @@ function Workspace({
         <header className="topbar">
           <div>
             <span className="breadcrumb">
-              EZZ Clinic <span>/</span> {w[tab]}
+              EZZ Clinic <span>/</span> {tab === "cash" ? cashText[lang].tab : w[tab]}
             </span>
             <small>
               <bdi>{auth.clinicCode}</bdi>
@@ -197,12 +205,12 @@ function Workspace({
           <div className="page-heading">
             <div>
               <p className="eyebrow">{w.reception}</p>
-              <h1>{tab === "agenda" ? w.welcome : w.patientTitle}</h1>
+              <h1>{tab === "agenda" ? w.welcome : tab === "cash" ? cashText[lang].title : w.patientTitle}</h1>
               <p className="muted">
-                {tab === "agenda" ? w.subtitle : w.patientSub}
+                {tab === "agenda" ? w.subtitle : tab === "cash" ? cashText[lang].subtitle : w.patientSub}
               </p>
             </div>
-            {writable && (
+            {writable && tab !== "cash" && (
               <button
                 className="primary"
                 disabled={tab === "agenda" && !current}
@@ -349,6 +357,7 @@ function Workspace({
                       key={current.day}
                       board={current}
                       w={w}
+                      lang={lang}
                       writable={writable}
                       api={auth.api}
                       refreshed={board.refresh}
@@ -360,6 +369,8 @@ function Workspace({
                 )}
               </section>
             </>
+          ) : tab === "cash" && auth.session.staff.roles.includes("OWNER") ? (
+            <OwnerCashControl api={auth.api} lang={lang} w={w} />
           ) : (
             <PatientDirectory
               key={patientRevision}

@@ -101,6 +101,10 @@ export const copy = {
     notFound: "Dossier introuvable.",
     conflict:
       "La demande est en conflit avec les données enregistrées. Actualisez et vérifiez.",
+    paymentDuplicate: "Paiement similaire détecté à l'enregistrement. Relisez l'historique. L'intention reste en attente, sans modification possible.",
+    paymentPending: "Un paiement est déjà en attente. Vérifiez l'historique avant toute autre opération.",
+    paymentStale: "Le journal de paiement a changé. Vérifiez-le puis résolvez l'intention en attente avant tout nouvel encaissement.",
+    paymentCancelled: "Cette intention est annulée. Relisez les paiements avant une nouvelle opération.",
     duplicate:
       "Un dossier similaire existe. Vérifiez avant de créer un autre dossier.",
     confirmDuplicate: "J’ai vérifié : il s’agit d’un autre patient",
@@ -261,6 +265,10 @@ export const copy = {
     credentials: "رمز العيادة أو اسم المستخدم أو كلمة المرور غير صحيحة.",
     notFound: "الملف غير موجود.",
     conflict: "الطلب يتعارض مع البيانات المسجلة. حدّثوا وراجعوا المعلومات.",
+    paymentDuplicate: "اكتُشف دفع مشابه عند التسجيل. راجع السجل؛ ما زالت العملية معلقة ولا يمكن تعديلها.",
+    paymentPending: "هناك دفع قيد الانتظار. راجع السجل وسوِّ العملية الحالية قبل البدء بغيرها.",
+    paymentStale: "تغيّر سجل الدفع. راجع السجل وحلّ العملية المعلقة قبل أي تسجيل جديد.",
+    paymentCancelled: "أُلغيت هذه العملية. راجع الدفعات قبل بدء عملية جديدة.",
     duplicate: "يوجد ملف مشابه. تحققوا قبل إنشاء ملف آخر.",
     confirmDuplicate: "تحققت: هذا مريض آخر",
     confirmOverlap: "تحققت: أسمح بتداخل المواعيد",

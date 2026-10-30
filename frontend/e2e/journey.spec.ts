@@ -66,8 +66,13 @@ test("End-to-end fictional patient: dentist UI confirms care, receptionist takes
   await expect(checkout.getByLabel("Mode de paiement")).toHaveValue("");
   await checkout.getByLabel("Montant (TND)").fill("30.000");
   await checkout.getByLabel("Mode de paiement").selectOption("CARD");
-  const paymentResponse = page.waitForResponse(r => r.url().endsWith(`/visits/${visit.id}/payments`) && r.request().method() === "POST" && r.status() === 201);
-  await checkout.getByRole("button", { name: "Enregistrer le paiement" }).click();
+  await checkout.getByRole("checkbox", { name: /vérifié les paiements enregistrés/ }).check();
+  await checkout.getByRole("button", { name: "Préparer le paiement" }).click();
+  await expect(checkout.getByText(/Paiement en attente de décision/)).toBeVisible();
+  await checkout.getByRole("checkbox", { name: /vérifié les paiements enregistrés/ }).check();
+  await checkout.getByRole("checkbox", { name: /paiement distinct a réellement été reçu/ }).check();
+  const paymentResponse = page.waitForResponse(r => r.url().includes("/payment-intents/") && r.url().endsWith("/record") && r.request().method() === "POST" && r.status() === 201);
+  await checkout.getByRole("button", { name: "Confirmer l’encaissement" }).click();
   const payment = await (await paymentResponse).json() as {
     payment: { id: string; evidence: { tier: string; verifiedBy: null } };
     receipt: { id: string; number: number; label: string };

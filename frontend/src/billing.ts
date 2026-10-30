@@ -20,6 +20,8 @@ export const historySchema = z.object({
       tender: z.enum(["CASH", "CARD"]),
       recordedAt: z.string(),
       receiptNumber: money.nullable(),
+      receiptId: z.string().uuid().nullable(),
+      receiptSeries: z.string().nullable(),
       returnedMillimes: money,
     }),
   ),
@@ -53,6 +55,8 @@ export const periodSchema = z.object({
   period: z.object({ id: z.string() }).nullable(),
 });
 export const printSchema = z.object({
+  preparationOnly: z.literal(true),
+  paperDelivery: z.literal("UNKNOWN"),
   copy: z.boolean(),
   copyNo: money,
   document: z.object({

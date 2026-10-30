@@ -8,15 +8,22 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, startApi, standardFixture, newVisit, confirmCare, adminConn, reauth, type TestDb, type Api } from './helpers.ts';
 import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
+import { localDate } from '../src/modules/settings.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
 after(async () => { await api.close(); await db.drop(); });
 
-const TODAY = new Date().toISOString().slice(0, 10);
-const day = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
+const CLINIC_ZONE = 'Africa/Tunis'; // The standard fixture's configured clinic timezone.
+const TODAY = localDate(CLINIC_ZONE);
+const day = (n: number) => localDate(CLINIC_ZONE, new Date(Date.now() + n * 86400_000));
 const HEADER = 'date,amount_tnd,type,terminal_ref,card_last4,description';
 const csv = (...rows: string[]) => [HEADER, ...rows].join('\n');
+
+test('Card evidence calendar day follows Tunis clinic timezone across UTC midnight', () => {
+  assert.equal(localDate('Africa/Tunis', new Date('2026-10-29T23:30:00Z')), '2026-10-30');
+  assert.equal(localDate('Africa/Tunis', new Date('2026-10-29T22:30:00Z')), '2026-10-29');
+});
 
 let n = 0;
 async function clinic() {

@@ -7,6 +7,7 @@
 import { deflateSync, crc32 } from 'node:zlib';
 import { createHash } from 'node:crypto';
 import { seedClinic, STANDARD_STAFF, adminConn, type Api, type TestDb } from './helpers.ts';
+import { localDate } from '../src/modules/settings.ts';
 
 export type Audience = 'receptionist' | 'dentist' | 'owner' | 'patient-facing' | 'security-states';
 export interface Step {
@@ -193,7 +194,8 @@ export async function runMoreWorkflows(api: Api, db: TestDb): Promise<Array<Omit
     steps.push({ file, title, role: ROLE_OF[role] ?? role, method, route, path, request: method === 'POST' ? (body ?? {}) : null, status: r.status, response: r.body });
     return r;
   };
-  const today = new Date().toISOString().slice(0, 10);
+  // A statement's date follows the clinic's Tunis business day, not UTC midnight.
+  const today = localDate('Africa/Tunis');
 
   // ---- owner administration
   steps.push({ file: 'owner-admin', title: 'Liveness (public)', role: 'PUBLIC', method: 'GET', route: '/api/v1/health', path: '/api/v1/health', request: null, status: 200, response: (await api.call('GET', '/api/v1/health')).body });

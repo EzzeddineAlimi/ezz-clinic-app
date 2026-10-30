@@ -1,13 +1,16 @@
 import { Checkout } from "./checkout.tsx";
+import { ClinicalWorkspace } from "./clinical-workspace.tsx";
+import { clinicalText } from "./clinical-text.ts";
 import { useState, useCallback } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
-import type { Words } from "./i18n.ts";
+import type { Words, Lang } from "./i18n.ts";
 import { nameOf } from "./forms.tsx";
 import { Empty, ErrorBox, Icon, Loading, useResource } from "./ui.tsx";
 export function DayBoard({
   board,
   w,
+  lang,
   writable,
   api,
   refreshed,
@@ -17,6 +20,7 @@ export function DayBoard({
 }: {
   board: Board;
   w: Words;
+  lang: Lang;
   writable: boolean;
   api: Api;
   refreshed: () => void;
@@ -53,6 +57,7 @@ export function DayBoard({
               key={v.id}
               visit={v}
               w={w}
+              lang={lang}
               writable={writable}
               api={api}
               refreshed={refreshed}
@@ -69,6 +74,7 @@ export function DayBoard({
 function VisitRow({
   visit: v,
   w,
+  lang,
   writable,
   api,
   refreshed,
@@ -78,6 +84,7 @@ function VisitRow({
 }: {
   visit: Visit;
   w: Words;
+  lang: Lang;
   writable: boolean;
   api: Api;
   refreshed: () => void;
@@ -86,6 +93,7 @@ function VisitRow({
   confirmCare: (visit: Visit) => void;
 }) {
   const [checkout, setCheckout] = useState(false);
+  const [clinical, setClinical] = useState(false);
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
     [intent] = useState(() => new WriteIntent());
@@ -154,6 +162,10 @@ function VisitRow({
           </p>
         )}
       </div>
+      {clinical && (
+        <ClinicalWorkspace api={api} visit={v} lang={lang} w={w}
+          close={() => setClinical(false)} />
+      )}
       {checkout && (
         <Checkout
           api={api}
@@ -166,6 +178,11 @@ function VisitRow({
         />
       )}
       <div className="visit-actions">
+        {canConfirmCare && !["CANCELLED", "NO_SHOW"].includes(v.status) && (
+          <button className="secondary compact" onClick={() => setClinical(true)}>
+            {clinicalText[lang].title}
+          </button>
+        )}
         {canConfirmCare && ["ARRIVED", "IN_CHAIR", "COMPLETED"].includes(v.status) && (
           <button className="secondary compact" onClick={() => confirmCare(v)}>
             {w.confirmCare}
