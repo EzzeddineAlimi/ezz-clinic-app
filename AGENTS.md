@@ -21,6 +21,11 @@
 - Use expensive reasoning for difficult architecture/security questions, and cheaper models for bounded routine work **when selected by the operator**. This file cannot switch models or guarantee vendor cache hits.
 - Keep independent adversarial review for payment, authorization, privacy, clinical, and release-critical changes. A model must not self-certify its own high-risk work.
 
+## UI/UX quality contract (all future visual work)
+- Read `docs/design/ui-ux-pro-max-ezz-fit-2026-10-30.md` and the relevant current role-workspace spec before changing frontend UI. External UI/UX Pro Max suggestions are advisory; verify them against React/Vite implementation, clinic workflows, current accepted design direction, accessibility and domain safety.
+- Resolve verified best-practice conflicts, even when existing draft UI PRs need reconciliation. Fix shared primitives at their source, one focused PR at a time; preserve active ownership, ancestry, actual test evidence and independent review. Do not broadly re-theme, install unreviewed upstream scripts or invent unsupported interactions.
+- For each changed journey, record real fictional-API screenshots and tests for the affected French/Arabic RTL, mobile/desktop, keyboard/zoom, error/pending/empty states, permissions and clinical/financial safeguards; use existing Playwright/axe CI. A screenshot or automated scanner alone is not UX sign-off. Never claim tests were run when they were not.
+
 ## Verify and hand off
 - For applicable backend changes run `npm --prefix backend run typecheck`, `npm --prefix backend test`, and `npm --prefix backend run test:dist` with PostgreSQL 16 and the required test environment.
 - For applicable frontend changes run `npm --prefix frontend test` and `npm --prefix frontend run build`; run `npm --prefix frontend run test:e2e` against the configured fictional real-API environment when affected. Leave GitHub Actions as the authoritative CI check on the exact PR head.
