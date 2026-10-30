@@ -21,5 +21,5 @@ export function cashIndependenceNotes(raw: string, lang: Lang): string {
     }
     return phrase;
   });
-  return phrases.join(lang === "ar" ? "؛ " : "; ");
+  return phrases.join("; ");
 }
