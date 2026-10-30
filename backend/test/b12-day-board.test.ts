@@ -27,6 +27,62 @@ const board = (token: string, qs = '') => api.call('GET', `/api/v1/day-board${qs
 const ids = (r: { body: { visits: Array<{ id: string }> } }) => r.body.visits.map(v => v.id);
 const tomorrowUtc = () => new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
 
+test('T-UX12-PRIVACY patient search returns birth year only; selected patient detail retains full DOB', async () => {
+  const f = await clinic();
+  const created = await api.call('POST', '/api/v1/patients', {
+    token: f.desk,
+    body: { familyName: 'FictionalPrivacy', givenName: 'BirthYearCheck', dateOfBirth: '1982-01-03', isSynthetic: true },
+  });
+  assert.equal(created.status, 201, JSON.stringify(created.body));
+  const id = created.body.patient.id as string;
+  const listed = await api.call('GET', '/api/v1/patients?q=BirthYearCheck', { token: f.desk });
+  assert.equal(listed.status, 200);
+  const summary = listed.body.patients.find((p: { id: string }) => p.id === id);
+  assert.ok(summary);
+  assert.equal(summary.birthYear, '1982');
+  assert.equal(Object.hasOwn(summary, 'dateOfBirth'), false, 'full date must not appear in a bulk response');
+  assert.ok(!JSON.stringify(listed.body).includes('1982-01-03'));
+  const selected = await api.call('GET', `/api/v1/patients/${id}`, { token: f.desk });
+  assert.equal(selected.status, 200);
+  assert.equal(selected.body.patient.dateOfBirth, '1982-01-03');
+});
+
+test('T-UX12-ARABIC matching Arabic names still warn with different known phone and birth date', async () => {
+  const f = await clinic();
+  const create = (body: Record<string, unknown>) => api.call('POST', '/api/v1/patients', {
+    token: f.desk, body: { isSynthetic: true, ...body },
+  });
+  const first = await create({
+    familyName: 'FictionalLatinOne', givenName: 'FictionalOne', nameAr: 'أحمد بن يوسف',
+    phone: '+216 21 111 111', dateOfBirth: '1980-01-02',
+  });
+  assert.equal(first.status, 201);
+  const conflict = await create({
+    familyName: 'FictionalLatinTwo', givenName: 'FictionalTwo', nameAr: 'احمد بن يوسف',
+    phone: '+216 22 222 222', dateOfBirth: '1990-04-05',
+  });
+  assert.equal(conflict.status, 409, JSON.stringify(conflict.body));
+  assert.ok(String(conflict.body.error.message).includes('matching patient'));
+  assert.ok(!String(conflict.body.error.message).includes('same name and phone'));
+});
+
+test('T-UX12-STATUS conflicts distinguish early no-show from dentist-documented visits', async () => {
+  const f = await clinic();
+  const future = await newVisit(api, f.desk, f.patientId, `${tomorrowUtc()}T12:00:00Z`);
+  const early = await api.call('POST', `/api/v1/visits/${future}/status`, {
+    token: f.desk, body: { status: 'NO_SHOW', reason: 'Fictional early absence' },
+  });
+  assert.equal(early.status, 409);
+  assert.equal(early.body.error.details.reason, 'NO_SHOW_BEFORE_START');
+  const cared = await newVisit(api, f.desk, f.patientId, '2026-10-05T10:00:00Z');
+  await confirmCare(api, f.dentist, cared, 10_000);
+  const blocked = await api.call('POST', `/api/v1/visits/${cared}/status`, {
+    token: f.desk, body: { status: 'CANCELLED', reason: 'Fictional cancellation request' },
+  });
+  assert.equal(blocked.status, 409);
+  assert.equal(blocked.body.error.details.reason, 'VISIT_HAS_DOCUMENTED_CARE');
+});
+
 test('T-DAY-1 (RED on base) GET /visits?day uses the clinic-local day: 00:30 in Tunis on the 29th is not on the 28th list', async () => {
   const f = await clinic();
   const late = await newVisit(api, f.desk, f.patientId, '2026-10-28T23:30:00Z'); // 00:30 on 29 Oct in Africa/Tunis (UTC+1)
