@@ -173,8 +173,17 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(arabicMissingDetail).toHaveCSS("background-color", "rgb(255, 243, 232)");
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  // C-32: capture the actual 390px viewport, not only the overview element crop.
+  // This proves viewport context, but NOT native browser 200% zoom acceptance.
+  const alertList = arabicOverview.getByTestId("clinical-alert-details");
+  const widths = await alertList.evaluate(el => ({ visible: el.clientWidth, content: el.scrollWidth }));
+  expect(widths.content).toBeLessThanOrEqual(widths.visible);
   await test.info().attach("dentist-ar-390-critical-first-null-detail", {
     body: await arabicOverview.screenshot({ path: "test-results/dentist-ar-medical-alert-details.png", animations: "disabled" }),
+    contentType: "image/png",
+  });
+  await test.info().attach("dentist-ar-390-full-viewport", {
+    body: await page.screenshot({ path: "test-results/dentist-ar-390-full-viewport.png", animations: "disabled", fullPage: false }),
     contentType: "image/png",
   });
 });
