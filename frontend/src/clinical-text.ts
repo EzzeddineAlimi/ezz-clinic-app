@@ -9,6 +9,11 @@ export const clinicalText = {
     quote: "Une estimation de plan n'est pas une facture.",
     uncertain: "Résultat incertain : relire le dossier ou réessayer la même demande.",
     retry: "Réessayer la même demande", warning: "Vérifier le dossier médical avant un soin.",
+    subjective: "Subjectif", objective: "Objectif", assessment: "Évaluation", planSection: "Conduite à tenir",
+    signedStatus: "Signée", initialSigned: "Note initiale déjà signée. Toute précision est un complément distinct et signé.",
+    addendum: "Ajouter un complément", addendumHint: "Le texte signé reste inchangé. Ce complément sera une nouvelle entrée signée.",
+    signAddendum: "Signer le complément", struck: "Entrée signalée comme erronée",
+    noteKinds: { NOTE: "Note initiale", LATE_ENTRY: "Note tardive", ADDENDUM: "Complément", ENTERED_IN_ERROR: "Entrée signalée comme erronée" },
   },
   ar: {
     title: "الملف السريري", note: "ملاحظات موقعة", plan: "خطة العلاج",
@@ -20,5 +25,10 @@ export const clinicalText = {
     quote: "التقدير ليس فاتورة.",
     uncertain: "النتيجة غير مؤكدة: راجع الملف أو أعد نفس الطلب.",
     retry: "إعادة نفس الطلب", warning: "راجع الملف الطبي قبل العلاج.",
+    subjective: "ذاتي", objective: "موضوعي", assessment: "التقييم", planSection: "خطة المتابعة",
+    signedStatus: "موقّعة", initialSigned: "تم توقيع الملاحظة الأصلية. أي إضافة تُسجّل كملاحظة مستقلة وموقّعة.",
+    addendum: "إضافة ملحق", addendumHint: "النص الموقّع لا يتغيّر. يُسجّل الملحق كإدخال جديد وموقّع.",
+    signAddendum: "توقيع الملحق", struck: "إدخال تم تصنيفه كخطأ",
+    noteKinds: { NOTE: "الملاحظة الأصلية", LATE_ENTRY: "ملاحظة متأخرة", ADDENDUM: "ملحق", ENTERED_IN_ERROR: "إدخال خاطئ" },
   },
 } as const;
