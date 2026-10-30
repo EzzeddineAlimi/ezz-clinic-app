@@ -14,6 +14,7 @@ const text = {
     title: "Encaissement",
     total: "Soins confirmés",
     balance: "Reste à payer",
+    settled: "Soldé — aucun nouveau paiement à préparer.",
     paid: "Paiements enregistrés",
     amount: "Montant (TND)",
     tender: "Mode de paiement",
@@ -56,6 +57,7 @@ const text = {
     title: "استخلاص",
     total: "العلاجات المؤكدة",
     balance: "المبلغ المتبقي",
+    settled: "تم السداد بالكامل — لا توجد دفعة جديدة للتسجيل.",
     paid: "الدفعات المسجلة",
     amount: "المبلغ (دينار)",
     tender: "طريقة الدفع",
@@ -95,6 +97,16 @@ const text = {
     recoveryError: "تعذر التحقق من حالة الدفعة؛ تسجيل دفعة جديدة ممنوع.",
   },
 };
+
+/** Display local clinic time; never raw ISO UTC in RTL/mobile payment history. */
+function clinicPaymentTime(value: string, lang: "fr" | "ar"): string {
+  const when = new Date(value);
+  if (!Number.isFinite(when.getTime())) return "—";
+  return new Intl.DateTimeFormat(lang === "ar" ? "ar-TN-u-nu-latn" : "fr-TN", {
+    timeZone: "Africa/Tunis", day: "2-digit", month: "2-digit",
+    year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(when);
+}
 
 function isUnknown(error: unknown) {
   return error instanceof ApiError &&
@@ -352,9 +364,10 @@ export function Checkout({
   } catch { /* Invalid amount cannot match a prior payment. */ }
   const blocked = pending || data.loading || !!data.error || !data.data?.consistent || needsRecovery || pendingAnomaly;
   return (
-    <Modal title={t.title} w={w} busy={pending} close={close}>
-      <div className="patient-context">
-        <strong><bdi>{nameOf(visit.patient)}</bdi> · #{visit.patient.fileNo}</strong>
+    <Modal title={`${t.title} — ${nameOf(visit.patient)}`} w={w} busy={pending} close={close}>
+      <div className="patient-context" data-testid="checkout-patient-context">
+        <strong><bdi>{nameOf(visit.patient)}</bdi> · {w.file} <bdi>#{visit.patient.fileNo}</bdi></strong>
+        <p>{w.dentist}: <bdi>{visit.dentist?.name ?? w.unassigned}</bdi> · {w.time}: <bdi dir="ltr">{visit.localTime}</bdi></p>
       </div>
       <p>{t.desk}</p>
       {error !== undefined && <ErrorBox error={error} w={w} />}
@@ -372,12 +385,15 @@ export function Checkout({
             <dt>{t.balance}</dt>
             <dd data-testid="checkout-balance">{amount(recovered!.balance.balanceMillimes)}</dd>
           </dl>
+          {recovered!.balance.careConfirmed && recovered!.balance.balanceMillimes === 0 && !pendingAnomaly && !activeIntent && (
+            <p role="status" data-testid="checkout-settled">{t.settled}</p>
+          )}
           <h3>{t.paid}</h3>
           {!data.data.history.payments.length && <p>{t.empty}</p>}
           <ul>
             {data.data.history.payments.map(p => (
               <li key={p.id}>
-                <bdi>{amount(p.amountMillimes)} · {p.tender === "CASH" ? t.cash : t.card} · {p.receiptNumber ?? "—"} · {p.recordedAt}</bdi>
+                <bdi>{amount(p.amountMillimes)} · {p.tender === "CASH" ? t.cash : t.card} · {p.receiptNumber ?? "—"}</bdi> · <bdi dir="ltr">{clinicPaymentTime(p.recordedAt, lang)}</bdi>
                 {p.receiptId && (
                   <> <button className="secondary compact" onClick={() => setReceiptId(p.receiptId!)}>{t.openReceipt}</button></>
                 )}
@@ -393,7 +409,7 @@ export function Checkout({
               <ul>
                 {pendingIntents.map(i => <li key={i.id}>
                   <bdi>{i.id} · {amount(i.payload.amountMillimes)} · {i.payload.tender}
-                    · {i.createdAt} · {i.createdBy}</bdi>
+                    · {clinicPaymentTime(i.createdAt, lang)} · {i.createdBy}</bdi>
                 </li>)}
               </ul>
             </section>
