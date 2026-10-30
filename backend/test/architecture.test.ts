@@ -32,6 +32,7 @@ const ALLOWED: Record<string, string[]> = {
   documents: ['audit', 'patients'],
   lab: ['audit', 'patients', 'settings'],
   stock: ['audit', 'settings'],
+  cnam: ['audit', 'patients', 'settings'],
 };
 const importsOf = (file: string) => [...readFileSync(file, 'utf8').matchAll(/from '\.\/([a-z]+)\.ts'/g)].map(m => m[1]!);
 

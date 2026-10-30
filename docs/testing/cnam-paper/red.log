@@ -1,0 +1,33 @@
+TAP version 13
+# Subtest: CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+not ok 1 - CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+  ---
+  duration_ms: 574.397086
+  type: 'test'
+  location: '/workspace/ezz-cnam/backend/test/cnam-paper.test.ts:28:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"error":{"code":"NOT_FOUND","message":"Not found"}}
+    
+    404 !== 400
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 400
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-cnam/backend/test/cnam-paper.test.ts:31:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 774.517079

@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+ok 1 - CNAM-1 rejects a forged invoiced fee instead of accepting desk-authored clinical facts
+  ---
+  duration_ms: 803.787272
+  type: 'test'
+  ...
+# Subtest: CNAM-2 rejects wrong patient, wrong treating dentist, unknown fields and non-integer money
+ok 2 - CNAM-2 rejects wrong patient, wrong treating dentist, unknown fields and non-integer money
+  ---
+  duration_ms: 63.495339
+  type: 'test'
+  ...
+# Subtest: CNAM-3 live auth, role and tenant boundaries include every dossier action and direct RLS
+ok 3 - CNAM-3 live auth, role and tenant boundaries include every dossier action and direct RLS
+  ---
+  duration_ms: 334.87605
+  type: 'test'
+  ...
+# Subtest: CNAM-4 concurrent same-key and lost-key retries recover one draft and one immutable issue
+ok 4 - CNAM-4 concurrent same-key and lost-key retries recover one draft and one immutable issue
+  ---
+  duration_ms: 125.796672
+  type: 'test'
+  ...
+# Subtest: CNAM-5 duplicate act issuance in competing dossiers fails closed under concurrency
+ok 5 - CNAM-5 duplicate act issuance in competing dossiers fails closed under concurrency
+  ---
+  duration_ms: 159.143733
+  type: 'test'
+  ...
+# Subtest: CNAM-6 reasoned dentist correction appends a version; desk/owner/stale changes cannot overwrite history
+ok 6 - CNAM-6 reasoned dentist correction appends a version; desk/owner/stale changes cannot overwrite history
+  ---
+  duration_ms: 41.093478
+  type: 'test'
+  ...
+# Subtest: CNAM-7 care/site changes before issue require a new version, never silently replace a snapshot
+ok 7 - CNAM-7 care/site changes before issue require a new version, never silently replace a snapshot
+  ---
+  duration_ms: 81.241187
+  type: 'test'
+  ...
+# Subtest: CNAM-8 copies have consecutive server markers and do not assert physical printing or delivery
+ok 8 - CNAM-8 copies have consecutive server markers and do not assert physical printing or delivery
+  ---
+  duration_ms: 155.406988
+  type: 'test'
+  ...
+# Subtest: CNAM-9 reports require optional follow-up consent and remain non-official, outside money ledgers
+ok 9 - CNAM-9 reports require optional follow-up consent and remain non-official, outside money ledgers
+  ---
+  duration_ms: 108.200141
+  type: 'test'
+  ...
+# Subtest: CNAM-10 records actual multi-practitioner/multi-session authors and immutable bilingual preparation contracts
+ok 10 - CNAM-10 records actual multi-practitioner/multi-session authors and immutable bilingual preparation contracts
+  ---
+  duration_ms: 589.176581
+  type: 'test'
+  ...
+# Subtest: CNAM-11 actual patient payment/receipt links are read-only and a later payment invalidates an unissued snapshot
+ok 11 - CNAM-11 actual patient payment/receipt links are read-only and a later payment invalidates an unissued snapshot
+  ---
+  duration_ms: 101.99865
+  type: 'test'
+  ...
+# Subtest: CNAM-12 failure before issue commit rolls reservation/event/audit/idempotency back and same-key retry succeeds
+ok 12 - CNAM-12 failure before issue commit rolls reservation/event/audit/idempotency back and same-key retry succeeds
+  ---
+  duration_ms: 98.354957
+  type: 'test'
+  ...
+# Subtest: CNAM-13 SIGKILL restart and new login recover committed issue after discarded response without a new issue
+ok 13 - CNAM-13 SIGKILL restart and new login recover committed issue after discarded response without a new issue
+  ---
+  duration_ms: 1025.576483
+  type: 'test'
+  ...
+# Subtest: CNAM-14 effective tooth amendment is detected at issue and cannot rewrite an existing preparation version
+ok 14 - CNAM-14 effective tooth amendment is detected at issue and cannot rewrite an existing preparation version
+  ---
+  duration_ms: 114.661672
+  type: 'test'
+  ...
+# Subtest: CNAM-15 database rejects a reasonless corrected version even below HTTP validation
+ok 15 - CNAM-15 database rejects a reasonless corrected version even below HTTP validation
+  ---
+  duration_ms: 33.706954
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4349.312408
