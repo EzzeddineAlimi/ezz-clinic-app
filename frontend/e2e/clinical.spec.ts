@@ -53,9 +53,15 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await row.getByRole("button",{name:"Dossier clinique"}).click();
   const dialog=page.getByRole("dialog");
   await expect(dialog).toContainText(familyName);
+  await dialog.getByRole("button", { name: "Vue d’ensemble" }).click();
+  const overview = dialog.getByTestId("clinical-overview");
+  await expect(overview).toContainText("État du rendez-vous: Arrivé");
+  await expect(overview).toContainText("Alertes médicales actives: 0");
+  await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
   await dialog.getByRole("button",{name:/Plan de traitement/}).click();
   await expect(dialog).toContainText("FICPLAN");
-  await expect(dialog).toContainText("150.000 TND");
+  await expect(dialog).toContainText("Estimation du plan (non facturée): 150.000 TND");
+  await expect(dialog.locator(".clinical-entry").filter({ hasText: "FICPLAN" }).getByTestId("plan-status")).toHaveText("Proposé");
 
   const newPlan = dialog.locator("form.cash-form");
   await newPlan.getByLabel("Code").fill("TESTPLAN2");
@@ -78,7 +84,7 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
     r.status() === 201);
   await statusForm.getByRole("button",{name:"Enregistrer la décision"}).click();
   expect((await (await statusSaved).json()).planItem.status).toBe("ACCEPTED");
-  await expect(planEntry).toContainText("ACCEPTED");
+  await expect(planEntry.getByTestId("plan-status")).toHaveText("Accepté");
 
   await dialog.getByRole("button",{name:/Constatations/}).click();
   const findingForm = dialog.locator("form.cash-form");
