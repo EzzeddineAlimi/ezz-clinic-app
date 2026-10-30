@@ -102,8 +102,12 @@ export const patientRoutes: Route[] = [
           name_ar AS "nameAr", contact_preference AS "contactPreference",
           date_of_birth::text AS "dateOfBirth",
           CASE WHEN phone IS NULL THEN NULL
-               ELSE right(regexp_replace(phone, '[^0-9]', '', 'g'), 4) END AS "phoneLast4"
-        FROM patients
+               ELSE right(regexp_replace(phone, '[^0-9]', '', 'g'), 4) END AS "phoneLast4",
+          EXISTS (SELECT 1 FROM patients other
+                  WHERE other.id <> p.id
+                    AND lower(other.family_name) = lower(p.family_name)
+                    AND lower(other.given_name) = lower(p.given_name)) AS "hasSameNameInClinic"
+        FROM patients p
         WHERE $1 = ''
            OR strpos(lower(family_name), lower($1)) > 0
            OR strpos(lower(given_name), lower($1)) > 0
