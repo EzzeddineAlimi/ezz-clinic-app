@@ -8,6 +8,10 @@ import type { Board, Visit, Patient } from "./api.ts";
 import type { Words, Lang } from "./i18n.ts";
 import { nameOf } from "./forms.tsx";
 import { Empty, ErrorBox, Icon, Loading, Modal, useResource } from "./ui.tsx";
+function patientNameKey(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f\u0640\u064b-\u065f\u0670]/g, "")
+    .toLocaleLowerCase().replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
+}
 export function DayBoard({
   board,
   w,
@@ -270,8 +274,8 @@ export function PatientDirectory({
   );
   const sameVisibleName = (p: Patient) =>
     !!p.hasSameNameInClinic || (resource.data?.patients ?? []).filter(other =>
-      nameOf(other).normalize("NFKC").toLocaleLowerCase() ===
-      nameOf(p).normalize("NFKC").toLocaleLowerCase(),
+      patientNameKey(nameOf(other)) === patientNameKey(nameOf(p)) ||
+      (!!p.nameAr && !!other.nameAr && patientNameKey(other.nameAr) === patientNameKey(p.nameAr)),
     ).length > 1;
   const contact: Record<string, string> = {
     IN_PERSON: w.inPerson,
@@ -343,7 +347,7 @@ export function PatientDirectory({
                 </span>
                 {(p.dateOfBirth || p.phoneLast4) && (
                   <small className="patient-identity-hints">
-                    {p.dateOfBirth && <span>{w.dob}: <bdi>{p.dateOfBirth.split("-").reverse().join("/")}</bdi></span>}
+                    {p.dateOfBirth && <span>{w.birthYear}: <bdi>{p.dateOfBirth.slice(0, 4)}</bdi></span>}
                     {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
                   </small>
                 )}
