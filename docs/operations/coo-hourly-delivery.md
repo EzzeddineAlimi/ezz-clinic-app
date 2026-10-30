@@ -1,6 +1,6 @@
 # EZZ Clinic — COO operating agreement (2026-10-29)
 
-**Status:** founder-directed working protocol. This is a draft-branch operating plan, not authority for production deployment or live patient data.
+**Status:** founder-directed working protocol, updated 2026-10-30. This is not authority for production deployment or live patient data.
 
 ## Accountable leadership
 
@@ -38,7 +38,7 @@ At each scheduled cycle:
 
 **Review gates:** Every role-specific change needs actual component/screenshot test evidence. Muse Ons challenges UX before merging consequential visual changes; Muse challenges clinical/financial/permission risks. Critical findings must be answered with an exact code/test diff or explicit deferral. No aesthetic vote may override server controls.
 
-**Founder boundaries:** GPT can autonomously research, design, code, open/update draft PRs, run checks, post Sheet/doc handoffs and resolve routine engineering details. Keep separate explicit founder approval for production hosting, real patient data, real payment/receipt issuance, legal/clinical/CNAM acceptance, spending and high-impact merges/releases. Never claim a scheduled run made an external model execute; only a model's separate authorized schedule/connection can do that.
+**Founder boundaries (2026-10-30 standing authorization):** GPT may merge **routine low-risk** approved-scope development PRs only after verifying exact-head and integrated-main applicable CI, complete dependencies, nonbreaking diff and required independent reviews at the relevant head. Use a merge commit with expected head SHA, verify the new main and its post-merge Actions before any further merge. Main protection currently has **zero required CI checks**, so these are manual fail-closed gates. Hold and notify the founder for permission/auth/security, clinical record integrity, payments/refunds/cash, CNAM/legal, destructive migrations, sensitive data/integrations, missing independent review, CI gaps or unexpected drift. Keep separate explicit founder approval for production hosting, real patient data, real payment/receipt issuance, legal/clinical/CNAM acceptance, spending and high-impact merges/releases. Never claim a scheduled run made an external model execute; only a model's separate authorized schedule/connection can do that.
 
 ## Shared Sheet protocol
 
