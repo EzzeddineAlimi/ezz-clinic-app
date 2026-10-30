@@ -21,6 +21,8 @@ test("cash-count evidence translates each server-authored phrase without losing 
 test("unrecognized audit notes are never silently dropped or reinterpreted", () => {
   assert.equal(cashIndependenceNotes("new evidence rule; " + software, "fr"),
     "new evidence rule; Contrôle logiciel uniquement : l'indépendance du comptage physique ne peut pas être prouvée par le logiciel");
+  assert.equal(cashIndependenceNotes("unknown audit rule; " + software, "ar"),
+    "unknown audit rule; فحص برمجي فقط: لا يمكن للبرنامج إثبات استقلالية الجرد الفعلي");
 });
 
 test("cash-count audit timestamp is explicitly UTC and independent of device timezone", () => {
