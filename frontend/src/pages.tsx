@@ -6,7 +6,7 @@ import { useState, useCallback } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
 import type { Words, Lang } from "./i18n.ts";
-import { nameOf } from "./forms.tsx";
+import { nameOf, usePatientVerification } from "./forms.tsx";
 import { Empty, ErrorBox, Icon, Loading, Modal, useResource } from "./ui.tsx";
 function patientNameKey(value: string): string {
   return value.normalize("NFD").replace(/[\u0300-\u036f\u0640\u064b-\u065f\u0670]/g, "")
@@ -292,7 +292,10 @@ export function PatientDirectory({
 }) {
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
-  const [verifyPatient, setVerifyPatient] = useState<Patient>();
+  const {
+    selected: verifyPatient, setSelected: setVerifyPatient,
+    busy: verificationPending, error: verificationError, open: openVerification,
+  } = usePatientVerification(api);
   const resource = useResource(
     useCallback(
       (signal: AbortSignal) => api.patients(search, signal),
@@ -372,9 +375,9 @@ export function PatientDirectory({
                     </>
                   )}
                 </span>
-                {(p.dateOfBirth || p.phoneLast4) && (
+                {(p.birthYear || p.phoneLast4) && (
                   <small className="patient-identity-hints">
-                    {p.dateOfBirth && <span>{w.birthYear}: <bdi>{p.dateOfBirth.slice(0, 4)}</bdi></span>}
+                    {p.birthYear && <span>{w.birthYear}: <bdi>{p.birthYear}</bdi></span>}
                     {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
                   </small>
                 )}
@@ -385,8 +388,8 @@ export function PatientDirectory({
               {writable && (
                 <button
                   className="secondary"
-                  disabled={!scheduleReady}
-                  onClick={() => sameVisibleName(p) ? setVerifyPatient(p) : schedule(p)}
+                  disabled={!scheduleReady || verificationPending}
+                  onClick={() => sameVisibleName(p) ? void openVerification(p) : schedule(p)}
                 >
                   {w.scheduleFor}
                   <Icon name="arrow" size={16} />
@@ -396,6 +399,8 @@ export function PatientDirectory({
           ))}
         </div>
       )}
+      {verificationPending && <Loading label={w.loading} />}
+      {verificationError !== undefined && <ErrorBox error={verificationError} w={w} />}
       {verifyPatient && (
         <Modal title={w.patientSafety} w={w} busy={false} close={() => setVerifyPatient(undefined)}>
           <p role="alert">{w.identityCheck}</p>
