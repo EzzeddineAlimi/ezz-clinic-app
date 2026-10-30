@@ -65,7 +65,18 @@ Fictional API examples were captured with `EZZ_RECORD_EXAMPLES=1 node --test bac
 
 ## Full suite and CI classification
 
-Final local full-suite reruns and exact-head CI verification are in progress at initial draft publication. This paragraph must be updated with actual final counts/results; historical main/#63/#66 CI is **not** evidence for this change. Initial source/compiled runs (364 tests,363 pass,0 fail,1 existing optional real-TLS skip) predate the final tests/SQL constraint; retained logs must not be mistaken for final-head coverage. No real TLS execution or local frontend/browser run is claimed for this slice. No configured lint script exists on current main; this PR does not invent a lint pass.
+Final **locally executed** runs against implementation commit `6f5ea7555629482491f651916bf874e2fcaea50c` (Node22.22.0/PG16.15, process timezone UTC):
+
+| Command | Result | Evidence |
+|---|---|---|
+| `npm --prefix backend run typecheck` | PASS, exit0 | `cnam-paper/typecheck.log` |
+| `node --test backend/test/cnam-paper.test.ts` | 15/15 PASS,0 fail,0 skip,exit0 | `cnam-paper/green.log` |
+| `npm --prefix backend test` | 366 tests,365 PASS,0 fail,1 optional TLS skip,exit0 | `cnam-paper/source.log` |
+| `npm --prefix backend run test:dist` | build PASS;366 tests,365 PASS,0 fail,1 optional TLS skip,exit0 | `cnam-paper/compiled.log` |
+
+No backend source/test/migration changes occurred during these final full runs. The subsequent evidence commit changes docs/logs only; compare its backend tree to the implementation SHA. Log SHA-256s are in `cnam-paper/manifest.json`. Earlier source/compiled iterations (`*-first.log`:364/363 pass; `*-pre-constraint.log`:365/364 pass,each0 fail/1 optionalTLSskip) are retained and **not** final-head evidence. They predate the final tests/constraint, unlike the runs above. Raw TAP failures/whitespace are retained verbatim, so a whitespace-only warning on a raw log is not an application failure.
+
+Exact-final-head CI is verified separately in the PR's final evidence comment and Mission Control; do not infer success from the local runs or historical main/#63/#66 checks. Initial implementation-head backend run: [41020102903](https://github.com/EzzeddineAlimi/ezz-clinic-app/actions/runs/41020102903); frontend run: [41020102996](https://github.com/EzzeddineAlimi/ezz-clinic-app/actions/runs/41020102996). These initial-head links are not substituted for the final evidence-head run. CI includes source/compiled UTC, Africa/Tunis, America/Toronto, Node24/26 forward compatibility and the existing real-API frontend/browser workflow. No **local** full timezone matrix, real TLS or frontend/browser run is claimed for this slice. The optional `T-TLS-5` skip is explicit: `EZZ_TEST_TLS_ROOTCERT` is unset; the PG service is not configured with certificates. No configured lint script exists on current main; this PR does not invent a lint pass.
 
 ## Remaining review gates
 

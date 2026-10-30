@@ -1,0 +1,44 @@
+{
+  "fictionalOnly": true,
+  "executedImplementationSha": "6f5ea7555629482491f651916bf874e2fcaea50c",
+  "node": "22.22.0",
+  "postgres": "16.15",
+  "final": {
+    "source": {
+      "tests": 366,
+      "pass": 365,
+      "fail": 0,
+      "skip": 1,
+      "exit": 0
+    },
+    "compiled": {
+      "tests": 366,
+      "pass": 365,
+      "fail": 0,
+      "skip": 1,
+      "exit": 0
+    },
+    "targeted": {
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "skip": 0,
+      "exit": 0
+    }
+  },
+  "skip": "T-TLS-5: EZZ_TEST_TLS_ROOTCERT unset",
+  "sha256": {
+    "compiled-first.log": "29c11d6815b15246faa78949ba2162218627a40cadb3ce1354c8aa750db23946",
+    "compiled-pre-constraint.log": "d24de35f26799e6b34287d55413d2b86fc3ffc93c3279ca436dc09460ed361af",
+    "compiled.log": "5cfe520868358d6383edb34733467a5fdcda63f9c268cb8d1368b76ee916a3d2",
+    "green-first.log": "c3452d4d79f36bfa3d990549a27be05e4978681682201c3cb5f7e2bbfaaebe3b",
+    "green-second.log": "30f789a94b9f1992cfcbf075381d8dc708f13c7645ab5b0877ff918a150371c3",
+    "green.log": "b9464617f4acb67e1e3545e8499bccf21ef49f6490975b3795b4ea5ee56059c5",
+    "red-db-reason.log": "f03e32613aa5d733cde3afe70c57994b76980e40d8820a6778e6ede9045caa68",
+    "red.log": "7a76ed0f3a5cb9fe389e2ce18c58f10b2fcf254b53ad4b94b4a837c41ad908e0",
+    "source-first.log": "b1f394ea4d3d3648d97b951e9f2d86513346549769cce5b1afa7b93f0fc800b7",
+    "source-pre-constraint.log": "ca56bf23b8490153887f0ec737a51118ad42ee0132f36ac82389a02a38a767a2",
+    "source.log": "dde49df79214838c4c8e88f41245b8b50754e262970e35add89aa0d31da9e0ff",
+    "typecheck.log": "b70cc478037f16b067eb02beb39536f37f7506baccae7caa3dd07db5d8c8e042"
+  }
+}
