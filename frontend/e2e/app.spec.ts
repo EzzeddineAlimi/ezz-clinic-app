@@ -865,7 +865,20 @@ test("UX12 follow-on: booking picker requires a focus-managed nested identity di
   const verifyClose = verify.getByRole("button", { name: "Fermer", exact: true });
   const verifyConfirm = verify.getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ });
   await verifyClose.focus();
+  const focusProbe = () => page.evaluate(() => {
+    const inner = [...document.querySelectorAll("dialog")].at(-1)!;
+    const buttons = [...inner.querySelectorAll("button")];
+    return {
+      activeButtonIndex: buttons.indexOf(document.activeElement as HTMLButtonElement),
+      activeTag: document.activeElement?.tagName,
+      buttonCount: buttons.length,
+      visibleButtons: buttons.map(b => b.getClientRects().length > 0),
+      dialogOpen: inner.open,
+    };
+  });
+  console.log("UX12_FOCUS_BEFORE_SHIFT_TAB", JSON.stringify(await focusProbe()));
   await page.keyboard.press("Shift+Tab");
+  console.log("UX12_FOCUS_AFTER_SHIFT_TAB", JSON.stringify(await focusProbe()));
   await expect(verifyConfirm).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(verifyClose).toBeFocused();
