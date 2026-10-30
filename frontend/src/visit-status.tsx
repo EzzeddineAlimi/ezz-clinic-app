@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Api, WriteIntent } from "./api.ts";
+import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Visit } from "./api.ts";
 import type { Words } from "./i18n.ts";
 import { nameOf } from "./forms.tsx";
@@ -51,6 +51,10 @@ export function VisitStatusModal({
     if (intent.uncertain) uncertainClose();
     close();
   }
+  const conflictText = error instanceof ApiError && error.code === "CONFLICT"
+    ? error.details.reason === "NO_SHOW_BEFORE_START" ? w.noShowTooEarly
+      : error.details.reason === "VISIT_HAS_DOCUMENTED_CARE" ? w.documentedVisitLocked : undefined
+    : undefined;
   return (
     <Modal
       title={status === "NO_SHOW" ? w.markNoShow : w.cancelVisit}
@@ -75,7 +79,9 @@ export function VisitStatusModal({
           disabled={pending || intent.uncertain}
         />
         <p className="muted">{w.reasonHint}</p>
-        {error !== undefined && <ErrorBox error={error} w={w} />}
+        {error !== undefined && <ErrorBox error={error} w={w}>
+          {conflictText && <p>{conflictText}</p>}
+        </ErrorBox>}
         {intent.uncertain && <p role="alert" className="uncertain">{w.uncertain}</p>}
         <div className="form-footer">
           <button type="button" className="secondary" disabled={pending} onClick={exit}>{w.cancel}</button>
