@@ -514,7 +514,8 @@ test("UX12: Arabic substring search and same-name booking require visible file v
   await search.fill("الفحص الثاني");
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.locator(".patient-row")).toHaveCount(1);
-  await expect(page.locator(".patient-row")).toContainText(["1994", "0002"]);
+  await expect(page.locator(".patient-row")).toContainText("1994");
+  await expect(page.locator(".patient-row")).toContainText("••••0002");
   await search.fill(familyName.slice(3, 9));
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.locator(".patient-row")).toHaveCount(2);
