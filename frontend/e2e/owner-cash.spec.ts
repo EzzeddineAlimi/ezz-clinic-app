@@ -67,7 +67,8 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await expect(cash.getByTestId("cash-attempt-history")).toContainText("17.000 TND");
   await expect(cash.getByTestId("cash-attempt-history")).toContainText("Horodatage enregistré (serveur)");
   await expect(cash.getByTestId("cash-attempt-history")).toContainText("Détail du contrôle logiciel (sans preuve physique)");
-  await expect(cash.getByTestId("cash-attempt-history")).toContainText("software check only");
+  await expect(cash.getByTestId("cash-attempt-history")).toContainText("Contrôle logiciel uniquement");
+  await expect(cash.getByTestId("cash-attempt-history").locator("time").last()).toContainText("UTC");
   await expect(cash.getByTestId("cash-counted")).toHaveText("17.000 TND");
 
   await page.getByRole("button", { name: "العربية", exact: true }).click();
@@ -75,6 +76,8 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await expect(cash.getByRole("heading", { name: "سجل عمليات الجرد المسجلة" })).toBeVisible();
   await expect(cash.getByTestId("cash-attempt-history")).toContainText("وقت تسجيل الجرد (الخادم)");
   await expect(cash.getByTestId("cash-attempt-history")).toContainText("تفاصيل الفحص البرمجي (لا يثبت الجرد الفعلي)");
+  await expect(cash.getByTestId("cash-attempt-history")).toContainText("فحص برمجي فقط");
+  await expect(cash.getByTestId("cash-attempt-history").locator("time").last()).toContainText("UTC");
   await expect(cash.getByTestId("cash-attempt-history").locator("li")).toHaveCount(attempts + 2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole("button", { name: "FR", exact: true }).click();
