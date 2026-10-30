@@ -6,7 +6,7 @@ function luminance(rgb: string): number {
   const channels = rgb.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/);
   if (!channels) throw new Error("Unexpected computed CSS color: " + rgb);
   return [1, 2, 3].reduce((sum, i) => {
-    const channel = Number(channels[i]) / 255;
+    const channel = Number(channels[i]!) / 255;
     const linear = channel <= 0.04045
       ? channel / 12.92
       : ((channel + 0.055) / 1.055) ** 2.4;
