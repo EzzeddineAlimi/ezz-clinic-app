@@ -1,4 +1,5 @@
 import { Checkout } from "./checkout.tsx";
+import { VisitStatusModal } from "./visit-status.tsx";
 import { ClinicalWorkspace } from "./clinical-workspace.tsx";
 import { clinicalText } from "./clinical-text.ts";
 import { useState, useCallback } from "react";
@@ -93,6 +94,7 @@ function VisitRow({
   confirmCare: (visit: Visit) => void;
 }) {
   const [checkout, setCheckout] = useState(false);
+  const [statusAction, setStatusAction] = useState<"NO_SHOW" | "CANCELLED">();
   const [clinical, setClinical] = useState(false);
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
@@ -155,6 +157,9 @@ function VisitRow({
             <span className="flag">{w.late}</span>
           )}
         </div>
+        {(v.status === "NO_SHOW" || v.status === "CANCELLED") && v.statusReason && (
+          <p className="muted">{w.visitReason}: <bdi>{v.statusReason}</bdi></p>
+        )}
         {error !== undefined && <ErrorBox error={error} w={w} />}
         {intent.uncertain && (
           <p role="alert" className="uncertain">
@@ -165,6 +170,24 @@ function VisitRow({
       {clinical && (
         <ClinicalWorkspace api={api} visit={v} lang={lang} w={w}
           close={() => setClinical(false)} />
+      )}
+      {statusAction && (
+        <VisitStatusModal
+          api={api}
+          visit={v}
+          status={statusAction}
+          w={w}
+          close={() => setStatusAction(undefined)}
+          saved={() => {
+            notify(statusAction === "NO_SHOW" ? w.savedNoShow : w.savedCancellation);
+            setStatusAction(undefined);
+            refreshed();
+          }}
+          uncertainClose={() => {
+            notify(w.ambiguousClosed);
+            refreshed();
+          }}
+        />
       )}
       {checkout && (
         <Checkout
@@ -204,6 +227,17 @@ function VisitRow({
             onClick={() => void arrive()}
           >
             {pending ? w.saving : intent.uncertain ? w.retry : w.arrival}
+          </button>
+        )}
+        {writable && v.status === "SCHEDULED" &&
+          new Date(v.scheduledAt).getTime() <= Date.now() && (
+            <button className="secondary compact" disabled={pending} onClick={() => setStatusAction("NO_SHOW")}>
+              {w.markNoShow}
+            </button>
+          )}
+        {writable && ["SCHEDULED", "ARRIVED"].includes(v.status) && (
+          <button className="secondary compact" disabled={pending} onClick={() => setStatusAction("CANCELLED")}>
+            {w.cancelVisit}
           </button>
         )}
       </div>
