@@ -206,6 +206,8 @@ export function Modal({
       aria-labelledby={titleId}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
+        // Keep the inner dialog's Tab handling from reaching a parent dialog.
+        event.stopPropagation();
         const elements = [
           ...event.currentTarget.querySelectorAll<HTMLElement>(
             "button, input, select, textarea, a[href], [tabindex]",
