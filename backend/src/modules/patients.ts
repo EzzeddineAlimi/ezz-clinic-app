@@ -14,6 +14,7 @@ import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
 import { clinicDay, clinicTimezone } from './settings.ts';
+import { patientNameKeySql as nameKey } from './patient-name.ts';
 
 const NAME = { min: 1, max: 80 };
 const PHONE = /^\+?[0-9 ]{6,20}$/;
@@ -78,9 +79,16 @@ export const patientRoutes: Route[] = [
       // Duplicate warning (C-135 AC-REG-3; B12): same normalised name, unless both phones are known and differ, or both
       // birth dates are known and differ. A missing phone never clears the warning (elderly / no-phone patients). Warn, never merge.
       const dup = await tx.query<{ id: string; file_no: number }>(
-        `SELECT id, file_no FROM patients WHERE lower(family_name) = lower($1) AND lower(given_name) = lower($2)
-           AND (phone IS NULL OR $3::text IS NULL OR phone = $3) AND (date_of_birth IS NULL OR $4::date IS NULL OR date_of_birth = $4) LIMIT 3`,
-        [familyName, givenName, phone, dob]);
+        `SELECT id, file_no FROM patients
+         WHERE ((${nameKey("family_name")} = ${nameKey("$1::text")}
+             AND ${nameKey("given_name")} = ${nameKey("$2::text")}
+             AND (phone IS NULL OR $3::text IS NULL OR phone = $3)
+             AND (date_of_birth IS NULL OR $4::date IS NULL OR date_of_birth = $4))
+           OR ($5::text IS NOT NULL AND btrim($5::text) <> ''
+             AND name_ar IS NOT NULL AND btrim(name_ar) <> ''
+             AND ${nameKey("name_ar")} = ${nameKey("$5::text")}))
+         LIMIT 3`,
+        [familyName, givenName, phone, dob, nameAr]);
       if (dup.rowCount > 0 && b.confirmNotDuplicate !== true) {
         fail('CONFLICT', 'A patient with the same name and phone exists; confirm it is a different person', { possibleDuplicates: dup.rows.map(r => ({ id: r.id, fileNo: r.file_no })), retryWith: { confirmNotDuplicate: true } });
       }
@@ -95,7 +103,7 @@ export const patientRoutes: Route[] = [
     method: 'GET', path: '/api/v1/patients', permission: 'patient.read',
     handler: async ({ tx, query }) => {
       const q = (query.get('q') ?? '').trim().slice(0, 80);
-      // Literal substring matching (not LIKE) prevents user-supplied %/_ wildcard expansion.
+      // Canonical literal substring matching (not LIKE) prevents %/_ wildcard expansion.
       // Keep Arabic name searchable and tolerate spaces/punctuation in a phone search.
       // DOB and last four phone digits aid same-name identity checks; never expose full phone here.
       const rows = (await tx.query(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName",
@@ -105,14 +113,17 @@ export const patientRoutes: Route[] = [
                ELSE right(regexp_replace(phone, '[^0-9]', '', 'g'), 4) END AS "phoneLast4",
           EXISTS (SELECT 1 FROM patients other
                   WHERE other.id <> p.id
-                    AND lower(other.family_name) = lower(p.family_name)
-                    AND lower(other.given_name) = lower(p.given_name)) AS "hasSameNameInClinic"
+                    AND ((${nameKey("other.family_name")} = ${nameKey("p.family_name")}
+                       AND ${nameKey("other.given_name")} = ${nameKey("p.given_name")})
+                      OR (other.name_ar IS NOT NULL AND btrim(other.name_ar) <> ''
+                        AND p.name_ar IS NOT NULL AND btrim(p.name_ar) <> ''
+                        AND ${nameKey("other.name_ar")} = ${nameKey("p.name_ar")}))) AS "hasSameNameInClinic"
         FROM patients p
         WHERE $1 = ''
-           OR strpos(lower(family_name), lower($1)) > 0
-           OR strpos(lower(given_name), lower($1)) > 0
-           OR strpos(lower(given_name || ' ' || family_name), lower($1)) > 0
-           OR strpos(coalesce(name_ar, ''), $1) > 0
+           OR strpos(${nameKey("family_name")}, ${nameKey("$1::text")}) > 0
+           OR strpos(${nameKey("given_name")}, ${nameKey("$1::text")}) > 0
+           OR strpos(${nameKey("given_name || ' ' || family_name")}, ${nameKey("$1::text")}) > 0
+           OR strpos(${nameKey("coalesce(name_ar, '')")}, ${nameKey("$1::text")}) > 0
            OR file_no::text = $1
            OR (length(regexp_replace($1, '[^0-9]', '', 'g')) >= 6
                AND regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') =
