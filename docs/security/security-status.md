@@ -1,6 +1,6 @@
 # Security status — v0.2 fictional-data build (Claude Opus 5.5, 2026-10-28)
 
-**Not a security certification.** Synthetic regression tests pass on a persistent PostgreSQL build (`docs/testing/results-matrix.md`); no independent review, penetration test or production deployment has happened. Full STRIDE threat model and risk register: `docs/operations/privacy-compliance-and-operational-risk.md` §11–12.
+**Historical 2026-10-28 security snapshot, not a current certification.** The original 80-test persistent build evidence remains historical. Main has since integrated additional code and CI; [draft security PR #71](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/71) documents current security review, and [issue #72](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/72) tracks unresolved production gates. No independent production penetration test, legal approval or deployment is claimed. Threat model and risks: `docs/operations/privacy-compliance-and-operational-risk.md` §11–12.
 
 ## Council challenges — status after this sprint (proposal; GPT owns the COUNCIL_CHALLENGES cells)
 
@@ -23,7 +23,7 @@ Per the C-146 / M-245 close bar, a challenge may only be proposed for closure wh
 
 ## Remaining vulnerabilities / gaps (ranked)
 
-1. **HIGH — No TLS in the in-repo DB driver** (ADR-0004). Dev/CI only. Fix: ENG-01. **B05 draft (ADR-0004a)** replaces it with `pg` + enforced verified TLS for remote hosts; pending independent review, not yet in this base.
+1. **HIGH — Production database transport/configuration not approved**. Main `backend/src/platform/postgres.ts` now uses pinned `pg` and rejects remote DB configurations without certificate-verifying TLS; prior no-TLS-driver warning is superseded. Actual hosting, CA/certificate rotation, network isolation, secrets and backup custody are still open under [issue #72](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/72).
 2. **HIGH — Demo-grade identity**: password-only, no MFA, no device binding, chairside auth undefined; a receptionist who learns the dentist's password can confirm care as the dentist. Mitigations: per-person accounts, lockout, re-auth, audit. Fix: identity ticket SEC-01.
 3. **HIGH — Owner recovery** requires DB-owner CLI access; no sealed recovery procedure. Fix: SEC-02.
 4. **HIGH — Repository visibility**: GitHub API reported `ezz-clinic-app` as **public** on 2026-10-28 although the Sheet says private. Founder to verify.
@@ -34,7 +34,7 @@ Per the C-146 / M-245 close bar, a challenge may only be proposed for closure wh
 9. **MEDIUM — Exceptions and integrity checks are O(n)** and run synchronously; an attacker with a valid owner session could cause load. Acceptable for one clinic; revisit at scale.
 10. **LOW — Session token sent on every request**; no rotation on privilege change (roles are re-read per request, so revocation is immediate). Rotation on re-auth would be better.
 11. **LOW — `security_denials` shows the staff id**; wording is neutral but owner UI must avoid accusatory presentation.
-12. **LOW — Dependency supply chain**: lockfile lacks integrity hashes (ENG-02); actions pinned by SHA but SHAs resolved through the API, not verified against signed tags.
+12. **LOW — Dependency supply chain residuals**: current backend/frontend lockfiles contain pinned dependencies with integrity metadata, but production advisory monitoring and full reachable-history secret scanning remain subject to [draft PR #71](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/71), independent review and provider-side controls. Pinned Actions SHAs still need provenance review.
 
 ## What the software can never prove (state this wherever a "green" is quoted)
 

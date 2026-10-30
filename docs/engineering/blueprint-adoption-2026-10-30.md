@@ -14,7 +14,7 @@ Adopt the guide's **context → accepted contract → focused plan → smallest 
 | DESIGN_SYSTEM | Design draft `#59`; UX batch and decision ledger | Independent FR/AR/390px review, merge only with founder authorization; GPT UX |
 | UX_FLOWS | Role-workspaces proposal and frontend security-state map | Explicit successful/error/blocked/offline/retry flows; UX-12 then UX-13/14 |
 | ARCHITECTURE | `docs/architecture/architecture.md`, ADRs, SOLID audit | Preserve modular TS/PostgreSQL; reconcile historical statements |
-| DATABASE | Migration files and derived schema catalogue | Keep migrations immutable; regenerate schema when changed |
+| DATABASE | Full migration source; `schema.md` is only a historical 0001–0007 catalogue | Keep migrations immutable; regenerate the complete schema from current disposable PG16 before relying on it |
 | API | Generated `docs/api/openapi.json`, `endpoints.md`, actual tests | Regenerate, validate consumer contracts; no hand-maintained duplicate |
 | SECURITY | `docs/security/security-status.md`, `#71` draft and `#72` | Exact-head independent audit and **real production gates** |
 | CODE_STYLE | `docs/engineering/standards.md` | Fix obsolete runtime/CI/branch/reviewer text in this PR |

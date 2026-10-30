@@ -1,6 +1,6 @@
 # EZZ Clinic v0.2 — database specification (Mission B)
 
-Status: generated + annotated by Claude Opus 5.5, 2026-10-28 from a database migrated with `backend/migrations/0001..0007` on PostgreSQL 16.15. **Source of truth = the migration files**; this page is a readable catalogue. Fictional data only.
+Status: **HISTORICAL PARTIAL CATALOGUE** generated 2026-10-28 from only `backend/migrations/0001..0007` on PostgreSQL 16.15. Current merged main contains additional migrations (at least `0012_patient_documents.sql`); this page does **not** catalogue the full current schema. **Source of truth = all merged migration files**. Regenerate against a current throwaway PostgreSQL 16 database before treating a schema catalogue as complete. No schema generation/test was run by this documentation-only update. Fictional data only.
 
 ## Setup (development / CI)
 
