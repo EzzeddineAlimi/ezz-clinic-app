@@ -3,7 +3,6 @@ name: Backend v0.2 fictional-data checks
 # Synthetic data only. No secrets are configured or needed. No deployment step exists.
 on:
   pull_request:
-    paths: ['backend/**', '.github/workflows/backend-ci.yml']
   push:
     branches: ['main', 'opus55/**']
     paths: ['backend/**', '.github/workflows/backend-ci.yml']
