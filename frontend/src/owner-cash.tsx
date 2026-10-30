@@ -41,6 +41,12 @@ export const cashText = {
     accept: "J'ai vérifié les tentatives, l'écart et le montant à remettre. Je comprends que la clôture ouvre la période suivante.",
     close: "Confirmer la clôture",
     latest: "Dernière tentative",
+    history: "Historique des comptages enregistrés",
+    attemptLabel: "Comptage n°",
+    firstCount: "Premier comptage — aucun motif de recomptage",
+    recountDetail: "Motif du recomptage",
+    recordedBy: "Identifiant du compteur (audit logiciel)",
+    afterWarning: "Des espèces ont été enregistrées après le dernier comptage. Elles ne sont pas incluses dans l’écart affiché et sont reportées sur la période suivante.",
     refreshing: "Relire les données serveur",
     uncertain: "État incertain après la demande. Ne soumettez rien d'autre avant la relecture du serveur.",
     invalid: "Montant invalide. Entrez des dinars avec trois décimales au maximum (ex. 125.500).",
@@ -85,6 +91,12 @@ export const cashText = {
     accept: "تحققت من الجرد والفارق والتسليم وأفهم أن الإغلاق يفتح فترة جديدة.",
     close: "تأكيد الإغلاق",
     latest: "آخر محاولة",
+    history: "سجل عمليات الجرد المسجلة",
+    attemptLabel: "الجرد رقم",
+    firstCount: "الجرد الأول — لا يوجد سبب لإعادة الجرد",
+    recountDetail: "سبب إعادة الجرد",
+    recordedBy: "معرّف الشخص الذي أجرى الجرد (سجل النظام)",
+    afterWarning: "سُجّلت مبالغ نقدية بعد آخر جرد. لا تدخل في الفارق المعروض وتُرحّل إلى الفترة التالية.",
     refreshing: "إعادة القراءة من الخادم",
     uncertain: "النتيجة غير مؤكدة. لا تسجل عملية أخرى قبل مراجعة حالة الخادم.",
     invalid: "مبلغ غير صحيح. أدخل الدينار بثلاث خانات عشرية كحد أقصى.",
@@ -288,7 +300,26 @@ export function OwnerCashControl({ api, lang, w }: { api: Api; lang: Lang; w: Wo
                 </dl>
                 <p>{t.evidence}: {latest.counterIndependent ? t.evidenceSoftware : t.evidenceStaff}</p>
                 <p className="warning">{t.note}</p>
-                <p>{t.after}: {review.cashRecordedAfterLatestCount.count} · <bdi>{amount(review.cashRecordedAfterLatestCount.totalMillimes)}</bdi></p>
+                <p>{t.after}: <bdi>{review.cashRecordedAfterLatestCount.count}</bdi> · <bdi>{amount(review.cashRecordedAfterLatestCount.totalMillimes)}</bdi></p>
+                {review.cashRecordedAfterLatestCount.count > 0 &&
+                  <p className="warning" role="status">{t.afterWarning}</p>}
+                <section aria-label={t.history}>
+                  <h3>{t.history}</h3>
+                  <ol className="cash-attempt-list" data-testid="cash-attempt-history">
+                    {review.attempts.map(attempt => (
+                      <li className="cash-attempt" key={attempt.id}>
+                        <h4>{t.attemptLabel} <bdi>{attempt.attemptNo}</bdi>{attempt.id === latest.id && <> · {t.latest}</>}</h4>
+                        <dl className="cash-figures">
+                          <dt>{t.actual}</dt><dd><bdi>{amount(attempt.countedMillimes)}</bdi></dd>
+                          <dt>{t.difference}</dt><dd><bdi>{amount(attempt.differenceMillimes)}</bdi></dd>
+                        </dl>
+                        <p>{t.recountDetail}: {attempt.recountReason ?? t.firstCount}</p>
+                        <p>{t.recordedBy}: <bdi>{attempt.countedBy}</bdi></p>
+                        <p>{t.evidence}: {attempt.counterIndependent ? t.evidenceSoftware : t.evidenceStaff}</p>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
                 <section className="cash-close">
                   <h3>{t.closing}</h3>
                   <p className="muted">{t.handoverWarning}</p>
