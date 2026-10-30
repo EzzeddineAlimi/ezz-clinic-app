@@ -60,7 +60,7 @@ export function PatientPicker({
               <bdi>{nameOf(p)}</bdi>
               <span>{w.file} <bdi>#{p.fileNo}</bdi></span>
               {(p.dateOfBirth || p.phoneLast4) && <small>
-                {p.dateOfBirth && <span>{w.dob}: <bdi>{p.dateOfBirth.split("-").reverse().join("/")}</bdi></span>}
+                {p.dateOfBirth && <span>{w.birthYear}: <bdi>{p.dateOfBirth.slice(0, 4)}</bdi></span>}
                 {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
               </small>}
             </button>
