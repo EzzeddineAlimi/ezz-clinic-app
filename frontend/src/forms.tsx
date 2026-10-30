@@ -20,6 +20,7 @@ export function PatientPicker({
 }) {
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
+  const [verifyPatient, setVerifyPatient] = useState<Patient>();
   const resource = useResource(
     useCallback(
       (signal: AbortSignal) => api.patients(search, signal),
@@ -54,13 +55,30 @@ export function PatientPicker({
         <div className="picker-results">
           {resource.data?.patients.length === 0 && <p>{w.noPatients}</p>}
           {resource.data?.patients.map((p) => (
-            <button type="button" key={p.id} onClick={() => select(p)}>
+            <button type="button" key={p.id}
+              onClick={() => p.hasSameNameInClinic ? setVerifyPatient(p) : select(p)}>
               <bdi>{nameOf(p)}</bdi>
-              <span>
-                {w.file} <bdi>#{p.fileNo}</bdi>
-              </span>
+              <span>{w.file} <bdi>#{p.fileNo}</bdi></span>
+              {(p.dateOfBirth || p.phoneLast4) && <small>
+                {p.dateOfBirth && <span>{w.dob}: <bdi>{p.dateOfBirth.split("-").reverse().join("/")}</bdi></span>}
+                {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
+              </small>}
             </button>
           ))}
+        </div>
+      )}
+      {verifyPatient && (
+        <div role="group" className="patient-context" aria-label={w.identityCheck}>
+          <p role="alert">{w.identityCheck}</p>
+          <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
+          {verifyPatient.dateOfBirth && <p>{w.dob}: <bdi>{verifyPatient.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
+          {verifyPatient.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifyPatient.phoneLast4}</bdi></p>}
+          <button type="button" className="primary" onClick={() => {
+            const confirmed = verifyPatient;
+            setVerifyPatient(undefined);
+            select(confirmed);
+          }}>{w.confirmFile} · #{verifyPatient.fileNo}</button>
+          <button type="button" className="secondary" onClick={() => setVerifyPatient(undefined)}>{w.cancel}</button>
         </div>
       )}
     </div>
