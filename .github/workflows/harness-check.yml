@@ -1,0 +1,28 @@
+name: EZZ harness source-reference integrity
+on:
+  pull_request:
+    paths:
+      - 'docs/harness/**'
+      - 'scripts/harness/**'
+      - '.github/workflows/harness-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/harness/**'
+      - 'scripts/harness/**'
+      - '.github/workflows/harness-check.yml'
+permissions:
+  contents: read
+jobs:
+  catalog-integrity:
+    name: harness-catalog-integrity
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Fail-closed validator regression checks
+        run: node --test scripts/harness/check.test.mjs
+      - name: Validate catalog and publish conservative summary
+        run: node scripts/harness/check.mjs --markdown >> "$GITHUB_STEP_SUMMARY"

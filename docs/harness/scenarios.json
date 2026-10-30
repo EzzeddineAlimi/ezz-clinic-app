@@ -1,0 +1,337 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "repo": "EzzeddineAlimi/ezz-clinic-app",
+    "mainSha": "406c5dd1fd16dd543f2c0b9a3a601af33ae6568b",
+    "date": "2026-10-30",
+    "data": "FICTIONAL_ONLY",
+    "meaning": "TEST_SOURCE_REFERENCE_ONLY_NOT_EXECUTION_OR_ACCEPTANCE"
+  },
+  "scenarios": [
+    {
+      "id": "EVAL-01",
+      "role": "receptionist",
+      "task": "Verify no-phone patient before booking",
+      "risk": "wrong file",
+      "targetProposal": "zero wrong-file choices",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Register no-phone patient, schedule in clinic zone, record arrival and search file",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Duplicate warning requires human decision; no automatic retry",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-02",
+      "role": "receptionist",
+      "task": "Book dentist appointment without hidden overlap",
+      "risk": "silent collision",
+      "targetProposal": "zero unconfirmed overlaps",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Register no-phone patient, schedule in clinic zone, record arrival and search file",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Overlapping appointment requires explicit confirmation; Arabic form remains keyboard accessible",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-03",
+      "role": "receptionist",
+      "task": "Recover empty/offline day board",
+      "risk": "false saved status",
+      "targetProposal": "zero false commits",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Real seeded board: French desktop, Arabic mobile, no storage, accessibility and screenshots",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Real empty day, loading delay, offline and recovery states",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-04",
+      "role": "dentist",
+      "task": "Confirm performed care with verified dentist authority",
+      "risk": "desk clinical impersonation",
+      "targetProposal": "zero unauthorized confirmations",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/journey.spec.ts",
+          "title": "End-to-end fictional patient: dentist UI confirms care, receptionist takes partial payment and receives server-numbered receipt",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Dentist confirms fictional care through real API; receptionist remains denied",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-05",
+      "role": "receptionist",
+      "task": "Record partial payment and server receipt",
+      "risk": "invalid money",
+      "targetProposal": "zero invalid amount acceptance",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/journey.spec.ts",
+          "title": "End-to-end fictional patient: dentist UI confirms care, receptionist takes partial payment and receives server-numbered receipt",
+          "kind": "positive"
+        },
+        {
+          "file": "backend/test/c4-payments-idempotency.test.ts",
+          "title": "T-PAY-2 hostile payment inputs: zero, negative, float, string, over balance, no tender, no care",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-06",
+      "role": "receptionist",
+      "task": "Recover uncertain payment without duplication",
+      "risk": "duplicate charge",
+      "targetProposal": "zero duplicate recorded payments",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/checkout.spec.ts",
+          "title": "Committed server payment is discovered after reload without automatic duplicate",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/checkout.spec.ts",
+          "title": "Record-time duplicate denial explains pending recovery, cancel and explicit new payment",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-07",
+      "role": "owner",
+      "task": "Count cash blind, then independently review gap",
+      "risk": "cash expectation leaked",
+      "targetProposal": "zero pre-count exposure",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/owner-cash.spec.ts",
+          "title": "owner cash control: blind count, reviewed gap, carry-forward close, Arabic mobile and desk denial",
+          "kind": "positive"
+        },
+        {
+          "file": "backend/test/b10-cash-period-evidence.test.ts",
+          "title": "T-WB-CASH-9 visit list on a new day after a long-closed period: nothing in the desk payload reveals any count figure",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-08",
+      "role": "owner",
+      "task": "Keep card claim separate from provider settlement",
+      "risk": "fake verified settlement",
+      "targetProposal": "zero unsupported card verification",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "backend/test/c3-card-evidence.test.ts",
+          "title": "T-CARD-1 desk card claim with no statement stays DESK_CLAIM; awaiting within lag, overdue after (T-STMT-5)",
+          "kind": "positive"
+        },
+        {
+          "file": "backend/test/c3-card-evidence.test.ts",
+          "title": "M-249-E owner confirmation can NEVER promote to PROVIDER_VERIFIED (API, DB constraint and privileges)",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-09",
+      "role": "dentist",
+      "task": "Sign clinical record and reject stale medical alerts",
+      "risk": "unsafe signed care",
+      "targetProposal": "zero wrong-actor signatures",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/clinical.spec.ts",
+          "title": "Dentist sees restricted encounter, signs append-only note and reads patient treatment plan",
+          "kind": "positive"
+        },
+        {
+          "file": "backend/test/clinical-medical-alerts.test.ts",
+          "title": "T-MED-4 care confirmation is gated by the CURRENT alert set (stale hash refused, implicit ack recorded)",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-10",
+      "role": "security reviewer",
+      "task": "Test wrong-role and cross-clinic record access",
+      "risk": "tenant leak",
+      "targetProposal": "zero unauthorized data exposure",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Assistant is read-only and real server denies registration; no role workaround",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Other clinic patient remains absent and cross-clinic id returns neutral 404",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-11",
+      "role": "owner",
+      "task": "Detect rollback against external checkpoint",
+      "risk": "silent backup rollback",
+      "targetProposal": "zero unflagged stale restore",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "backend/test/r73-owner-checkpoints.test.ts",
+          "title": "T-CP-1 the owner creates a checkpoint: one line with a check code, a printable FR/AR sheet, no patient data; desk and dentist cannot",
+          "kind": "positive"
+        },
+        {
+          "file": "backend/test/r73-owner-checkpoints.test.ts",
+          "title": "T-CP-7 restore: an OLDER backup restored after a newer checkpoint is caught from the printed line; the latest backup passes",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-12",
+      "role": "receptionist",
+      "task": "Use numbered paper during network outage",
+      "risk": "lost/double paper receipts",
+      "targetProposal": "zero silently resolved mismatches",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "backend/test/r72-whole-clinic-journey.test.ts",
+          "title": "T-JOURNEY-1 whole fictional clinic day on the integrated build: desk, dentist, owner; second clinic isolated; backup restored",
+          "kind": "positive"
+        },
+        {
+          "file": "backend/test/outage-20-visit.test.ts",
+          "title": "R46-PAPER 20 fictional visits: 16 partial cash, 2 void, 1 unused, 1 missing; replay unchanged",
+          "kind": "negative"
+        }
+      ]
+    },
+    {
+      "id": "EVAL-13",
+      "role": "receptionist",
+      "task": "Use Arabic RTL and keyboard for mobile recovery",
+      "risk": "misread or inaccessible action",
+      "targetProposal": "zero critical accessibility blockers",
+      "humanBaseline": null,
+      "humanTrials": 0,
+      "humanStatus": "NOT_MEASURED",
+      "v1Status": "NOT_ACCEPTED",
+      "reviewStatus": "PENDING",
+      "exactHeadCi": null,
+      "refs": [
+        {
+          "file": "frontend/e2e/app.spec.ts",
+          "title": "Real seeded board: French desktop, Arabic mobile, no storage, accessibility and screenshots",
+          "kind": "positive"
+        },
+        {
+          "file": "frontend/e2e/checkout.spec.ts",
+          "title": "Arabic mobile recovery is keyboard accessible without lateral overflow",
+          "kind": "negative"
+        }
+      ]
+    }
+  ]
+}
