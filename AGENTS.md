@@ -7,7 +7,9 @@
 
 ## Work on the smallest verified scope
 - At task start identify the target branch/head, intended behavior, affected files, and acceptance checks. Inspect relevant implementations, dependencies, and current diffs; do not re-read the entire repo or paste large handoffs for every small task. For a requested comprehensive audit or cross-cutting safety change, inspect all relevant code and evidence exhaustively.
-- Bug protocol: formulate a causal theory, obtain direct evidence (existing logs or a targeted failing regression test), then make the minimum fix. Do not make speculative repairs.
+- Before editing, state the observable goal, any material assumptions, the simplest in-scope implementation, and pass/fail acceptance criteria. If ambiguity could alter patient identity, care, money, permissions, privacy, or a release gate, document a blocker and stop only that affected slice; for low-risk details, follow existing conventions and report the choice.
+- Avoid speculative features, one-use abstractions, unrequested configurability, and defensive code for impossible states. Match nearby code style. Do not mix in unrelated refactors, formatting sweeps, or cleanup of pre-existing dead code; remove only unused code introduced by this change.
+- Bug protocol: formulate a causal theory, obtain direct evidence (existing logs or a targeted failing regression test), then make the minimum fix. Where reproducible, record red-before/green-after regression evidence. If the cause is unverified, report the blocker instead of making speculative repairs.
 - Keep modular TypeScript boundaries and server-side controls: role/clinic isolation, dentist authority, integer millimes, idempotency, append-only/audited facts, receipt sequence, and physical-cash evidence limitations. Do not weaken safeguards to speed delivery.
 - Reuse scripts and CI for repeated deterministic operations. Introduce a new script only when repetition is demonstrated and maintaining it is worthwhile.
 
@@ -22,6 +24,6 @@
 ## Verify and hand off
 - For applicable backend changes run `npm --prefix backend run typecheck`, `npm --prefix backend test`, and `npm --prefix backend run test:dist` with PostgreSQL 16 and the required test environment.
 - For applicable frontend changes run `npm --prefix frontend test` and `npm --prefix frontend run build`; run `npm --prefix frontend run test:e2e` against the configured fictional real-API environment when affected. Leave GitHub Actions as the authoritative CI check on the exact PR head.
-- Report exact commit/PR SHA, scope, commands **actually run**, pass/fail/skip, remaining risks, and reviewer action. Never claim unrun tests passed.
+- Report exact commit/PR SHA, goal and acceptance checks, scope, commands **actually run**, pass/fail/skip, remaining risks, and reviewer action. For intentional refactors, compare pre-change and post-change tests. Never claim unrun tests passed.
 - The blueprint includes lint and formatting checks, but current backend/frontend manifests have no `lint`/`format:check` scripts. Explicitly report them **NOT CONFIGURED**, not PASS, until a small independently reviewed tooling/CI change establishes real commands. Avoid mass reformatting unrelated files.
 - Persist durable outcomes and handoffs in GitHub PRs/docs and the approved Mission Control lane—not solely in a local agent workspace. Avoid duplicating old evidence; link it by immutable SHA.
