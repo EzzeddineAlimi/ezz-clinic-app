@@ -23,5 +23,5 @@
 
 ## Release gates
 - [ ] Fictional data only; no production secrets, real patients, payment execution or legal/fiscal claims
-- [ ] No production deployment or merge without separate explicit founder authorization
-- [ ] Main required-check status and any skipped path-filtered workflows checked
+- [ ] No production deployment; merge only within founder's standing low-risk delegation after exact-head CI, ancestry and required independent review. Hold high-risk security/clinical/payment/CNAM/data changes for explicit approval
+- [ ] Actual GitHub required-check enforcement verified (issue #68); all applicable latest-head CI results, including any skipped jobs, checked
