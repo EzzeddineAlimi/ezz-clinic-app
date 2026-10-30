@@ -235,7 +235,7 @@ export function PatientDirectory({
     ),
   );
   const sameVisibleName = (p: Patient) =>
-    (resource.data?.patients ?? []).filter(other =>
+    !!p.hasSameNameInClinic || (resource.data?.patients ?? []).filter(other =>
       nameOf(other).normalize("NFKC").toLocaleLowerCase() ===
       nameOf(p).normalize("NFKC").toLocaleLowerCase(),
     ).length > 1;
