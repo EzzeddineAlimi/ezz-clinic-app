@@ -111,7 +111,7 @@ test("Committed server payment is discovered after reload without automatic dupl
   await d.getByRole("button", { name: "Préparer une impression" }).click();
   await expect(d.locator("#receipt-print")).toContainText("COPIE");
   await test.info().attach("reception-fr-server-numbered-receipt-copy", {
-    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    body: await page.screenshot({ path: "../docs/images/sprint3b/reception-fr-server-numbered-receipt-copy.png", animations: "disabled", fullPage: true }),
     contentType: "image/png",
   });
   const h = await (await request.get("/api/v1/visits/" + f.id + "/payments", {
