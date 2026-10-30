@@ -20,6 +20,10 @@ async function login(page: Page, user = "desk") {
   await expect(
     page.getByRole("heading", { name: "Le fil de la journée" }),
   ).toBeVisible();
+  // The fixture's date is fixed when Playwright starts, even if the suite crosses midnight.
+  const fixtureDay = process.env.EZZ_E2E_FIXTURE_DAY;
+  if (!fixtureDay) throw new Error("Missing EZZ_E2E_FIXTURE_DAY from Playwright config");
+  await page.locator("#board-date").fill(fixtureDay);
   await expect(
     page.getByText("Amira Ben Salem", { exact: true }),
   ).toBeVisible();
