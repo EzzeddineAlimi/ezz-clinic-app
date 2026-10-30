@@ -489,3 +489,41 @@ test("Dentist confirms fictional care through real API; receptionist remains den
   });
   expect(denied.status()).toBe(403);
 });
+
+test("UX12: Arabic substring search and same-name booking require visible file verification", async ({ page, request }) => {
+  const session = await request.post("/api/v1/session/login", {
+    data: { clinicCode: "web-fictional", username: "desk", password: "fictional-pass-123" },
+  });
+  expect(session.status()).toBe(200);
+  const { token } = await session.json() as { token: string };
+  const familyName = "Ux12" + crypto.randomUUID().slice(0, 8);
+  for (const [i, nameAr] of ["حياة الفحص الأول", "حياة الفحص الثاني"].entries()) {
+    const created = await request.post("/api/v1/patients", {
+      headers: { Authorization: "Bearer " + token, "Idempotency-Key": crypto.randomUUID() },
+      data: {
+        familyName, givenName: "Hayet", nameAr, isSynthetic: true,
+        phone: "+216 20 000 00" + (i + 1), contactPreference: "BASIC_PHONE_CALL",
+        dateOfBirth: i === 0 ? "1982-01-03" : "1994-02-05",
+      },
+    });
+    expect(created.status()).toBe(201);
+  }
+  await login(page);
+  await page.getByRole("button", { name: "Patients", exact: true }).click();
+  const search = page.getByPlaceholder("Nom, numéro de dossier ou téléphone");
+  await search.fill("الفحص الثاني");
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.locator(".patient-row")).toHaveCount(1);
+  await expect(page.locator(".patient-row")).toContainText(["1994", "0002"]);
+  await search.fill(familyName.slice(3, 9));
+  await page.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(page.locator(".patient-row")).toHaveCount(2);
+  const first = page.locator(".patient-row").filter({ hasText: "1982" });
+  await expect(first).toContainText("••••0001");
+  await first.getByRole("button", { name: "Planifier", exact: true }).click();
+  const confirmation = page.getByRole("dialog");
+  await expect(confirmation).toContainText("Noms identiques");
+  await expect(confirmation).toContainText("Dossier #");
+  await confirmation.getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ }).click();
+  await expect(page.getByRole("dialog")).toContainText("Patient sélectionné");
+});
