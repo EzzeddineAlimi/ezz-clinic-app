@@ -240,6 +240,12 @@ test('UX12 patient search: Arabic name and literal FR substring, spaced phone, D
   } });
   assert.equal(add.status, 201, JSON.stringify(add.body));
   const id = add.body.patient.id;
+  const other = await api.call('POST', '/api/v1/patients', { token: f.desk, body: {
+    familyName: 'RechercheFictive', givenName: 'Samir', nameAr: 'سمير الثاني',
+    dateOfBirth: '1995-05-11', phone: '+216 22 999 999', contactPreference: 'BASIC_PHONE_CALL',
+    isSynthetic: true,
+  } });
+  assert.equal(other.status, 201, JSON.stringify(other.body));
   const find = (q: string) => api.call('GET', '/api/v1/patients?q=' + encodeURIComponent(q), { token: f.desk });
   for (const q of ['الاختبار', 'cherchefict', '+21622345678', '345 678']) {
     if (q === '345 678') continue; // Phone lookup requires a full number, not a fragment.
@@ -249,6 +255,7 @@ test('UX12 patient search: Arabic name and literal FR substring, spaced phone, D
     assert.ok(p, 'must find fictional patient by ' + q);
     assert.equal(p.dateOfBirth, '1981-06-14');
     assert.equal(p.phoneLast4, '5678');
+    assert.equal(p.hasSameNameInClinic, true, 'filtered Arabic search must still flag hidden same-name records');
     assert.equal(p.phone, undefined, 'directory response may not expose full phone');
   }
   const literal = await find('%');
