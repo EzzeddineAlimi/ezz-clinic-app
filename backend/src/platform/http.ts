@@ -94,6 +94,8 @@ function send(res: http.ServerResponse, status: number, body: unknown, extra: Re
     'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
     'Referrer-Policy': 'no-referrer',
     'X-Frame-Options': 'DENY',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
     'Content-Length': Buffer.byteLength(data).toString(),
     ...extra,
   });
@@ -113,6 +115,7 @@ function sendFile(res: http.ServerResponse, f: FileBody, requestId: string) {
     'Cross-Origin-Resource-Policy': 'same-origin',
     'Referrer-Policy': 'no-referrer',
     'X-Frame-Options': 'DENY',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=(), payment=()',
     'X-Content-Sha256': f.sha256,
     'X-Request-Id': requestId,
   });
@@ -198,7 +201,7 @@ export function createServer(db: Db, routes: Route[], sec: SecurityHooks, cfg: A
           if (ct.split(';')[0]!.trim() !== 'application/octet-stream') throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/octet-stream');
           // Read AFTER authentication and the permission check below: large bodies are never buffered for anonymous callers.
         } else {
-          if (!ct.startsWith('application/json')) throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json');
+          if (ct.split(';', 1)[0]!.trim() !== 'application/json') throw new AppError('UNSUPPORTED_MEDIA_TYPE', 'Content-Type must be application/json');
           body = await readBody(req);
         }
       }

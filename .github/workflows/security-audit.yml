@@ -1,0 +1,36 @@
+name: Security audit gates (fictional data)
+
+# Always runs on every PR, including docs-only changes; unlike backend/frontend CI path filters.
+# A future branch-protection required-check selection can use the stable security-audit job.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  security-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout full reachable history without persistable credentials
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install pinned supported Node runtime
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: backend/.nvmrc
+      - name: Scan tracked files and reachable git history for known secret signatures (redacted)
+        run: node scripts/security-history-scan.mjs
+      - name: Install backend lockfile without install scripts
+        run: npm --prefix backend ci --ignore-scripts --no-audit --no-fund
+      - name: Audit backend dependencies (HIGH and CRITICAL block)
+        run: npm --prefix backend audit --audit-level=high --no-fund
+      - name: Install frontend lockfile without install scripts
+        run: npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
+      - name: Audit frontend dependencies (HIGH and CRITICAL block)
+        run: npm --prefix frontend audit --audit-level=high --no-fund
