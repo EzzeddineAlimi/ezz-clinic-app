@@ -49,6 +49,7 @@ export const visitSchema = z.object({
   flags: z.array(z.string()),
   waitingMinutes: z.number().nullable(),
   balanceDueMillimes: z.number().int().optional(),
+  statusReason: z.string().nullable().optional(),
 });
 export const boardSchema = z.object({
   day: z.string(),
@@ -329,10 +330,17 @@ export class Api {
     );
   }
   arrive(id: string, key: string) {
+    return this.changeVisitStatus(id, { status: "ARRIVED" }, key);
+  }
+  changeVisitStatus(
+    id: string,
+    body: { status: "ARRIVED" | "NO_SHOW" | "CANCELLED"; reason?: string },
+    key: string,
+  ) {
     return this.call(
       `/visits/${id}/status`,
       z.object({ visit: z.object({ id: z.string(), status: z.string() }) }),
-      { body: { status: "ARRIVED" }, key },
+      { body, key },
     );
   }
 }
