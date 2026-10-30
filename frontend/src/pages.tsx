@@ -40,6 +40,8 @@ export function DayBoard({
     v.dentist ? [[v.dentist.id, v.dentist] as const] : [],
   )).values()].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
   const query = patientNameKey(patientQuery.trim());
+  const hasFilters = filter !== "all" || patientQuery.trim().length > 0 || dentistId !== "all";
+  const clearFilters = () => { setFilter("all"); setPatientQuery(""); setDentistId("all"); };
   const visits = board.visits.filter(v =>
     (filter === "all" || v.status === filter) &&
     (dentistId === "all" || v.dentist?.id === dentistId) &&
@@ -72,12 +74,16 @@ export function DayBoard({
             {s === "all" ? w.all : w[s as Visit["status"]]}
           </button>
         ))}
-        <span>
-          <bdi>{visits.length}</bdi> {w.total.toLowerCase()}
+        <span data-testid="dayboard-result-count" role="status">
+          <bdi>{visits.length}</bdi>{hasFilters && <> / <bdi>{board.visits.length}</bdi></>} {w.total.toLowerCase()}
         </span>
       </div>
       {visits.length === 0 ? (
-        <Empty title={w.emptyBoard} text={w.emptyBoardHint} />
+        <Empty
+          title={hasFilters ? w.noMatchingVisits : w.emptyBoard}
+          text={hasFilters ? w.noMatchingVisitsHint : w.emptyBoardHint}
+          action={hasFilters ? <button type="button" className="secondary" onClick={clearFilters}>{w.clearBoardFilters}</button> : undefined}
+        />
       ) : (
         <div className="visit-list">
           {visits.map((v) => (
