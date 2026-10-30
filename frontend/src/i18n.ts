@@ -19,6 +19,8 @@ export const copy = {
     loginHint:
       "Environnement de développement : utilisez uniquement des patients fictifs.",
     boardTitle: "Le fil de la journée",
+    boardSearch: "Filtrer par nom ou numéro de dossier",
+    allDentists: "Tous les praticiens",
     boardSub: "Un accueil fluide, du premier au dernier rendez-vous.",
     today: "Aujourd’hui",
     previous: "Jour précédent",
@@ -196,6 +198,8 @@ export const copy = {
     loginNote: "لكل عضو في الفريق حسابه الشخصي.",
     loginHint: "بيئة تطوير: استخدموا بيانات مرضى وهمية فقط.",
     boardTitle: "مسار اليوم",
+    boardSearch: "تصفية حسب الاسم أو رقم الملف",
+    allDentists: "جميع الأطباء",
     boardSub: "استقبال منظّم من الموعد الأول إلى الأخير.",
     today: "اليوم",
     previous: "اليوم السابق",
