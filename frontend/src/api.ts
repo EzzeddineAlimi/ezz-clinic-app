@@ -289,6 +289,11 @@ export class Api {
       body: sections, key,
     });
   }
+  addClinicalAddendum(noteId: string, body: Record<string, unknown>, key: string) {
+    return this.call(`/clinical-notes/${noteId}/addenda`, noteCreatedSchema, {
+      body, key,
+    });
+  }
   recordChartFinding(id: string, finding: Record<string, unknown>, key: string) {
     return this.call(`/visits/${id}/chart-findings`, findingCreatedSchema, {
       body: finding, key,
