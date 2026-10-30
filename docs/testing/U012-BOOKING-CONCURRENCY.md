@@ -46,9 +46,17 @@ npm test
 npm run test:dist
 ```
 
-Focused GREEN3/3, no skip/fail; strict backend typecheck PASS. Raw RED/GREEN and
-full source/compiled logs committed in u012/. Full source354:353pass/0fail/1optionalTLSskip; compiled354:same. CI must be verified on the exact new head; previous
-PR greens are not evidence for this change. No local browser test claimed.
+Focused GREEN3/3, no skip/fail; strict backend typecheck PASS. Short RED/GREEN
+reproduction logs remain committed in u012/. Full source and compiled TAP logs
+were removed from the PR diff to keep review focused; the original-run records
+remain at commit 8415f6069254aa1ade84f7c9cb9f0ce400407e79.
+Full source354:353pass/0fail/1optionalTLSskip; compiled354:same.
+GitHub Actions for that exact code SHA: [backend](https://github.com/EzzeddineAlimi/ezz-clinic-app/actions/runs/40994075937),
+[frontend](https://github.com/EzzeddineAlimi/ezz-clinic-app/actions/runs/40994075969),
+[prototype](https://github.com/EzzeddineAlimi/ezz-clinic-app/actions/runs/40994075953).
+Those runs succeeded at the original code head; this documentation/log cleanup
+does not constitute a new test execution. Verify the current PR head and gates
+before merging. No local browser test claimed.
 
 Coverage: deterministic two-request race, one stored booking,409 evidence;
 half-open adjacent slots; explicit overlap override; same-key replay; midnight
