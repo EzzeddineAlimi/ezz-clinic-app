@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Visit } from "./api.ts";
@@ -32,6 +32,15 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [mode, setMode] = useState<"notes" | "findings" | "plans">("notes");
   const [addendumTargetId, setAddendumTargetId] = useState<string | null>(null);
   const [signedLocally, setSignedLocally] = useState(false);
+  const signedAgainst = useRef<typeof chart.data>(undefined);
+  const addendumToggleRef = useRef<HTMLButtonElement>(null);
+  // Only a newly fetched authoritative chart can release the local post-sign guard.
+  useEffect(() => {
+    if (signedLocally && chart.data && chart.data !== signedAgainst.current &&
+        !chart.data.notes.some(n => n.kind === "NOTE" && !n.enteredInError)) {
+      setSignedLocally(false);
+    }
+  }, [chart.data, signedLocally]);
   async function runClinicalWrite(
     action: ClinicalMutation, form?: HTMLFormElement,
   ): Promise<void> {
@@ -56,7 +65,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         await api.transitionTreatmentPlanItem(action.targetId, body, action.key);
       }
       setUnresolved(null);
-      if (action.kind === "addendum") setAddendumTargetId(null);
+      if (action.kind === "addendum") {
+        addendumToggleRef.current?.focus(); // The submitted form is about to unmount.
+        setAddendumTargetId(null);
+      }
       if (form?.isConnected) form.reset();
       setNotice(lang === "fr" ? "Écriture clinique enregistrée." : "تم تسجيل التغيير السريري.");
       chart.refresh();
@@ -114,6 +126,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
     setError(undefined);
     try {
       await api.signClinicalNote(visit.id, intent.payload(body), intent.key);
+      signedAgainst.current = chart.data;
       setSignedLocally(true); // A successful write must never expose another initial-sign action while refreshing.
       setIntent(new WriteIntent());
       setNotice(lang === "fr" ? "Note signée et enregistrée." : "تم توقيع وتسجيل الملاحظة.");
@@ -175,6 +188,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                   {(n.kind === "NOTE" || n.kind === "LATE_ENTRY") &&
                     !n.enteredInError && n.integrity !== "CONTENT_HASH_MISMATCH" && (
                     <button type="button" className="secondary" disabled={!editable || intent.uncertain}
+                      ref={addendumTargetId === n.id ? addendumToggleRef : undefined}
                       aria-expanded={addendumTargetId === n.id}
                       onClick={() => setAddendumTargetId(addendumTargetId === n.id ? null : n.id)}>
                       {t.addendum}
