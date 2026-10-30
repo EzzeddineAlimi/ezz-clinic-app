@@ -128,7 +128,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
     } finally { setSaving(false); lock.current = false; }
   }
   const data = chart.data;
-  const initialNoteSigned = signedLocally || !!data?.notes.some(n => n.kind === "NOTE");
+  const initialNoteSigned = signedLocally || !!data?.notes.some(n => n.kind === "NOTE" && !n.enteredInError);
   const soapSections = ["subjective", "objective", "assessment", "plan"] as const;
   const soapLabels = { subjective: t.subjective, objective: t.objective,
     assessment: t.assessment, plan: t.planSection };
