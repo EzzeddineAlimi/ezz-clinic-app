@@ -688,3 +688,72 @@ test("UX12 review: Arabic-only duplicate triggers verification, normalized searc
   await expect(verify).toContainText("03/01/1982");
   await verify.getByRole("button", { name: "Fermer", exact: true }).click();
 });
+
+
+test("UX12 follow-on: receptionist dayboard filters by patient, file and dentist in FR/AR mobile", async ({ page }) => {
+  await login(page);
+  const rows = page.locator(".visit-row");
+  const search = page.getByRole("searchbox", { name: "Filtrer par nom ou numéro de dossier" });
+  await search.fill("Amira");
+  await expect(rows.filter({ hasText: "Amira Ben Salem" }).first()).toBeVisible();
+  await expect(rows.filter({ hasText: "Youssef Trabelsi" })).toHaveCount(0);
+  await search.fill("");
+  const dentist = page.getByRole("combobox", { name: "Praticien", exact: true });
+  const options = dentist.locator("option");
+  expect(await options.count()).toBeGreaterThan(1);
+  const selectedName = await options.nth(1).textContent();
+  await dentist.selectOption({ index: 1 });
+  await expect(rows.first()).toContainText(selectedName!);
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("searchbox", { name: "تصفية حسب الاسم أو رقم الملف" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("UX12 follow-on: booking picker requires a focus-managed nested identity dialog", async ({ page }) => {
+  const session = await login(page);
+  const headers = () => ({
+    Authorization: "Bearer " + session.token,
+    "Idempotency-Key": crypto.randomUUID(),
+  });
+  const suffix = crypto.randomUUID().slice(0, 8);
+  const nameAr = "محمد تجريبي " + suffix;
+  const first = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: {
+      familyName: "PickerFirst" + suffix, givenName: "Fictif",
+      nameAr, dateOfBirth: "1982-01-03", isSynthetic: true,
+    },
+  });
+  expect(first.status()).toBe(201);
+  const second = await page.request.post("/api/v1/patients", {
+    headers: headers(), data: {
+      familyName: "PickerSecond" + suffix, givenName: "Fictif",
+      nameAr, dateOfBirth: "1994-02-05", confirmNotDuplicate: true, isSynthetic: true,
+    },
+  });
+  expect(second.status()).toBe(201);
+  await page.getByRole("button", { name: "Nouveau rendez-vous" }).click();
+  const scheduling = page.getByRole("dialog").first();
+  await scheduling.locator("#picker-search").fill(suffix);
+  await scheduling.getByRole("button", { name: "Rechercher", exact: true }).click();
+  await expect(scheduling.locator(".picker-results button")).toHaveCount(2);
+  await scheduling.locator(".picker-results button").first().click();
+  const dialogs = page.getByRole("dialog");
+  await expect(dialogs).toHaveCount(2);
+  const verify = dialogs.last();
+  await expect(verify).toContainText("Noms identiques");
+  await expect(verify).toContainText("03/01/1982");
+  expect(await page.evaluate(() => {
+    const ds = [...document.querySelectorAll("dialog")];
+    return ds.length === 2 &&
+      ds[0]!.getAttribute("aria-labelledby") !== ds[1]!.getAttribute("aria-labelledby") &&
+      ds[1]!.contains(document.activeElement);
+  })).toBe(true);
+  await verify.getByRole("button", { name: "Fermer", exact: true }).click();
+  await expect(dialogs).toHaveCount(1);
+  await scheduling.locator(".picker-results button").first().click();
+  await dialogs.last().getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ }).click();
+  await expect(dialogs).toHaveCount(1);
+  await expect(scheduling).toContainText("Patient sélectionné");
+  await expect(scheduling).toContainText("PickerFirst" + suffix);
+});
