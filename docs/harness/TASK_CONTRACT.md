@@ -22,7 +22,7 @@ Use this checklist for GPT COO, scheduled Codex, manually invoked Muse/Muse Ons,
 
 1. Discover live current main, accepted scope and in-progress ownership in GitHub + Mission Control. Do not act on the last summary alone.
 2. Check that this model's actual tools/privileges can run the requested actions. If not, report the missing access, never simulate execution.
-3. For changes, work in a new isolated draft PR, reuse patterns, minimize scope, run actual tests and record negative evidence. Never merge or touch production automatically.
+3. For changes, work in a new isolated draft PR, reuse patterns, minimize scope, run actual tests and record negative evidence. Low-risk merges may use documented standing founder authorization **only after** exact-head CI, ancestry and required independent review; high-risk merges and all production actions require separate explicit approval.
 4. For independent reviews, inspect exact diff and real UI where claiming usability; cite severity/file/line and clear reproduction. No rubber-stamp, no self-approval.
 5. For A/B comparisons, hold fictional scenario, environment and acceptance outcome constant; measure task completion, errors, steps, accessibility, not just beautiful screenshots.
 6. Publish durable PR links and append-only assigned Sheet reports with readback. Scheduled GPT/Codex will discover new handoffs; Muse/Muse Ons/Gemini cannot be assumed to execute when merely named in a Sheet.
