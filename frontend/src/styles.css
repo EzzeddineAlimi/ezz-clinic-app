@@ -1383,6 +1383,13 @@ dialog::backdrop {
 
 /* Mobile web: preserve comfortable targets without changing desktop density. */
 @media (max-width: 760px) {
+  /* Keep the chart owner visible while the dentist reads lower alerts on mobile. */
+  .clinical-workspace > .patient-context {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    overflow-wrap: anywhere;
+  }
   .date-controls .icon-button,
   .language button {
     min-width: 44px;

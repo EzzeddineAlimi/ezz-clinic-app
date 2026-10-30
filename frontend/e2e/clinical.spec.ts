@@ -178,6 +178,18 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   const alertList = arabicOverview.getByTestId("clinical-alert-details");
   const widths = await alertList.evaluate(el => ({ visible: el.clientWidth, content: el.scrollWidth }));
   expect(widths.content).toBeLessThanOrEqual(widths.visible);
+  // C-35: the patient identity must remain visible with the critical alert after scrolling.
+  const identity = page.getByRole("dialog").locator(".clinical-workspace > .patient-context");
+  await expect(identity).toContainText(familyName);
+  const criticalAlert = alertList.locator("li").first();
+  await criticalAlert.evaluate(el => el.scrollIntoView({ block: "center" }));
+  await expect(identity).toBeInViewport({ ratio: 1 });
+  await expect(criticalAlert).toBeInViewport({ ratio: 0.9 });
+  const identityBox = await identity.boundingBox();
+  const alertBox = await criticalAlert.boundingBox();
+  expect(identityBox).not.toBeNull();
+  expect(alertBox).not.toBeNull();
+  expect(identityBox!.y + identityBox!.height).toBeLessThan(alertBox!.y);
   await test.info().attach("dentist-ar-390-critical-first-null-detail", {
     body: await arabicOverview.screenshot({ path: "test-results/dentist-ar-medical-alert-details.png", animations: "disabled" }),
     contentType: "image/png",
