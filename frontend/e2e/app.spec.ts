@@ -737,7 +737,7 @@ test("UX12 follow-on: booking picker requires a focus-managed nested identity di
   await scheduling.locator("#picker-search").fill(suffix);
   await scheduling.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(scheduling.locator(".picker-results button")).toHaveCount(2);
-  await scheduling.locator(".picker-results button").first().click();
+  await scheduling.locator(".picker-results button").filter({ hasText: "PickerFirst" + suffix }).click();
   const dialogs = page.getByRole("dialog");
   await expect(dialogs).toHaveCount(2);
   const verify = dialogs.last();
@@ -751,7 +751,7 @@ test("UX12 follow-on: booking picker requires a focus-managed nested identity di
   })).toBe(true);
   await verify.getByRole("button", { name: "Fermer", exact: true }).click();
   await expect(dialogs).toHaveCount(1);
-  await scheduling.locator(".picker-results button").first().click();
+  await scheduling.locator(".picker-results button").filter({ hasText: "PickerFirst" + suffix }).click();
   await dialogs.last().getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ }).click();
   await expect(dialogs).toHaveCount(1);
   await expect(scheduling).toContainText("Patient sélectionné");
