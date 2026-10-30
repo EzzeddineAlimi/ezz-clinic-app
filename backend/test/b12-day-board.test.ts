@@ -74,9 +74,16 @@ test('T-UX12-STATUS conflicts distinguish early no-show from dentist-documented 
   });
   assert.equal(early.status, 409);
   assert.equal(early.body.error.details.reason, 'NO_SHOW_BEFORE_START');
-  const cared = await newVisit(api, f.desk, f.patientId, '2026-10-05T10:00:00Z');
-  await confirmCare(api, f.dentist, cared, 10_000);
-  const blocked = await api.call('POST', `/api/v1/visits/${cared}/status`, {
+  const documented = await newVisit(api, f.desk, f.patientId, '2026-10-05T10:00:00Z');
+  const arrival = await api.call('POST', `/api/v1/visits/${documented}/status`, {
+    token: f.desk, body: { status: 'ARRIVED' },
+  });
+  assert.equal(arrival.status, 200);
+  const signedNote = await api.call('POST', `/api/v1/visits/${documented}/clinical-notes`, {
+    token: f.dentist, body: { subjective: 'Fictional clinical note before billing' },
+  });
+  assert.equal(signedNote.status, 201, JSON.stringify(signedNote.body));
+  const blocked = await api.call('POST', `/api/v1/visits/${documented}/status`, {
     token: f.desk, body: { status: 'CANCELLED', reason: 'Fictional cancellation request' },
   });
   assert.equal(blocked.status, 409);
@@ -287,7 +294,7 @@ test('T-DAY-12 an invalid clinic timezone setting fails loudly (never silently f
   assert.match(r.body.error.message, /timezone/i);
 });
 
-test('UX12 patient search: Arabic name and literal FR substring, spaced phone, DOB and masked identity hints', async () => {
+test('UX12 patient search: Arabic name and literal FR substring, spaced phone, birth year and masked identity hints', async () => {
   const f = await clinic();
   const add = await api.call('POST', '/api/v1/patients', { token: f.desk, body: {
     familyName: 'RechercheFictive', givenName: 'Samir', nameAr: 'سمير الاختبار',
@@ -309,7 +316,8 @@ test('UX12 patient search: Arabic name and literal FR substring, spaced phone, D
     assert.equal(result.status, 200, q);
     const p = result.body.patients.find((x: { id: string }) => x.id === id);
     assert.ok(p, 'must find fictional patient by ' + q);
-    assert.equal(p.dateOfBirth, '1981-06-14');
+    assert.equal(p.birthYear, '1981');
+    assert.equal(Object.hasOwn(p, 'dateOfBirth'), false, 'bulk search must never return full DOB');
     assert.equal(p.phoneLast4, '5678');
     assert.equal(p.hasSameNameInClinic, true, 'filtered Arabic search must still flag hidden same-name records');
     assert.equal(p.phone, undefined, 'directory response may not expose full phone');
