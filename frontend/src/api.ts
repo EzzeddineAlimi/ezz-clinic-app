@@ -27,6 +27,8 @@ export const patientSchema = z.object({
   contactPreference: z.string(),
   preferredLanguage: z.string().optional(),
   phone: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional(),
+  phoneLast4: z.string().nullable().optional(),
 });
 export const visitSchema = z.object({
   id: z.string(),
