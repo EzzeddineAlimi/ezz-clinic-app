@@ -166,7 +166,7 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dentist-ar-390-critical-first-null-detail", {
-    body: await page.screenshot({ path: "test-results/dentist-ar-medical-alert-details.png", animations: "disabled", fullPage: true }),
+    body: await arabicOverview.screenshot({ path: "test-results/dentist-ar-medical-alert-details.png", animations: "disabled" }),
     contentType: "image/png",
   });
 });
