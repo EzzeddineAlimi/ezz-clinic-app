@@ -110,6 +110,10 @@ test("Committed server payment is discovered after reload without automatic dupl
   await expect(d.getByText(/impression et remise au patient non confirmées/)).toBeVisible();
   await d.getByRole("button", { name: "Préparer une impression" }).click();
   await expect(d.locator("#receipt-print")).toContainText("COPIE");
+  await test.info().attach("reception-fr-server-numbered-receipt-copy", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
   const h = await (await request.get("/api/v1/visits/" + f.id + "/payments", {
     headers: { Authorization: "Bearer " + f.desk },
   })).json();
