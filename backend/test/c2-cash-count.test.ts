@@ -131,6 +131,11 @@ test('T-WIN-2 / T-CASH-5 two periods: counted carry-forward after owner handover
   assert.equal(close.status, 200);
   assert.equal(close.body.nextPeriod.openingFloatMillimes, 50_000);
   assert.equal(close.body.nextPeriod.openingBasis, 'COUNTED_CARRY_FORWARD');
+  const closedReview = await review(F);
+  assert.equal(closedReview.status, 200);
+  assert.equal(closedReview.body.cashRecordedAfterLatestCount.count, 0,
+    'closed-period warning must not include cash carried into the next period');
+  assert.equal(closedReview.body.cashRecordedAfterLatestCount.totalMillimes, 0);
   const recount = await count(F, F.dentist, 1, 'late', F.periodId);
   assert.equal(recount.status, 409);
   assert.equal(recount.body.error.code, 'CASH_PERIOD_CLOSED');
@@ -183,4 +188,23 @@ test('T-CASH-7 cash cannot be recorded with no open period; denominations must a
   assert.equal(bad.status, 400);
   const good = await api.call('POST', `/api/v1/cash/periods/${G.periodId}/counts`, { token: G.owner, body: { countedMillimes: 30_000, denominations: { '10000': 2, '5000': 2 } } });
   assert.equal(good.status, 201);
+});
+
+
+test('T-CASH-SCOPE after-count warning includes only this clinic and the open period', async () => {
+  const F = await clinic(0);
+  const G = await clinic(0);
+  await count(F, F.dentist, 0);
+  await cashPayment(G, 15_000, 15_000);
+  const before = await review(F);
+  assert.equal(before.status, 200);
+  assert.equal(before.body.cashRecordedAfterLatestCount.count, 0,
+    'other clinic cash must not appear in this owner review');
+  assert.equal(before.body.cashRecordedAfterLatestCount.totalMillimes, 0);
+  await cashPayment(F, 9_000, 9_000);
+  const after = await review(F);
+  assert.equal(after.body.cashRecordedAfterLatestCount.count, 1);
+  assert.equal(after.body.cashRecordedAfterLatestCount.totalMillimes, 9_000);
+  const denied = await api.call('GET', `/api/v1/cash/periods/${F.periodId}/review`, { token: G.owner });
+  assert.equal(denied.status, 404, 'another clinic cannot inspect this period');
 });
