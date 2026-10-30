@@ -738,7 +738,7 @@ test("UX12 follow-on: booking picker requires a focus-managed nested identity di
   await scheduling.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(scheduling.locator(".picker-results button")).toHaveCount(2);
   await scheduling.locator(".picker-results button").filter({ hasText: "PickerFirst" + suffix }).click();
-  const dialogs = page.getByRole("dialog");
+  const dialogs = page.locator("dialog");
   await expect(dialogs).toHaveCount(2);
   const verify = dialogs.last();
   await expect(verify).toContainText("Noms identiques");
