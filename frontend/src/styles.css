@@ -603,6 +603,15 @@ a {
 [dir="rtl"] .date-controls .prev svg {
   transform: none;
 }
+.dayboard-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 26px 0;
+}
+@media (max-width: 600px) {
+  .dayboard-filters { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; }
+}
 .filter-tabs {
   display: flex;
   gap: 5px;
