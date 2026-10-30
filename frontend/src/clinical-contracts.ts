@@ -57,7 +57,13 @@ export const encounterSchema = z.object({
     id: uuid, fileNo: integer, familyName: z.string(), givenName: z.string(),
   }),
   medical: z.object({
-    activeAlerts: z.array(z.unknown()),
+    activeAlerts: z.array(z.object({
+      id: uuid,
+      code: z.string(),
+      severity: z.enum(["CRITICAL", "CAUTION"]),
+      detail: z.string().nullable(),
+      source: z.enum(["PATIENT_DECLARED", "DENTIST_VERIFIED"]),
+    })),
     treatmentGate: z.enum([
       "NO_ACTIVE_ALERTS", "ACKNOWLEDGED", "SEND_ALERT_SET_HASH_WITH_CARE_OR_ACKNOWLEDGE",
     ]),
