@@ -30,7 +30,7 @@ test("invalid calendar days and clock input are rejected instead of normalized",
     ["2026-02-29", "09:00"], ["2026-04-31", "09:00"],
     ["2026-10-30", "24:00"], ["2026-10-30", "09:60"],
     ["2026-10-30", "9:05"], ["30/10/2026", "09:00"],
-  ]) {
+  ] as const) {
     assert.throws(() => clinicInstant(day, time, "Africa/Tunis"), { message: "INVALID_TIME" });
   }
   assert.equal(clinicInstant("2024-02-29", "09:00", "Africa/Tunis"), "2024-02-29T08:00:00.000Z");
