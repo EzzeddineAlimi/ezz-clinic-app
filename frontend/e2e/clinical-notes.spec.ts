@@ -69,6 +69,11 @@ test("UX13 signed SOAP cannot be signed again; dentist appends a linked signed e
   const arabic = page.getByRole("dialog");
   await expect(arabic.getByText("تم توقيع الملاحظة الأصلية.", { exact: false })).toBeVisible();
   await expect(arabic.getByRole("button", { name: "توقيع وتسجيل" })).toHaveCount(0);
+  await arabic.getByRole("button", { name: "نظرة عامة" }).click();
+  const overview = arabic.getByTestId("clinical-overview");
+  await expect(overview).toContainText("حالة الموعد");
+  await expect(overview).toContainText("التنبيهات الطبية النشطة");
+  await expect(overview).toContainText("هذا الملخص لا يثبت إجراء علاج أو استلام دفعة");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   expect(axe.violations).toEqual([]);
