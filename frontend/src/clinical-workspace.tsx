@@ -29,7 +29,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [unresolved, setUnresolved] = useState<ClinicalMutation | null>(null);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
-  const [mode, setMode] = useState<"overview" | "notes" | "findings" | "plans">("notes");
+  const [mode, setMode] = useState<"overview" | "notes" | "findings" | "plans">("overview");
   const [addendumTargetId, setAddendumTargetId] = useState<string | null>(null);
   const [signedLocally, setSignedLocally] = useState(false);
   const signedAgainst = useRef<typeof chart.data>(undefined);
@@ -195,6 +195,18 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
                 <p><strong>{t.visitStatus}:</strong> {t.visitStatuses[data.visit.status as keyof typeof t.visitStatuses] ?? data.visit.status}</p>
                 <p><strong>{t.assignedDentist}:</strong> <bdi>{visit.dentist?.name ?? t.unassigned}</bdi></p>
                 <p><strong>{t.medicalAlerts}:</strong> <bdi>{data.medical.activeAlerts.length}</bdi></p>
+                {data.medical.activeAlerts.length > 0 && (
+                  <ul data-testid="clinical-alert-details">
+                    {data.medical.activeAlerts.map(alert => (
+                      <li key={alert.id}>
+                        <strong><bdi>{alert.code}</bdi></strong>
+                        {" · "}{alert.severity === "CRITICAL" ? t.alertCritical : t.alertCaution}
+                        {" · "}{alert.source === "PATIENT_DECLARED" ? t.alertDeclared : t.alertVerified}
+                        {alert.detail && <p><bdi>{alert.detail}</bdi></p>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <p className="warning">{t.overviewHint}</p>
               </section>
             )}
