@@ -34,11 +34,34 @@ export function DayBoard({
   confirmCare: (visit: Visit) => void;
 }) {
   const [filter, setFilter] = useState("all");
-  const visits = board.visits.filter(
-    (v) => filter === "all" || v.status === filter,
+  const [patientQuery, setPatientQuery] = useState("");
+  const [dentistId, setDentistId] = useState("all");
+  const dentists = [...new Map(board.visits.flatMap(v =>
+    v.dentist ? [[v.dentist.id, v.dentist] as const] : [],
+  )).values()].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  const query = patientNameKey(patientQuery.trim());
+  const visits = board.visits.filter(v =>
+    (filter === "all" || v.status === filter) &&
+    (dentistId === "all" || v.dentist?.id === dentistId) &&
+    (!query ||
+      patientNameKey(nameOf(v.patient)).includes(query) ||
+      (!!v.patient.nameAr && patientNameKey(v.patient.nameAr).includes(query)) ||
+      String(v.patient.fileNo) === patientQuery.trim().replace(/^#/, "")),
   );
   return (
     <>
+      <div className="dayboard-filters">
+        <label>{w.boardSearch}
+          <input type="search" value={patientQuery} maxLength={80}
+            onChange={e => setPatientQuery(e.target.value)} />
+        </label>
+        <label>{w.dentist}
+          <select value={dentistId} onChange={e => setDentistId(e.target.value)}>
+            <option value="all">{w.allDentists}</option>
+            {dentists.map(d => <option key={d.id} value={d.id}>{d.name ?? w.unnamed}</option>)}
+          </select>
+        </label>
+      </div>
       <div className="filter-tabs" aria-label={w.status}>
         {["all", "SCHEDULED", "ARRIVED", "COMPLETED"].map((s) => (
           <button
@@ -63,6 +86,7 @@ export function DayBoard({
               visit={v}
               w={w}
               lang={lang}
+              timezone={board.timezone}
               writable={writable}
               api={api}
               refreshed={refreshed}
@@ -80,6 +104,7 @@ function VisitRow({
   visit: v,
   w,
   lang,
+  timezone,
   writable,
   api,
   refreshed,
@@ -90,6 +115,7 @@ function VisitRow({
   visit: Visit;
   w: Words;
   lang: Lang;
+  timezone: string;
   writable: boolean;
   api: Api;
   refreshed: () => void;
@@ -197,6 +223,7 @@ function VisitRow({
         <Checkout
           api={api}
           visit={v}
+          timezone={timezone}
           w={w}
           close={() => {
             setCheckout(false);
