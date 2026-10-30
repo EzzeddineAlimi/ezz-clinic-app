@@ -92,21 +92,21 @@ test("UI quality: French and Arabic 200% CSS zoom stress without horizontal page
   await expect(page.getByRole("heading", { name: "Le fil de la journée" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dayboard-fr-200pct-css-zoom", {
-    body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-fr-200pct-css-zoom.png", animations: "disabled", fullPage: true }),
+    body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-fr-200pct-css-zoom.png", animations: "disabled" }),
     contentType: "image/png",
   });
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dayboard-ar-200pct-css-zoom", {
-    body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-ar-200pct-css-zoom.png", animations: "disabled", fullPage: true }),
+    body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-ar-200pct-css-zoom.png", animations: "disabled" }),
     contentType: "image/png",
   });
   await page.evaluate(() => { document.body.style.zoom = "1"; });
   await page.setViewportSize({ width: 640, height: 360 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dayboard-ar-landscape", {
-    body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-ar-landscape.png", animations: "disabled", fullPage: true }),
+    body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-ar-landscape.png", animations: "disabled" }),
     contentType: "image/png",
   });
 });
