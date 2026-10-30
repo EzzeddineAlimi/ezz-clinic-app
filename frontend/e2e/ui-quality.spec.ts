@@ -83,3 +83,30 @@ test("UI quality: unavailable buttons do not falsely signal loading; field label
   expect(state.cursor).toBe("not-allowed");
   expect(state.labelSize).toBeGreaterThanOrEqual(14);
 });
+
+// CSS zoom is a supplementary reflow stress case, not a substitute for real browser zoom review.
+test("UI quality: French and Arabic 200% CSS zoom stress without horizontal page overflow", async ({ page }) => {
+  await login(page);
+  await page.setViewportSize({ width: 640, height: 900 });
+  await page.evaluate(() => { document.body.style.zoom = "2"; });
+  await expect(page.getByRole("heading", { name: "Le fil de la journée" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await test.info().attach("dayboard-fr-200pct-css-zoom", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await test.info().attach("dayboard-ar-200pct-css-zoom", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
+  await page.evaluate(() => { document.body.style.zoom = "1"; });
+  await page.setViewportSize({ width: 640, height: 360 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await test.info().attach("dayboard-ar-landscape", {
+    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    contentType: "image/png",
+  });
+});
