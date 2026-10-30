@@ -531,3 +531,124 @@ test("UX12: Arabic substring search and same-name booking require visible file v
   await confirmation.getByRole("button", { name: /Confirmer ce dossier pour le rendez-vous/ }).click();
   await expect(page.getByRole("dialog")).toContainText("Patient sélectionné");
 });
+
+test("UX12 status: desk no-show requires reason, updates board, and cannot re-arrive", async ({ page }) => {
+  const session = await login(page);
+  const headers = { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() };
+  const name = "UxNoShow" + crypto.randomUUID().slice(0, 7);
+  const patient = await page.request.post("/api/v1/patients", {
+    headers, data: { familyName: name, givenName: "Fictif", isSynthetic: true },
+  });
+  expect(patient.status()).toBe(201);
+  const { patient: created } = await patient.json() as { patient: { id: string } };
+  const visit = await page.request.post("/api/v1/visits", {
+    headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+    data: { patientId: created.id, scheduledAt: "2025-02-15T09:00:00+01:00", durationMin: 30 },
+  });
+  expect(visit.status()).toBe(201);
+  await page.getByLabel("Date des rendez-vous", { exact: true }).fill("2025-02-15");
+  const row = page.locator(".visit-row").filter({ hasText: name });
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Signaler absent" }).click();
+  const dialog = page.getByRole("dialog");
+  const confirm = dialog.getByRole("button", { name: "Confirmer le changement" });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByLabel("Motif de ce changement *").fill("Patient absent au rendez-vous");
+  await confirm.click();
+  await expect(dialog).not.toBeVisible();
+  await expect(row.getByText("Absent", { exact: true })).toBeVisible();
+  await expect(row).toContainText("Patient absent au rendez-vous");
+  await expect(row.getByRole("button", { name: "Signaler l’arrivée" })).toHaveCount(0);
+  await expect(row.getByRole("button", { name: "Annuler le rendez-vous" })).toHaveCount(0);
+});
+
+test("UX12 status: future no-show is denied; reasoned cancellation is final and RTL accessible", async ({ page }) => {
+  const session = await login(page);
+  const headers = { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() };
+  const name = "UxCancel" + crypto.randomUUID().slice(0, 7);
+  const patient = await page.request.post("/api/v1/patients", {
+    headers, data: { familyName: name, givenName: "Fictif", isSynthetic: true },
+  });
+  expect(patient.status()).toBe(201);
+  const { patient: created } = await patient.json() as { patient: { id: string } };
+  const visit = await page.request.post("/api/v1/visits", {
+    headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+    data: { patientId: created.id, scheduledAt: "2098-01-15T09:00:00+01:00", durationMin: 30 },
+  });
+  expect(visit.status()).toBe(201);
+  const { visit: createdVisit } = await visit.json() as { visit: { id: string } };
+  const premature = await page.request.post("/api/v1/visits/" + createdVisit.id + "/status", {
+    headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+    data: { status: "NO_SHOW", reason: "Patient absent" },
+  });
+  expect(premature.status()).toBe(409);
+  const noReason = await page.request.post("/api/v1/visits/" + createdVisit.id + "/status", {
+    headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+    data: { status: "CANCELLED" },
+  });
+  expect(noReason.status()).toBe(400);
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByLabel("تاريخ المواعيد", { exact: true }).fill("2098-01-15");
+  const row = page.locator(".visit-row").filter({ hasText: name });
+  await expect(row).toBeVisible();
+  await expect(row.getByRole("button", { name: "تسجيل الغياب" })).toHaveCount(0);
+  await row.getByRole("button", { name: "إلغاء الموعد" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
+  expect(axe.violations).toEqual([]);
+  await dialog.getByLabel("سبب تغيير حالة الموعد *").fill("ألغى المريض الموعد");
+  await dialog.getByRole("button", { name: "تأكيد التغيير" }).click();
+  await expect(dialog).not.toBeVisible();
+  await expect(row.getByText("ملغى", { exact: true })).toBeVisible();
+  await expect(row).toContainText("ألغى المريض الموعد");
+  await expect(row.getByRole("button", { name: "تسجيل الوصول" })).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+});
+
+test("UX12 status: lost committed response retries the same frozen request, not a second transition", async ({ page }) => {
+  const session = await login(page);
+  const headers = { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() };
+  const name = "UxStatusRetry" + crypto.randomUUID().slice(0, 7);
+  const patient = await page.request.post("/api/v1/patients", {
+    headers, data: { familyName: name, givenName: "Fictif", isSynthetic: true },
+  });
+  expect(patient.status()).toBe(201);
+  const { patient: created } = await patient.json() as { patient: { id: string } };
+  const visit = await page.request.post("/api/v1/visits", {
+    headers: { ...headers, "Idempotency-Key": crypto.randomUUID() },
+    data: { patientId: created.id, scheduledAt: "2098-01-16T09:00:00+01:00" },
+  });
+  expect(visit.status()).toBe(201);
+  await page.getByLabel("Date des rendez-vous", { exact: true }).fill("2098-01-16");
+  const row = page.locator(".visit-row").filter({ hasText: name });
+  await expect(row).toBeVisible();
+  let lost = false;
+  const keys: string[] = [];
+  const bodies: string[] = [];
+  await page.route("**/api/v1/visits/*/status", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    keys.push(route.request().headers()["idempotency-key"] ?? "");
+    bodies.push(route.request().postData() ?? "");
+    if (!lost) {
+      lost = true;
+      const committed = await route.fetch();
+      expect(committed.status()).toBe(200);
+      await route.abort("failed");
+    } else await route.continue();
+  });
+  await row.getByRole("button", { name: "Annuler le rendez-vous" }).click();
+  const dialog = page.getByRole("dialog");
+  const reason = dialog.getByLabel("Motif de ce changement *");
+  await reason.fill("Annulation fictive demandée");
+  await dialog.getByRole("button", { name: "Confirmer le changement" }).click();
+  await expect(dialog.getByText("Réception non confirmée.", { exact: false })).toBeVisible();
+  await expect(reason).toBeDisabled();
+  await dialog.getByRole("button", { name: "Réessayer la même demande" }).click();
+  await expect(dialog).not.toBeVisible();
+  expect(keys).toHaveLength(2);
+  expect(keys[0]).toBe(keys[1]);
+  expect(bodies[0]).toBe(bodies[1]);
+  await expect(row.getByText("Annulé", { exact: true })).toBeVisible();
+});
