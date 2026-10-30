@@ -39,7 +39,7 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await expect(cash.getByTestId("cash-expected")).toHaveCount(0);
   await expect(cash.getByTestId("cash-difference")).toHaveCount(0);
   await test.info().attach("owner-fr-blind-count-before-reveal", {
-    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    body: await page.screenshot({ path: "../docs/images/sprint3b/owner-fr-blind-count-before-reveal.png", animations: "disabled", fullPage: true }),
     contentType: "image/png",
   });
 
@@ -75,7 +75,7 @@ test("owner cash control: blind count, reviewed gap, carry-forward close, Arabic
   await expect(cash.getByTestId("cash-attempt-history").locator("time").last()).toContainText("UTC");
   await expect(cash.getByTestId("cash-counted")).toHaveText("17.000 TND");
   await test.info().attach("owner-fr-complete-count-audit", {
-    body: await page.screenshot({ animations: "disabled", fullPage: true }),
+    body: await page.screenshot({ path: "../docs/images/sprint3b/owner-fr-complete-count-audit.png", animations: "disabled", fullPage: true }),
     contentType: "image/png",
   });
 
