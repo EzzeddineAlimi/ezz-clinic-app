@@ -69,3 +69,11 @@ GREEN verified: cleanup restores the passing authored-backend lint baseline.
 ```
 
 SHA256 provenance: config `7be74b6788efb35f40d354437c5f7413b6940f126697a4383c91ce6f6296efb1`; smoke script `7d2d702e312e1a78c80ba52fe2074faecd4b207e34e687b1798d27c60e7e845a`; source TAP `bd6612704daaf4223b79c66ff0617ad9471d23ed806fe5d1d201dd1c0374c59c`; compiled TAP `d0e447bf1c775c0d10dd58dab1de2e4bd731baaadb391e97053ec81069b60f91`. Local bulk transcripts are temporary; durable commands/results/risks are here and exact-head CI logs are linked in the draft PR. No UI changed, so screenshots are not applicable.
+
+## Formatter measurement — 2026-10-31, draft PR #106
+
+The original lint-slice statements above are historical; they do not describe this newer draft. PR #106 adds `npm --prefix backend run format:check` (`biome format .`) and a **diagnostic-only** step in the existing backend quality workflow. It is intentionally not an enforced formatter gate: mass reformatting of clinical, financial or UI files is outside this change.
+
+At PR #106 head `3f587b917110a1da54ea189378250ef19b0ef44e`, the [real GitHub Actions job](https://github.com/EzzeddineAlimi/ezz-clinic-app/actions/runs/41233329403) installed pinned dependencies and executed the formatter. It exited **1** with **110 formatting diagnostics across 110 checked authored files**. Biome reported **No fixes applied**; the job's clean-working-tree assertion passed. This is measured formatting debt, not a passing formatting baseline or a finding of backend runtime failure. The existing lint and RED/GREEN lint verifier also passed in that job.
+
+To reproduce without changing source: `npm --prefix backend ci --ignore-scripts` then `npm --prefix backend run format:check`. Expect exit 1 until the measured baseline is deliberately resolved. Contributors should not run a repository-wide write-mode formatter as part of this PR. Independently review any future focused formatting diff and keep application behavior and clinical/payment controls unchanged.
