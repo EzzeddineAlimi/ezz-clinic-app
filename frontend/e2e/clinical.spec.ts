@@ -85,6 +85,23 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(missingDetail).toHaveCSS("background-color", "rgb(255, 243, 232)");
   await expect(details).toContainText("Vérifié par le dentiste");
   await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
+  // Muse Ons C-36: verify desktop patient identity remains visible when reading CRITICAL alerts.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const desktopIdentity = dialog.locator(".clinical-workspace > .patient-context");
+  const desktopCriticalAlert = details.locator("li").first();
+  await expect(desktopIdentity).toContainText(familyName);
+  await desktopCriticalAlert.evaluate(el => el.scrollIntoView({ block: "center" }));
+  await expect(desktopIdentity).toBeInViewport({ ratio: 1 });
+  await expect(desktopCriticalAlert).toBeInViewport({ ratio: 0.9 });
+  const desktopIdentityBox = await desktopIdentity.boundingBox();
+  const desktopAlertBox = await desktopCriticalAlert.boundingBox();
+  expect(desktopIdentityBox).not.toBeNull();
+  expect(desktopAlertBox).not.toBeNull();
+  expect(desktopIdentityBox!.y + desktopIdentityBox!.height).toBeLessThan(desktopAlertBox!.y);
+  await test.info().attach("dentist-fr-1440-identity-critical", {
+    body: await page.screenshot({ path: "test-results/dentist-fr-1440-identity-critical.png", animations: "disabled", fullPage: false }),
+    contentType: "image/png",
+  });
   await test.info().attach("dentist-fr-medical-alert-details", {
     body: await page.screenshot({ path: "../docs/images/sprint3b/dentist-fr-medical-alert-details.png", animations: "disabled" }),
     contentType: "image/png",
