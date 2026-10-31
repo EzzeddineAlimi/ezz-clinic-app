@@ -208,6 +208,7 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   const cash = page.locator(".owner-cash");
   await expect(cash).toBeVisible();
   await expect(page.getByRole("heading", { name: "Contrôle de caisse" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("owner-fr-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/owner-fr-native-200pct-X11-desktop.png"),
     contentType: "image/png",
@@ -215,6 +216,7 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(cash).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("owner-ar-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/owner-ar-native-200pct-X11-desktop.png"),
     contentType: "image/png",
