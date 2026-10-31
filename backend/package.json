@@ -8,6 +8,8 @@
     "node": ">=22.18.0 <23"
   },
   "scripts": {
+    "lint": "biome lint .",
+    "lint:verify": "node scripts/verify-lint-gate.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.json",
     "migrate": "node scripts/migrate.ts",
@@ -19,6 +21,7 @@
     "bench": "node scripts/bench.ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/node": "26.6.3",
     "@types/pg": "8.23.1",
     "typescript": "6.0.3"
