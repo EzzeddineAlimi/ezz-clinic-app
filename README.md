@@ -11,8 +11,8 @@ EZZ Clinic brings patient registration, appointments, dentist-authored care, pay
 
 | Area | Implementation status |
 | --- | --- |
-| **Backend** | TypeScript / Node.js 22 / PostgreSQL 16 modular monolith integrated into `main` through [PR #42](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/42). |
-| **Web application** | React, TypeScript and Vite receptionist slice merged in [PR #43](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/43). Additional receptionist UX changes are in [draft PRs](https://github.com/EzzeddineAlimi/ezz-clinic-app/pulls), not in main. |
+| **Backend** | TypeScript / Node.js 22 / PostgreSQL 16 modular monolith on `main`, including the scheduling and clinical safeguards integrated through [PR #100](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/100). |
+| **Web application** | React, TypeScript and Vite receptionist, dentist and owner workspaces. The independently reviewed UX-12/13/14 integration is on `main` via [PR #100](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/100); full V1 acceptance remains open. |
 | **Receptionist workflow** | Real staff login, patient search and registration, daily clinic agenda, appointment scheduling and arrival recording; frontend connects to real API and fictional PostgreSQL records. |
 | **Languages** | French and Arabic with responsive right-to-left (RTL) layouts in the receptionist slice. |
 | **Other backend capabilities** | Server-enforced roles and clinic isolation, authenticated dentist care, payments, receipts, cash-period evidence, owner review, paper recovery and audit checks — **not yet all exposed in the web UI**. |
@@ -90,8 +90,8 @@ Automated tests and sample screenshots use fictional data. A passing test suite 
 
 ## What's next
 
-1. Independently review the stacked receptionist UX draft PRs; merge only in approved dependency order after exact-head checks and founder authorization.
-2. Build and review the dentist and owner workspaces against existing server-side permissions and monetary evidence rules.
+1. Validate the [private fictional Codespaces preview](docs/operations/CODESPACES-FICTIONAL-PREVIEW.md) from draft PR #44 with an actual **Private** port 5173 and signed-in mobile access; do not make the port public.
+2. Complete missing receptionist, dentist and owner workflows and independent V1 acceptance; the merged role-workspace UI does not establish clinical, payment or cash-custody readiness.
 3. Complete the 61 approved V1 acceptance-group evidence checks and separate paper-first CNAM workflow implementation without inventing current tariffs.
 4. Validate the private, GitHub-authenticated fictional-data preview and address [production security blockers](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/72) and [CI/protection governance](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/68) before any real-clinic rollout.
 

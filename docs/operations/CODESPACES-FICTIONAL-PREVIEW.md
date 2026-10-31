@@ -39,7 +39,7 @@ These are demo-only accounts and **must not be used in a public port or producti
 - Schedule a fictional appointment and record arrival.
 - Logout, then verify the interface returns to login.
 
-This branch contains fictional-data receptionist checkout, dentist clinical notes/workspace and owner cash-control screens in addition to the day board. They are **development features**, not verified clinical, payment, physical-cash custody or production workflows. The newer UX-12/13/14 integration candidate in PR #100 is a separate unmerged draft; do not assume its fixes are included in this preview. Verify what the running branch actually shows rather than treating a role's ability to sign in as acceptance evidence.
+This branch contains fictional-data receptionist checkout, dentist clinical notes/workspace and owner cash-control screens in addition to the day board. They are **development features**, not verified clinical, payment, physical-cash custody or production workflows. The reviewed UX-12/13/14 integration was merged into `main` through PR #100 and is included in this updated preview branch. This does **not** establish clinical, payment or V1 acceptance. Verify what the running Codespace actually shows rather than treating a role's ability to sign in as acceptance evidence.
 
 ## Stopping and removal
 
