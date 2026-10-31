@@ -1,5 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+// Host allowlist is limited to this exact private Codespace, never a wildcard.
+const codespaceName =
+  process.env.CODESPACES === "true" ? process.env.CODESPACE_NAME : undefined;
+if (process.env.CODESPACES === "true" && (!codespaceName || !/^[a-z0-9-]+$/.test(codespaceName))) {
+  throw new Error("Codespaces preview requires a valid CODESPACE_NAME");
+}
+const allowedHosts = codespaceName ? [`${codespaceName}-5173.app.github.dev`] : [];
+const apiProxy = { target: "http://127.0.0.1:4180", changeOrigin: true };
 const headers = {
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
@@ -12,6 +20,7 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: true,
+    allowedHosts,
     headers: {
       ...headers,
       "Content-Security-Policy": headers["Content-Security-Policy"].replace(
@@ -19,7 +28,13 @@ export default defineConfig({
         "script-src 'self' 'unsafe-inline'",
       ),
     },
-    proxy: { "/api": { target: "http://127.0.0.1:4180" } },
+    proxy: { "/api": apiProxy },
   },
-  preview: { headers, proxy: { "/api": { target: "http://127.0.0.1:4180" } } },
+  preview: {
+    port: 5173,
+    strictPort: true,
+    allowedHosts,
+    headers,
+    proxy: { "/api": apiProxy },
+  },
 });

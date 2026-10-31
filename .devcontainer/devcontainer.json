@@ -1,0 +1,31 @@
+{
+  "name": "EZZ Clinic — PRIVATE fictional-data preview",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "runServices": [
+    "database",
+    "app"
+  ],
+  "workspaceFolder": "/workspaces/ezz-clinic-app",
+  "remoteUser": "node",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "npm --prefix backend ci --ignore-scripts --no-audit --no-fund && npm --prefix frontend ci --ignore-scripts --no-audit --no-fund",
+  "forwardPorts": [
+    5173
+  ],
+  "portsAttributes": {
+    "4180": {
+      "label": "internal API — DO NOT FORWARD",
+      "onAutoForward": "ignore"
+    },
+    "5173": {
+      "label": "EZZ Clinic — private fictional preview",
+      "onAutoForward": "silent",
+      "protocol": "http"
+    },
+    "5432": {
+      "label": "internal PostgreSQL — DO NOT FORWARD",
+      "onAutoForward": "ignore"
+    }
+  }
+}
