@@ -85,6 +85,17 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(missingDetail).toHaveCSS("background-color", "rgb(255, 243, 232)");
   await expect(details).toContainText("Vérifié par le dentiste");
   await expect(overview).toContainText("Ce résumé ne prouve ni soin réalisé ni paiement.");
+  // Keyboard-only dentist task: the active section must be navigable and reversible.
+  const notesNav = dialog.locator(".clinical-nav button").nth(1);
+  const overviewNav = dialog.locator(".clinical-nav button").first();
+  await notesNav.focus();
+  await page.keyboard.press("Enter");
+  await expect(notesNav).toHaveAttribute("aria-pressed", "true");
+  await expect(overview).toHaveCount(0);
+  await page.keyboard.press("Shift+Tab");
+  await expect(overviewNav).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(overview).toBeVisible();
   // Muse Ons C-36: verify desktop patient identity remains visible when reading CRITICAL alerts.
   await page.setViewportSize({ width: 1440, height: 900 });
   const desktopIdentity = dialog.locator(".clinical-workspace > .patient-context");
@@ -173,6 +184,9 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await dialog.getByRole("button",{name:"Actualiser"}).click();
   await expect(dialog.getByText("Contexte fictif")).toBeVisible();
   await expect(dialog.getByRole("button",{name:/Notes signées/})).toContainText("(1)");
+  // Signed SOAP is immutable: no second initial-sign affordance after refresh.
+  await expect(dialog.getByTestId("clinical-initial-note-form")).toHaveCount(0);
+  await expect(dialog.getByRole("button", { name: "Signer et enregistrer" })).toHaveCount(0);
   await dialog.getByRole("button", { name: "Fermer le formulaire" }).click();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
