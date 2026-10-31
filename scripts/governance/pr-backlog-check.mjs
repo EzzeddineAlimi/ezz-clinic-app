@@ -27,8 +27,15 @@ export function auditPullRequests(pulls, now = new Date()) {
     groups.set(rootNumber, group);
   }
 
+  // GitHub lists newest PRs first. Work on every integration root oldest-first.
+  const orderedGroups = [...groups.values()].sort((a, b) =>
+    Date.parse(a.root.created_at) - Date.parse(b.root.created_at) || a.root.number - b.root.number);
+  const queue = orderedGroups.map(g => ({
+    root: g.root.number, createdAt: g.root.created_at, members: g.members.size,
+    depth: g.longest.length
+  }));
   const findings = [];
-  for (const group of groups.values()) {
+  for (const group of orderedGroups) {
     const ageHours = (now.getTime() - Date.parse(group.root.created_at)) / 3_600_000;
     if (!Number.isFinite(ageHours) || ageHours < 0) throw new Error(`Invalid created_at for #${group.root.number}`);
     if (group.longest.length > MAX_STACK) {
@@ -41,11 +48,14 @@ export function auditPullRequests(pulls, now = new Date()) {
       findings.push({code: 'STANDALONE_AGING', root: group.root.number, detail: `unintegrated PR open ${Math.floor(ageHours)}h (limit ${MAX_SINGLE_PR_HOURS}h)`});
     }
   }
-  return {openCount: pulls.length, stackCount: [...groups.values()].filter(g => g.members.size > 1).length, findings};
+  return {openCount: pulls.length, stackCount: orderedGroups.filter(g => g.members.size > 1).length, queue, findings};
 }
 
 export function reportMarkdown(audit, repo) {
   const lines = ['## EZZ open-PR integration watch', '', `Open PRs: **${audit.openCount}** · stacks: **${audit.stackCount}** · actionable findings: **${audit.findings.length}**.`, ''];
+  lines.push('### Complete oldest-first integration-root queue', '');
+  for (const g of audit.queue) lines.push(`- [#${g.root}](https://github.com/${repo}/pull/${g.root}) — opened ${g.createdAt}; ${g.members} linked PR(s), depth ${g.depth}`);
+  lines.push('');
   if (audit.findings.length === 0) lines.push('PASS: No stack-depth or age threshold exceeded. This is NOT CI/reviewer/release approval.');
   for (const f of audit.findings) lines.push(`- **${f.code}** at [#${f.root}](https://github.com/${repo}/pull/${f.root}): ${f.detail}`);
   if (audit.findings.length) lines.push('', 'FAIL: Stop extending affected stacks; reconcile their root against current main and make a reviewed integration candidate. Do not close unmerged work or bypass clinical/payment/security gates.');

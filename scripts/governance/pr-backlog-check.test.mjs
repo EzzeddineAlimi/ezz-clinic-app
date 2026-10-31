@@ -37,3 +37,15 @@ test('fails fast on ambiguous graphs instead of reporting a false pass', () => {
   assert.throws(() => auditPullRequests([p(1, 'x', 'y'), p(2, 'y', 'x')], now), /cycle/);
   assert.throws(() => auditPullRequests([p(1, 'same', 'main'), p(2, 'same', 'main')], now), /Duplicate/);
 });
+
+test('shows every open integration root oldest-first even if none is overdue', () => {
+  // GitHub API's live open-PR list arrives newest-first.
+  const pulls = [p(101, 'guard', 'main', 1), p(91, 'ux-child', 'ux-root', 1),
+    p(60, 'ux-root', 'main', 25), p(44, 'preview', 'main', 35)];
+  const result = auditPullRequests(pulls, now);
+  assert.deepEqual(result.queue.map(g => g.root), [44, 60, 101]);
+  assert.deepEqual(result.findings.map(f => f.root), [60]);
+  const markdown = reportMarkdown(result, 'EzzeddineAlimi/ezz-clinic-app');
+  assert.ok(markdown.indexOf('/pull/44') < markdown.indexOf('/pull/60'));
+  assert.ok(markdown.indexOf('/pull/60') < markdown.indexOf('/pull/101'));
+});
