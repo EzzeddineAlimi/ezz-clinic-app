@@ -1381,15 +1381,16 @@ dialog::backdrop {
 .clinical-workspace .cash-form label { display: grid; gap: 6px; font-size: 14px; }
 .clinical-workspace .cash-form button { justify-self: start; }
 
+/* Keep the current patient visible while reading lower clinical alerts at every viewport. */
+.clinical-workspace > .patient-context {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  overflow-wrap: anywhere;
+}
+
 /* Mobile web: preserve comfortable targets without changing desktop density. */
 @media (max-width: 760px) {
-  /* Keep the chart owner visible while the dentist reads lower alerts on mobile. */
-  .clinical-workspace > .patient-context {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    overflow-wrap: anywhere;
-  }
   .date-controls .icon-button,
   .language button {
     min-width: 44px;
