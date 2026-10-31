@@ -1,0 +1,117 @@
+{
+  "title": "U001 fictional receptionist enquiry queue",
+  "fictional": true,
+  "generatedBy": "EZZ_RECORD_EXAMPLES=1 node --test test/u001-enquiries.test.ts",
+  "steps": [
+    {
+      "file": "receptionist",
+      "title": "/api/v1/enquiries",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/enquiries",
+      "path": "/api/v1/enquiries",
+      "request": {
+        "name": "Fictional Léa خيالي",
+        "reason": "Rappel pour rendez-vous fictif",
+        "isSynthetic": true
+      },
+      "status": 201,
+      "response": {
+        "enquiry": {
+          "id": "<id-1>",
+          "name": "Fictional Léa خيالي",
+          "reason": "Rappel pour rendez-vous fictif",
+          "callback": null,
+          "status": "OPEN",
+          "version": 1,
+          "createdBy": "<id-2>",
+          "updatedBy": "<id-2>",
+          "createdAt": "<timestamp>",
+          "updatedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "/api/v1/enquiries",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/enquiries",
+      "path": "/api/v1/enquiries?status=OPEN",
+      "request": {},
+      "status": 200,
+      "response": {
+        "enquiries": [
+          {
+            "id": "<id-1>",
+            "name": "Fictional Léa خيالي",
+            "reason": "Rappel pour rendez-vous fictif",
+            "callback": null,
+            "status": "OPEN",
+            "version": 1,
+            "createdBy": "<id-2>",
+            "updatedBy": "<id-2>",
+            "createdAt": "<timestamp>",
+            "updatedAt": "<timestamp>"
+          }
+        ],
+        "nextBefore": null
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "/api/v1/enquiries/:id",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/enquiries/:id",
+      "path": "/api/v1/enquiries/<id-1>",
+      "request": {},
+      "status": 200,
+      "response": {
+        "enquiry": {
+          "id": "<id-1>",
+          "name": "Fictional Léa خيالي",
+          "reason": "Rappel pour rendez-vous fictif",
+          "callback": null,
+          "status": "OPEN",
+          "version": 1,
+          "createdBy": "<id-2>",
+          "updatedBy": "<id-2>",
+          "createdAt": "<timestamp>",
+          "updatedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "receptionist",
+      "title": "/api/v1/enquiries/:id/update",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/enquiries/:id/update",
+      "path": "/api/v1/enquiries/<id-1>/update",
+      "request": {
+        "name": "Fictional Léa خيالي",
+        "reason": "Rappel pour rendez-vous fictif",
+        "isSynthetic": true,
+        "callback": null,
+        "expectedVersion": 1,
+        "status": "CLOSED"
+      },
+      "status": 200,
+      "response": {
+        "enquiry": {
+          "id": "<id-1>",
+          "name": "Fictional Léa خيالي",
+          "reason": "Rappel pour rendez-vous fictif",
+          "callback": null,
+          "status": "CLOSED",
+          "version": 2,
+          "createdBy": "<id-2>",
+          "updatedBy": "<id-2>",
+          "createdAt": "<timestamp>",
+          "updatedAt": "<timestamp>"
+        }
+      }
+    }
+  ]
+}

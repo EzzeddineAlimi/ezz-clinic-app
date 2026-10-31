@@ -29,6 +29,7 @@ import { documentRoutes, type DocumentDeps } from './modules/documents.ts';
 import { labRoutes } from './modules/lab.ts';
 import { stockRoutes } from './modules/stock.ts';
 import { cnamRoutes } from './modules/cnam.ts';
+import { enquiryRoutes } from './modules/enquiries.ts';
 import { PgBlobStore } from './platform/blobstore.ts';
 import { structuralScreener } from './platform/fileinspect.ts';
 
@@ -79,6 +80,7 @@ export function buildRoutes(db: Db, documents: Partial<DocumentDeps> = {}): Rout
     ...labRoutes,
     ...stockRoutes,
     ...cnamRoutes,
+    ...enquiryRoutes,
   ];
 }
 
