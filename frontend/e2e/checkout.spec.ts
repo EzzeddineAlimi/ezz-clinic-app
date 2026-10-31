@@ -110,6 +110,10 @@ test("Committed server payment is discovered after reload without automatic dupl
   await expect(d.getByText(/impression et remise au patient non confirmées/)).toBeVisible();
   await d.getByRole("button", { name: "Préparer une impression" }).click();
   await expect(d.locator("#receipt-print")).toContainText("COPIE");
+  await test.info().attach("reception-fr-server-numbered-receipt-copy", {
+    body: await d.locator("#receipt-print").screenshot({ path: "../docs/images/sprint3b/reception-fr-server-numbered-receipt-copy.png", animations: "disabled" }),
+    contentType: "image/png",
+  });
   const h = await (await request.get("/api/v1/visits/" + f.id + "/payments", {
     headers: { Authorization: "Bearer " + f.desk },
   })).json();
@@ -261,4 +265,21 @@ test("Arabic mobile recovery is keyboard accessible without lateral overflow", a
     .include("dialog")
     .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
     .analyze()).violations).toEqual([]);
+});
+
+test("UX12: checkout identifies patient/visit, shows settled state and never offers a second payment", async ({ page, request }) => {
+  const f = await fixture(request);
+  await login(page);
+  const d = await open(page, f.familyName);
+  await expect(d.getByRole("heading", { name: new RegExp("Encaissement — Checkout " + f.familyName) })).toBeVisible();
+  const identity = d.getByTestId("checkout-patient-context");
+  await expect(identity).toContainText("Dossier #");
+  await expect(identity).toContainText("Heure du cabinet");
+  await prepare(d, "100.000", "CARD");
+  await record(d);
+  await expect(d.getByTestId("checkout-balance")).toHaveText("0.000 TND");
+  await expect(d.getByTestId("checkout-settled")).toContainText("Soldé");
+  await expect(d.getByLabel("Montant (TND)")).toHaveCount(0);
+  await expect(d.getByRole("button", { name: "Préparer le paiement" })).toHaveCount(0);
+  await expect(d).not.toContainText(/\d{4}-\d{2}-\d{2}T\d{2}:/);
 });

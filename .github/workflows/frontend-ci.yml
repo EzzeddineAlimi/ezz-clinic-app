@@ -37,3 +37,21 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - run: npm --prefix frontend run test:e2e
+      - name: Preserve fictional UI screenshots for visual review
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: fictional-ui-screenshots
+          retention-days: 5
+          if-no-files-found: warn
+          path: |
+            docs/images/sprint2/*.png
+            # Explicit current-run risk-state captures; exclude historical committed checkout PNGs.
+            docs/images/sprint3b/owner-fr-blind-count-before-reveal.png
+            docs/images/sprint3b/owner-fr-complete-count-audit.png
+            docs/images/sprint3b/dentist-fr-medical-alert-details.png
+            docs/images/sprint3b/reception-fr-server-numbered-receipt-copy.png
+            docs/images/sprint3b/dayboard-fr-200pct-css-zoom.png
+            docs/images/sprint3b/dayboard-ar-200pct-css-zoom.png
+            docs/images/sprint3b/dayboard-ar-landscape.png
+            frontend/test-results/**/*.png

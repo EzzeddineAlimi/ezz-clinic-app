@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { ApiError } from "./api.ts";
 import type { Lang, Words } from "./i18n.ts";
@@ -181,6 +181,7 @@ export function Modal({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const d = ref.current!;
     const opener =
@@ -189,9 +190,12 @@ export function Modal({
         : null;
     d.showModal();
     return () => {
+      const parentDialog = d.parentElement?.closest("dialog");
       d.close();
       queueMicrotask(() => {
         if (opener?.isConnected) opener.focus();
+        else if (parentDialog?.open)
+          parentDialog.querySelector<HTMLElement>("input:not(:disabled), button:not(:disabled)")?.focus();
         else document.querySelector<HTMLElement>("#main")?.focus();
       });
     };
@@ -199,9 +203,11 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      aria-labelledby="dialog-title"
+      aria-labelledby={titleId}
       onKeyDown={(event) => {
         if (event.key !== "Tab") return;
+        // Keep the inner dialog's Tab handling from reaching a parent dialog.
+        event.stopPropagation();
         const elements = [
           ...event.currentTarget.querySelectorAll<HTMLElement>(
             "button, input, select, textarea, a[href], [tabindex]",
@@ -230,9 +236,10 @@ export function Modal({
       <div className="modal-head">
         <div>
           <p className="eyebrow">EZZ CLINIC</p>
-          <h2 id="dialog-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
         </div>
         <button
+          type="button"
           className="icon-button"
           aria-label={w.close}
           disabled={busy}
