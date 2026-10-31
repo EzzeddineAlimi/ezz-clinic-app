@@ -25,7 +25,7 @@
 6. In the PORTS tab, select port 5173 → **Open in Browser** (or copy the forwarded HTTPS address). GitHub may ask you to authenticate again. If it does, sign in with the same GitHub account that created the Codespace.
 7. Use only the seeded test credentials:
    - Clinic: `web-fictional`
-   - Username: `desk` (or `dentist`, `owner`, `assistant`; the receptionist slice is the only functional UI)
+   - Username: `desk` (or `dentist`, `owner`, `assistant`; each account has role-limited fictional development workflows)
    - Password: `fictional-pass-123`
 
 These are demo-only accounts and **must not be used in a public port or production**. No one should enter real patient details.
@@ -39,7 +39,7 @@ These are demo-only accounts and **must not be used in a public port or producti
 - Schedule a fictional appointment and record arrival.
 - Logout, then verify the interface returns to login.
 
-The feature screens for dentist charting, checkout/payment/receipt and owner cash review are **not present in this frontend slice**. Do not interpret a role's ability to sign in as evidence those screens exist.
+This branch contains fictional-data receptionist checkout, dentist clinical notes/workspace and owner cash-control screens in addition to the day board. They are **development features**, not verified clinical, payment, physical-cash custody or production workflows. The newer UX-12/13/14 integration candidate in PR #100 is a separate unmerged draft; do not assume its fixes are included in this preview. Verify what the running branch actually shows rather than treating a role's ability to sign in as acceptance evidence.
 
 ## Stopping and removal
 
