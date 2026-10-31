@@ -2,6 +2,7 @@
 - Related approved V1 IDs / issue(s):
 - Exact base and head SHA; parent PR if stacked:
 - Existing owner/workstream checked; no duplicate parallel implementation:
+- Open-PR queue preflight: number open, stack root/depth/age, integration target and closure owner; if three linked drafts already exist, reconcile rather than extend the stack:
 
 ## Behavior and evidence
 - Intended user flow, success/empty/loading/error/offline/retry states (FR/Arabic if relevant):
