@@ -141,7 +141,7 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   const arMissingDetail = arabicDialog.getByTestId("clinical-alert-missing-detail");
   await arMissingDetail.scrollIntoViewIfNeeded();
   await expect(arMissingDetail).toBeInViewport({ ratio: 1 });
-  await expect(arMissingDetail).toHaveText("لم تُسجّل تفاصيل");
+  await expect(arMissingDetail).toHaveText("التفاصيل غير مسجّلة");
   await expect(arIdentity).toBeInViewport({ ratio: 1 });
   await expect(arabicDialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
   await test.info().attach("dentist-ar-native-200pct-missing-detail-X11", {
