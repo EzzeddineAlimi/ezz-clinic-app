@@ -1,6 +1,17 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
+// Independent OS-compositor capture: CDP page and element screenshots were flat background.
+function captureDesktop(path: string): Buffer {
+  if (!process.env.DISPLAY) throw new Error("Native zoom desktop capture requires DISPLAY");
+  execFileSync("ffmpeg", [
+    "-y", "-loglevel", "error", "-f", "x11grab",
+    "-video_size", "1280x1024", "-i", process.env.DISPLAY + "+0,0",
+    "-frames:v", "1", path,
+  ]);
+  return readFileSync(path);
+}
 // Dedicated headed-Xvfb CI step: never present CSS zoom or emulated DPR as native browser zoom.
 test("Dentist alerts and dialog controls remain readable at native Chromium 200% zoom in FR/AR", async ({ page, request }) => {
   test.skip(process.env.EZZ_NATIVE_ZOOM !== "1", "Dedicated headed Xvfb native-browser-zoom job");
@@ -75,6 +86,10 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     body: await dialog.screenshot({ path: "test-results/dentist-fr-native-browser-200pct-dialog.png", animations: "disabled" }),
     contentType: "image/png",
   });
+  await test.info().attach("dentist-fr-native-200pct-X11-desktop", {
+    body: captureDesktop("test-results/dentist-fr-native-200pct-X11-desktop.png"),
+    contentType: "image/png",
+  });
 
   await dialog.getByRole("button", { name: "Fermer le formulaire" }).click();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
@@ -95,6 +110,10 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   });
   await test.info().attach("dentist-ar-native-browser-200pct-dialog", {
     body: await arabicDialog.screenshot({ path: "test-results/dentist-ar-native-browser-200pct-dialog.png", animations: "disabled" }),
+    contentType: "image/png",
+  });
+  await test.info().attach("dentist-ar-native-200pct-X11-desktop", {
+    body: captureDesktop("test-results/dentist-ar-native-200pct-X11-desktop.png"),
     contentType: "image/png",
   });
 });
