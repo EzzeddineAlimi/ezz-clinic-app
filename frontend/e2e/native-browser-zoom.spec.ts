@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
+import type { Locator } from "@playwright/test";
 
 // Independent OS-compositor capture: CDP page and element screenshots were flat background.
 function captureDesktop(path: string): Buffer {
@@ -10,7 +11,7 @@ function captureDesktop(path: string): Buffer {
     "-video_size", "1280x1024", "-i", process.env.DISPLAY + "+0,0",
     "-frames:v", "1", path,
   ]);
-  // Fail if the clinical-content area is flat; CDP screenshots previously passed while blank.
+  // Fail if the central UI is flat; CDP screenshots previously passed while blank.
   const pixels = execFileSync("ffmpeg", [
     "-loglevel", "error", "-i", path, "-vf", "crop=380:450:120:380,format=gray",
     "-f", "rawvideo", "pipe:1",
@@ -20,7 +21,7 @@ function captureDesktop(path: string): Buffer {
     darkest = Math.min(darkest, pixel);
     lightest = Math.max(lightest, pixel);
   }
-  if (lightest - darkest < 30) throw new Error("Native zoom clinical UI screenshot is blank");
+  if (lightest - darkest < 30) throw new Error("Native zoom UI screenshot is blank");
   return readFileSync(path);
 }
 // Dedicated headed-Xvfb CI step: never present CSS zoom or emulated DPR as native browser zoom.
@@ -50,6 +51,11 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     data: { code: "ALLERGY_LATEX", severity: "CRITICAL", detail: "Allergie au latex fictive" },
   });
   expect(alert.status()).toBe(201);
+  const missingDetailAlert = await request.post("/api/v1/patients/" + arrived!.patient.id + "/medical-alerts", {
+    headers: { Authorization: "Bearer " + dentist, "Idempotency-Key": crypto.randomUUID() },
+    data: { code: "ANTICOAGULANT_DOAC", severity: "CAUTION", detail: null },
+  });
+  expect(missingDetailAlert.status()).toBe(201);
 
   await page.setViewportSize({ width: 640, height: 900 });
   await page.goto("/");
@@ -98,6 +104,17 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     contentType: "image/png",
   });
 
+  const frMissingDetail = dialog.getByTestId("clinical-alert-missing-detail");
+  await frMissingDetail.scrollIntoViewIfNeeded();
+  await expect(frMissingDetail).toBeInViewport({ ratio: 1 });
+  await expect(frMissingDetail).toHaveText("Détail non renseigné");
+  await expect(identity).toBeInViewport({ ratio: 1 });
+  await expect(dialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
+  await test.info().attach("dentist-fr-native-200pct-missing-detail-X11", {
+    body: captureDesktop("test-results/dentist-fr-native-200pct-missing-detail-X11.png"),
+    contentType: "image/png",
+  });
+
   await dialog.getByRole("button", { name: "Fermer le formulaire" }).click();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
@@ -119,6 +136,77 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dentist-ar-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/dentist-ar-native-200pct-X11-desktop.png"),
+    contentType: "image/png",
+  });
+  const arMissingDetail = arabicDialog.getByTestId("clinical-alert-missing-detail");
+  await arMissingDetail.scrollIntoViewIfNeeded();
+  await expect(arMissingDetail).toBeInViewport({ ratio: 1 });
+  await expect(arMissingDetail).toHaveText("لم تُسجّل تفاصيل");
+  await expect(arIdentity).toBeInViewport({ ratio: 1 });
+  await expect(arabicDialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
+  await test.info().attach("dentist-ar-native-200pct-missing-detail-X11", {
+    body: captureDesktop("test-results/dentist-ar-native-200pct-missing-detail-X11.png"),
+    contentType: "image/png",
+  });
+
+  // C-37: exercise real native zoom outside D02; CSS-zoom screenshots are not evidence.
+  const signInAtNativeZoom = async (username: "desk" | "owner") => {
+    await page.goto("/");
+    await page.getByLabel("Code du cabinet").fill("web-fictional");
+    await page.getByLabel("Identifiant personnel").fill(username);
+    await page.getByLabel("Mot de passe").fill("fictional-pass-123");
+    await page.getByRole("button", { name: "Ouvrir ma session" }).click();
+    await expect(page.getByRole("heading", { name: "Le fil de la journée" })).toBeVisible();
+    expect(await page.evaluate(() => ({ dpr: devicePixelRatio, width: innerWidth }))).toEqual({ dpr: 2, width: 320 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  };
+  const reachByKeyboardTab = async (target: Locator) => {
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    for (let step = 0; step < 60; step++) {
+      await page.keyboard.press("Tab");
+      if (await target.isFocused()) return;
+    }
+    throw new Error("Navigation target not reachable by Tab at native 200% zoom");
+  };
+
+  await signInAtNativeZoom("desk");
+  await expect(page.locator(".visit-row").first()).toBeVisible();
+  await test.info().attach("reception-fr-native-200pct-X11-desktop", {
+    body: captureDesktop("test-results/reception-fr-native-200pct-X11-desktop.png"),
+    contentType: "image/png",
+  });
+  const patientsNav = page.getByRole("button", { name: "Patients", exact: true });
+  await reachByKeyboardTab(patientsNav);
+  await page.keyboard.press("Enter");
+  await expect(page.getByPlaceholder("Nom, numéro de dossier ou téléphone")).toBeVisible();
+  await page.keyboard.press("Shift+Tab");
+  const agendaNav = page.getByRole("button", { name: "Agenda", exact: true });
+  await expect(agendaNav).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".visit-row").first()).toBeVisible();
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await test.info().attach("reception-ar-native-200pct-X11-desktop", {
+    body: captureDesktop("test-results/reception-ar-native-200pct-X11-desktop.png"),
+    contentType: "image/png",
+  });
+
+  await signInAtNativeZoom("owner");
+  const cashNav = page.getByRole("button", { name: "Caisse", exact: true });
+  await reachByKeyboardTab(cashNav);
+  await page.keyboard.press("Enter");
+  const cash = page.locator(".owner-cash");
+  await expect(cash).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Contrôle de caisse" })).toBeVisible();
+  await test.info().attach("owner-fr-native-200pct-X11-desktop", {
+    body: captureDesktop("test-results/owner-fr-native-200pct-X11-desktop.png"),
+    contentType: "image/png",
+  });
+  await page.getByRole("button", { name: "العربية", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(cash).toBeVisible();
+  await test.info().attach("owner-ar-native-200pct-X11-desktop", {
+    body: captureDesktop("test-results/owner-ar-native-200pct-X11-desktop.png"),
     contentType: "image/png",
   });
 });
