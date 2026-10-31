@@ -13,7 +13,8 @@
     "test": "node --test test/*.test.ts",
     "test:e2e": "playwright test",
     "lint": "biome lint .",
-    "lint:verify": "node scripts/verify-lint-gate.mjs"
+    "lint:verify": "node scripts/verify-lint-gate.mjs",
+    "format:check": "biome format ."
   },
   "dependencies": {
     "react": "19.2.0",

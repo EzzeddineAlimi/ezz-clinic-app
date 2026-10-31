@@ -10,6 +10,7 @@
   "scripts": {
     "lint": "biome lint .",
     "lint:verify": "node scripts/verify-lint-gate.ts",
+    "format:check": "biome format .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "build": "tsc -p tsconfig.json",
     "migrate": "node scripts/migrate.ts",
