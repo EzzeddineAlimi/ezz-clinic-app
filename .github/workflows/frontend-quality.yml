@@ -1,0 +1,36 @@
+name: Frontend authored-source quality
+
+# Unconditional PR job, including documentation-only PRs.
+on:
+  pull_request:
+  push:
+    branches: ['main']
+    paths: ['frontend/**', '.github/workflows/frontend-quality.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: backend/.nvmrc
+      - name: Install pinned frontend dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Lint authored frontend source
+        run: npm run lint
+      - name: Verify RED/GREEN and fixture exclusion
+        run: npm run lint:verify
