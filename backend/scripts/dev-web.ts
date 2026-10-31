@@ -50,7 +50,8 @@ await call(
   { openingFloatMillimes: 0 },
   String(ownerLogin.token),
 );
-const day = localDate("Africa/Tunis");
+// Playwright fixes one synthetic clinic day at suite start; manual previews still use today.
+const day = process.env.EZZ_E2E_FIXTURE_DAY ?? localDate("Africa/Tunis");
 const examples = [
   ["Ben Salem", "Amira", "أميرة بن سالم", "08:30", "ARRIVED"],
   ["Trabelsi", "Youssef", "يوسف الطرابلسي", "09:15", "SCHEDULED"],
