@@ -10,6 +10,17 @@ function captureDesktop(path: string): Buffer {
     "-video_size", "1280x1024", "-i", process.env.DISPLAY + "+0,0",
     "-frames:v", "1", path,
   ]);
+  // Fail if the clinical-content area is flat; CDP screenshots previously passed while blank.
+  const pixels = execFileSync("ffmpeg", [
+    "-loglevel", "error", "-i", path, "-vf", "crop=380:450:120:380,format=gray",
+    "-f", "rawvideo", "pipe:1",
+  ]);
+  let darkest = 255, lightest = 0;
+  for (const pixel of pixels) {
+    darkest = Math.min(darkest, pixel);
+    lightest = Math.max(lightest, pixel);
+  }
+  if (lightest - darkest < 30) throw new Error("Native zoom clinical UI screenshot is blank");
   return readFileSync(path);
 }
 // Dedicated headed-Xvfb CI step: never present CSS zoom or emulated DPR as native browser zoom.
@@ -77,15 +88,6 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   await expect(dialog.locator(".modal-head h2")).toBeInViewport({ ratio: 1 });
   await expect(dialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await test.info().attach("dentist-fr-native-browser-200pct", {
-    body: await page.screenshot({ path: "test-results/dentist-fr-native-browser-200pct.png", animations: "disabled" }),
-    contentType: "image/png",
-  });
-  // Investigate blank full-viewport capture at native zoom: capture the actual dialog top-layer separately.
-  await test.info().attach("dentist-fr-native-browser-200pct-dialog", {
-    body: await dialog.screenshot({ path: "test-results/dentist-fr-native-browser-200pct-dialog.png", animations: "disabled" }),
-    contentType: "image/png",
-  });
   await test.info().attach("dentist-fr-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/dentist-fr-native-200pct-X11-desktop.png"),
     contentType: "image/png",
@@ -104,14 +106,6 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   await expect(arabicDialog.locator(".modal-head h2")).toBeInViewport({ ratio: 1 });
   await expect(arabicDialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await test.info().attach("dentist-ar-native-browser-200pct", {
-    body: await page.screenshot({ path: "test-results/dentist-ar-native-browser-200pct.png", animations: "disabled" }),
-    contentType: "image/png",
-  });
-  await test.info().attach("dentist-ar-native-browser-200pct-dialog", {
-    body: await arabicDialog.screenshot({ path: "test-results/dentist-ar-native-browser-200pct-dialog.png", animations: "disabled" }),
-    contentType: "image/png",
-  });
   await test.info().attach("dentist-ar-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/dentist-ar-native-200pct-X11-desktop.png"),
     contentType: "image/png",
