@@ -2,6 +2,8 @@
 node_modules/
 coverage/
 dist/
+# Generated local code graphs: source-derived paths/labels never belong in the public repo
+graphify-out/
 *.log
 .env
 .env.*
