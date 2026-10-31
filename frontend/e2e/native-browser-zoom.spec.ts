@@ -158,7 +158,17 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     await page.getByRole("button", { name: "Ouvrir ma session" }).click();
     await expect(page.getByRole("heading", { name: "Le fil de la journée" })).toBeVisible();
     expect(await page.evaluate(() => ({ dpr: devicePixelRatio, width: innerWidth }))).toEqual({ dpr: 2, width: 320 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    const layout = await page.evaluate(() => ({
+      viewport: innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      offenders: [...document.querySelectorAll<HTMLElement>("body *")].map(element => {
+        const rect = element.getBoundingClientRect();
+        return { tag: element.tagName, className: String(element.className).slice(0, 80),
+          left: Math.round(rect.left), right: Math.round(rect.right), width: Math.round(rect.width) };
+      }).filter(item => item.right > innerWidth + 1 || item.left < -1).slice(0, 16),
+    }));
+    console.log("C37_NATIVE_200_LAYOUT", username, JSON.stringify(layout));
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewport);
   };
   const reachByKeyboardTab = async (target: Locator) => {
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
