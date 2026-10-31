@@ -1,6 +1,6 @@
 # Engineering standards and workflow (Mission G)
 
-Original 2026-10-28 engineering proposal; factual implementation entries reconciled against merged main `406c5dd1` on 2026-10-30. Production readiness is **not** approved. See [`docs/INDEX.md`](../INDEX.md) for current authority and draft/merged distinction.
+Original 2026-10-28 engineering proposal; factual implementation entries refreshed against merged main `65c7d972` on 2026-10-30. Production readiness is **not** approved. See [`docs/INDEX.md`](../INDEX.md) for current authority and draft/merged distinction.
 
 ## Repository structure
 
@@ -13,7 +13,7 @@ backend/               v0.2 API (TypeScript, Node 22, PostgreSQL)
   test/                one throw-away PostgreSQL database per test file; helpers.ts
   scripts/             migrate, seed-fictional, bootstrap-roles.sql, v0.1 baseline probe, permission-matrix generator
 docs/{architecture,database,api,security,testing,clinical-domain,operations,engineering,product,handoff}/
-.github/workflows/     demo-checks.yml, backend-ci.yml and frontend-ci.yml (scope-filtered CI)
+.github/workflows/     backend-ci.yml, frontend-ci.yml, security-audit.yml, harness-check.yml, demo-checks.yml
 ```
 
 ## Rules
@@ -23,8 +23,8 @@ docs/{architecture,database,api,security,testing,clinical-domain,operations,engi
 | Dependencies | Backend uses pinned `pg` runtime dependency; frontend uses pinned React/ReactDOM/Zod. Commit lockfiles with integrity metadata; use `npm ci --ignore-scripts`. | PRESENT on main; dependency security audit remains active draft PR #71 |
 | Node | `.nvmrc` 22.23.4; engines `>=22.18 <23`; production runs compiled `dist/` | DONE |
 | TypeScript | `strict`, `noUncheckedIndexedAccess`, `erasableSyntaxOnly` (runs under Node type-stripping and tsc), `verbatimModuleSyntax` | DONE |
-| CI | Scope-filtered GitHub Actions: backend PostgreSQL/timezone/compiled tests, frontend real-API Playwright, and fictional prototype; read-only permissions and pinned actions. | Runs observed green on main `406c5dd1` where triggered; **docs-only PRs may have no required job**; #68 remains open |
-| Branching | `main` reports `protected: true`, but required-check enforcement and admin bypass need verification (#68). Isolated draft PRs and exact-head independent reviews; do not merge on CI green alone or without founder authorization. | PARTIAL — protection details cannot be independently read through current integration |
+| CI | Backend PostgreSQL/timezone/compiled tests and frontend real-API Playwright run on **every PR** after merged #92; unconditional security audit (#71), plus scope-specific harness and prototype checks. Read-only workflow permissions and pinned actions. | Workflow source verified on main `65c7d972`; **zero GitHub required checks** still means passing CI is not an enforced merge prerequisite (#68) |
+| Branching | GitHub `branches/main` on `65c7d972` reports `protected: true`, `enforcement_level: non_admins`, `contexts: []`, `checks: []`; API rulesets returned `[]`. Isolated draft PRs, exact-head review and standing founder authority only for low-risk verified changes; high-risk and production need separate approval. | OPEN P0 — protection does not enforce required checks or owner-approval policy (#68) |
 | Commits | one slice per commit/PR; message explains the control and lists test IDs; AI attribution trailer | DONE |
 | Errors | modules throw `AppError(code)`; HTTP maps to stable envelope; DB errors mapped without SQL text; 500 = no detail | DONE |
 | Money | integer millimes only; ARCH-3 fitness test | DONE |
@@ -46,4 +46,4 @@ See `backend/README.md` and `docs/engineering/dev-environment.md`. Supported dev
 1. Author model opens a draft PR per slice with test IDs and residual risks.
 2. An independent reviewer examines the exact-head diff and relevant negative tests; primary Muse handles adversarial safety review, and Muse Ons is an independently prompted UX critic. Do not assume external reviewers run automatically.
 3. New failing tests are committed first (red), then fixes (green).
-4. Founder approves merge; nothing auto-merges; production deploy is a separate gate.
+4. Apply the standing founder **low-risk** merge delegation only after exact-head CI, dependency and relevant independent review gates as defined in `docs/operations/coo-hourly-delivery.md`. Hold and escalate security, patient/clinical, payments/cash, CNAM/legal, destructive schema, sensitive-data and production changes for explicit founder approval. Production deployment remains a separate gate.

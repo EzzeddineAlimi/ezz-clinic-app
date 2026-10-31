@@ -19,6 +19,15 @@ Muse Ons's past **MUSE-UX-B** independent research and two optional Canva propos
 
 ## Execution cadence and bulk delivery
 
+### Mandatory open-PR closure gate (2026-10-31)
+
+Before selecting another implementation batch, inventory **every open PR across all pages**, not just recently updated branches, red CI, or the newest model-review rows. **Process the entire integration-root queue oldest-first by PR creation timestamp; blocked roots keep a named owner and evidence while the worker advances to the next oldest actionable item. Do not begin a new PR just because the oldest is blocked.** Group open PRs by their target/head branch dependency chain; name the root, oldest creation time, accountable implementer, review/CI status **at exact head**, integration target and next action. Update the existing Mission Control dashboard and log a changed root status only when it changes. Green CI or a review of a descendant is not proof that the root merged into `main`.
+
+**Hard workflow limits:** no more than **three** open PRs in one dependency chain; a stack root open **24 hours** or an independent PR open **48 hours** requires immediate actionable reconciliation. Once a chain reaches three, the next step is integrating/reviewing its existing work, **not opening a fourth dependent draft**. For a breach, stop *extending that stack*, identify a current-main integration candidate and precise blockers; continue only unrelated authorized work or urgent safety repairs. A critical patient/security concern may require an isolated fix, but never silent bypass of review gates. Closing an unmerged PR is not a substitute for preserving its changes: verify exact SHA ancestry after an approved integration or explicitly document why a discarded draft is obsolete.
+
+`scripts/governance/pr-backlog-check.mjs` independently checks these invariants using the live GitHub open-PR API; `.github/workflows/pr-backlog-watch.yml` runs a **daily read-only check** and a regression test on changed guard code. A failed watch is backlog evidence, **not** permission to automatically merge or delete. The existing hourly Build Council preflight and CI watcher are the faster detection/triage layer; daily GitHub Actions is an independent backstop. Scheduled GitHub Actions can be delayed, and a PR may be blocked for legitimate safety reasons: always report the blocked root with the next reviewer/actor instead of claiming an absolute resolution guarantee.
+
+
 GPT's existing **EZZ Clinic Build Council** automation ID `6ae3f2acf2c48191a54969b305d917f4` is enabled **hourly**, which is the highest supported recurring frequency. It is independent from the active CI watcher. **The paused older research council is not a required dependency and must not be silently reactivated.**
 
 At each scheduled cycle:

@@ -1,0 +1,66 @@
+# Open-source engineering adoption decision — EZZ Clinic
+
+**Audit snapshot:** 2026-10-30. Project baseline: merged `main` `65c7d972daf9383e6ca4caf6d3e0e760104b8bd6` (PR #92); 397 entries in recursive repository tree, including directories and fixtures. **Status: assessment for fictional-data development, NOT production approval, penetration testing, clinical acceptance, or a claim to have read every upstream source line.**
+
+## Why this review exists and what was verified
+
+The founder requested evaluation of popular engineering/AI/healthcare repositories against **the actual clinic**, not installation of a universal startup template. GitHub REST metadata was read for all **22 projects below** (star count, last push, license identifier, archive flag on 2026-10-30). Relevant upstream project READMEs were inspected for Medplum, Temporal, Backstage, Aider, Synthea, Semgrep and OpenTelemetry; GitHub/web sources covered Continue and Trivy. For our repository, tree inventory, actual workflows, package manifests, AGENTS, architecture, harness, operations, issues/PRs and Mission Control status/ownership were checked. **No complete line-by-line audit of the millions of lines of upstream projects or every EZZ test/source file was performed.** Tool popularity and stars are not security or fit attestations.
+
+Our true constraints: Tunisian private dental clinic, physical-cash fraud deterrence, receptionist/dentist/owner separation, no patient smartphone requirement, Arabic RTL/French, minimal clinician clicks, integer TND millimes, patient identity certainty, signed clinical authorship, physical evidence boundaries, fictional-only tests and **no authorized production deployment**. [Issue #69](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/69) tracks **0/61** V1 acceptance groups at snapshot. Public GitHub visibility is founder-approved for **fictional-only** content; no real patient data, secrets or actual clinic screenshots may go into public repos or model prompts.
+
+## Evidence-ranked external repository review
+
+Star numbers are point-in-time GitHub API observations, not quality scores. "Use" means reuse a **practice** or existing integration unless a dedicated installation is explicitly justified. No dependency has been added by this assessment.
+
+| Repository | Stars | EZZ decision and integration rationale |
+| --- | ---: | --- |
+| [kubernetes/kubernetes](https://github.com/kubernetes/kubernetes) | 128,539 | **Defer:** not justified for one modular clinic application without a production platform or operations team |
+| [microsoft/playwright](https://github.com/microsoft/playwright) | 98,900 | **Keep/expand existing:** real fictional-API role, checkout, Arabic RTL, keyboard, receipt and recovery journeys |
+| [OpenHands/OpenHands](https://github.com/OpenHands/OpenHands) | 92,283 | **Study only:** no parallel autonomous agent with competing edit/merge authority |
+| [grafana/grafana](https://github.com/grafana/grafana) | 77,586 | **Conditional:** operational dashboards after hosting and privacy-safe metric design; AGPL-3.0 license review |
+| [cline/cline](https://github.com/cline/cline) | 71,079 | **Study agent patterns only:** don't replace existing GPT/Codex/Muse governance |
+| [prometheus/prometheus](https://github.com/prometheus/prometheus) | 66,863 | **Conditional:** metrics backend after a real runtime/alerting requirement |
+| [Aider-AI/aider](https://github.com/Aider-AI/aider) | 49,831 | **No default adoption:** useful test/lint feedback concept, but existing Codex worker already occupies coding lane; last GitHub push observed 2026-05-22 |
+| [aquasecurity/trivy](https://github.com/aquasecurity/trivy) | 38,865 | **P1 evaluate:** scan dependencies, repository and eventual image/IaC with pinned scanner; measure findings before blocking |
+| [continuedev/continue](https://github.com/continuedev/continue) | 36,376 | **Do not adopt:** README says read-only / no longer actively maintained even though GitHub API archived flag was false |
+| [backstage/backstage](https://github.com/backstage/backstage) | 34,746 | **Defer:** existing GitHub + Mission Control + docs/INDEX provide a simpler project catalogue; portal costs exceed benefit |
+| [argoproj/argo-cd](https://github.com/argoproj/argo-cd) | 24,502 | **Defer:** only relevant if managed Kubernetes deployment is later approved |
+| [temporalio/temporal](https://github.com/temporalio/temporal) | 24,094 | **Defer:** first demonstrate a specific multi-day workflow failure that current DB transactions/idempotency cannot solve |
+| [renovatebot/renovate](https://github.com/renovatebot/renovate) | 22,966 | **P2 pilot:** bounded pinned dependency PRs, no auto-merge and no unexpected major version upgrades; AGPL-3.0 evaluation |
+| [semgrep/semgrep](https://github.com/semgrep/semgrep) | 17,366 | **P1 evaluate:** source-level authorization/tenant/unsafe interpolation/secret-pattern rules; baseline and tune false positives first |
+| [architecture-decision-record/architecture-decision-record](https://github.com/architecture-decision-record/architecture-decision-record) | 17,365 | **Keep practice:** preserve existing repo ADRs and dissent, no new ADR framework required |
+| [open-telemetry/opentelemetry-collector](https://github.com/open-telemetry/opentelemetry-collector) | 7,722 | **P2 pilot:** opt-in body-free metrics/tracing with explicit PHI redaction and retention policy; collector later only if needed |
+| [argoproj/argo-rollouts](https://github.com/argoproj/argo-rollouts) | 3,613 | **Defer:** no Kubernetes/prod rollout approved |
+| [synthetichealth/synthea](https://github.com/synthetichealth/synthea) | 3,425 | **Conditional:** study synthetic longitudinal scenarios, but generator defaults are not Tunisian dental care; preserve domain-specific fixtures |
+| [medplum/medplum](https://github.com/medplum/medplum) | 2,772 | **Defer adoption:** study FHIR/API/auth boundary only when real interoperability use case, consent/hosting and data mapping are approved |
+| [hapifhir/hapi-fhir](https://github.com/hapifhir/hapi-fhir) | 2,424 | **Reference only:** Java FHIR server unnecessary for the current TypeScript modular monolith |
+| [openmrs/openmrs-core](https://github.com/openmrs/openmrs-core) | 1,956 | **Reference only:** EHR workflow patterns, not a suitable dental clinic runtime replacement |
+| [open-feature/js-sdk](https://github.com/open-feature/js-sdk) | 287 | **Conditional:** feature-flag API only when truly needed for controlled preview/release; no feature-flag service now |
+
+Repository metadata labels **not independently established** as a definitive whole-project commercial licensing determination: OpenMRS and architecture-decision-record returned GitHub license `NOASSERTION`; verify specific source file/project license before copying. This review does not embed their code.
+
+## Concrete, ordered backlog (reuse existing owners/issues)
+
+1. **P0 — enforcement and sharing, [#68](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/68).** At baseline GitHub reports `main.protected=true` but `required_status_checks.enforcement_level=non_admins`, **zero required checks**, and rulesets `[]`. Configure and read back real owner-enforced protection, review and required exact-head checks; do not mistake `protected=true` for enforcement. Mission Control currently has `anyone:reader` (not discoverable); review trusted reviewer access before any share change. This is an admin/security action, not automatic author-model permission.
+2. **P0 — production privacy/security, [#72](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/72).** Stay fictional-only until hosting/residency, local identity/MFA, HTTPS, backup restore, malware quarantine, monitored alerts, incident response, role and clinical acceptance are independently proven. Tunisia **Loi organique 2004-63**, notably Articles 52 and 62-63, requires specialized legal review for health processing and cross-border transfers: [law](https://legislation-securite.tn/latest-laws/loi-organique-n-2004-63-du-27-juillet-2004-portant-sur-la-protection-des-donnees-a-caractere-personnel/). Ontario PHIPA/HIPAA are not automatically primary law for a Tunisian clinic.
+3. **P0 — quality evidence, [#69](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/69).** Link exact source SHA, acceptance IDs, negative wrong-actor/wrong-patient/cross-clinic/retry/concurrency tests, CI runs, independent reviewer and separately verified physical/bank evidence. Do not confuse green CI with 61 completed features.
+4. **P1 — additive security tools.** Current `.github/workflows/security-audit.yml` already runs unconditional history signature checks and backend/frontend high-severity npm audits; **Semgrep and Trivy are not configured** in the scanned source. Pilot pinned scanners on a focused branch, baseline findings and false positives, and only then enforce critical verified findings. Never call npm audit a full supply-chain assessment or put scanner API keys into PRs.
+5. **P1 — CI and lint, [#74](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/74).** PR #92 merged unconditional backend/frontend reporting on 2026-10-30. Manifests still lack lint/format scripts: implement the smallest version-pinned setup, red/green test and independent review. No broad formatting sweep.
+6. **P1 — UX and performance, [#58](https://github.com/EzzeddineAlimi/ezz-clinic-app/issues/58), [draft #90](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/90), [draft #91](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/91), [draft #93](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/93).** Fix only measured issues. Respect stacked PR ancestry and real FR/Arabic 390px/native browser 200% evidence; never enable clinical caching/unsafe prefetched patient data for speed.
+7. **P2 — incremental observability/reliability.** Use existing body-free request logs and owner audit first, introduce allowlisted metrics with no patient identifiers, measure request errors and failed retries; test offsite restore/alert delivery only in approved environments. Do not introduce Temporal/Kubernetes/Backstage on an architectural hunch.
+
+## High-performance, small-team operating contract
+
+- **Specify:** founder-approved R76 V1 scope and relevant exact workflow, clinic role, acceptance ID; distinguish accepted scope vs code vs independent acceptance.
+- **Claim:** check current main, drafts, GitHub issue claims and Mission Control before assigning one owner; GPT owns UX + integration, Codex the eligible backend lane; Gemini is on-demand domain reviewer; Primary Muse audits safety, Muse Ons UX. No duplicate claims or assumption that one agent invokes another.
+- **Implement:** isolated branch and narrow diff; diagnosis is theory → direct evidence/failing test → surgical repair. Preserve role/clinic/patient/authorship, immutable money in integer millimes, idempotency, clinic cash limitations and FR/Arabic usability.
+- **Verify:** run real test commands; obtain CI on the **exact current head**, dependency ancestor heads, observable negative cases and independent review. Logged skips stay skips. A screenshot does not certify accessibility, an audit log does not prove physical custody.
+- **Integrate:** order stacked PRs by their actual base/head graph, never merge a leaf before its unmerged ancestors or call an ancestor's review the leaf's review. Low-risk pre-authorized merges must still meet [COO protocol](../operations/coo-hourly-delivery.md); founder holds high-risk/production approval.
+- **Observe:** track PR elapsed lead time, scope/owner conflicts, stale acceptance evidence, flaky tests, vulnerabilities and unresolved risk; once actual production exists, measure DORA delivery/recovery metrics with service-specific baselines rather than borrowed targets.
+- **Learn:** append decisions and counterevidence in existing GitHub/Sheet lanes; each adopted tool must replace a measurable failure mode with lower total complexity. Explicitly reject redundant models, dashboards, templates, and tools.
+
+## Decision and evidence gates
+
+**No direct imports, code changes, new autonomous workers, additional schedules, paid services, hosting changes or releases are approved by this document.** The adoption record is itself a scoped documentation update and must remain a draft until reviewed. Before installing each candidate record observed problem, deterministic proof, exactly why the existing tooling fails, threat/privacy/license assessment, implementation owner, CI regression strategy and measurable exit. The existing security, clinical, CNAM, payment and independent-review gates override all delivery-speed suggestions.
+
+**Primary sources:** each repository link above (GitHub API metadata 2026-10-30); [OWASP ASVS](https://asvs.owasp.org/), [DORA](https://dora.dev/guides/dora-metrics/), [HL7 SMART](https://www.hl7.org/fhir/smart-app-launch/), [Temporal reliability](https://docs.temporal.io/design-patterns), [Trivy action](https://github.com/aquasecurity/trivy-action), [Backstage](https://backstage.io/docs/), [SLSA](https://slsa.dev/spec/v1.2/), and the current EZZ GitHub/Sheet/operating protocols. Reference descriptions are not independent code audits.
