@@ -66,6 +66,8 @@ Proposed event envelope (not an existing storage table):
 
 Keep permissions enforced on the server and by clinic-scoped DB constraints; hiding buttons is insufficient. Imaging and clinical notes must not appear in raw financial/audit logs or client error payloads.
 
+**Same-clinic dentist cover:** Under the [founder authorship policy](../decisions/clinical-authorship.md), the scheduled dentist is not an exclusive clinical author. Another currently authenticated, authorized dentist in the same clinic may document and confirm care without an administrative reassignment or cover-approval screen. Signed entries and audit events retain the actual acting dentist, never the absent colleague's identity. Existing role, tenant and medical-alert gates still apply; this grants no CNAM eligibility, regulatory or billing authority. The dedicated PostgreSQL/API regression is `backend/test/clinical-dentist-cover.test.ts`; [evidence and remaining gates](../testing/ISSUE7-DENTIST-COVER.md).
+
 ## 4. Eight workflow contracts for Astra's later UI
 
 1. **Elderly walk-in/no phone:** desk registers fictional patient and schedules visit in French or Arabic, prints paper information; no QR, smartphone, SMS or patient login required.

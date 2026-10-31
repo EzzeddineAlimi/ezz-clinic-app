@@ -1,0 +1,36 @@
+name: Backend authored-source quality
+
+# Stable check on every PR, including documentation-only PRs. No database or secrets required.
+on:
+  pull_request:
+  push:
+    branches: ['main']
+    paths: ['backend/**', '.github/workflows/backend-quality.yml']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: backend/.nvmrc
+      - name: Install pinned tools without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Lint authored backend source
+        run: npm run lint
+      - name: Verify real RED and GREEN plus fixture exclusion
+        run: npm run lint:verify

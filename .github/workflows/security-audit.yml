@@ -24,6 +24,10 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: backend/.nvmrc
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
       - name: Scan tracked files and reachable git history for known secret signatures (redacted)
         run: node scripts/security-history-scan.mjs
       - name: Install backend lockfile without install scripts

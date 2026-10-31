@@ -2,7 +2,7 @@
 
 | Actor | Allowed development scope | Forbidden without separate authority | Status of enforcement |
 | --- | --- | --- | --- |
-| GPT COO | Approved frontend/architecture drafting, fictional tests, shared governance handoff | Merge, deploy, real patients, self-approve safety | Prompt + workflow; separate limited GitHub write credentials **not proven** |
+| GPT COO | Approved frontend/architecture drafting, fictional tests, shared governance handoff, narrowly delegated low-risk merges after exact-head CI/review | High-risk merges, deploy, real patients, self-approve safety | Standing founder authorization is a **process rule**, not verified token isolation or required-check enforcement (#68) |
 | Codex scheduled | Approved unclaimed backend task in isolated branch; draft PR and tests | Steal UX task, overwrite another branch, merge, production | Task preflight and ownership convention; hard token isolation **not proven** |
 | Primary Muse | Independent financial, privacy, clinical safety and permission critique | Self-approval or real clinic operations | Manual reviewer; exact GitHub read-only permissions **not independently verified** |
 | Muse Ons | Independently critique actual UI, 1440/390 FR/AR RTL accessibility and dangerous states | Own GPT implementation or waive review gates | Manual; no verified automatic schedule |
@@ -18,4 +18,4 @@
 - Prod identity/MFA, HTTPS, backups, monitoring, malware quarantine, key custody and legal gates remain issue #72.
 - Medical and financial authority is enforced by the application's server, not by model-specific prompt wording.
 
-The founder retains final merge/release decisions; professional clinical, fiscal and privacy approval are separate. An independent review is never inferred from green CI.
+Standing founder authorization allows only reviewed low-risk development merges; the founder retains explicit decisions for high-risk merges and all production releases. Professional clinical, fiscal and privacy approval remain separate. An independent review is never inferred from green CI.

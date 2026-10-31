@@ -13,6 +13,6 @@
 - Receptionists, assistants and dentists from another clinic have no additional authoring rights under this policy.
 - This defines **clinical authorship**, not insurance/CNAM eligibility, billing authority, regulatory approval, or permission to access an unrelated clinic.
 
-**Verification:** Existing dentist role/tenant tests remain mandatory. Add a specific cross-dentist same-clinic test when the multi-dentist fixture is available. Preserve the founder's source decision in Mission Control G-89 and PR #56.
+**Verification:** Existing dentist role/tenant tests remain mandatory. The dedicated real-API PostgreSQL regression in `backend/test/clinical-dentist-cover.test.ts` books a visit with one dentist and has a second same-clinic dentist sign the note, finding and care. It checks persisted author/audit identity, unchanged appointment assignment, idempotent retries, append-only notes, receptionist/assistant/anonymous/cross-clinic denial and the existing medical-alert gate. See [execution evidence](../testing/ISSUE7-DENTIST-COVER.md); this is not independent clinical acceptance. Preserve the founder's source decision in Mission Control G-89 and PR #56.
 
 Development uses fictional data only. Do not interpret this policy as a production readiness approval.
