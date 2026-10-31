@@ -37,6 +37,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - run: npm --prefix frontend run test:e2e
+      # Dedicated headed test: real Chromium browser Ctrl+Plus, not CSS zoom or Playwright DPR emulation.
+      - name: Native 200% desktop browser zoom for fictional dentist alerts
+        working-directory: frontend
+        env:
+          EZZ_NATIVE_ZOOM: "1"
+        run: xvfb-run -a npx playwright test e2e/native-browser-zoom.spec.ts --headed
       - name: Preserve fictional UI screenshots for visual review
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
