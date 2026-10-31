@@ -102,6 +102,9 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   const desktopCriticalAlert = details.locator("li").first();
   await expect(desktopIdentity).toContainText(familyName);
   await desktopCriticalAlert.evaluate(el => el.scrollIntoView({ block: "center" }));
+  // Regression: scrolling to critical alerts must not hide dialog title/close controls.
+  await expect(dialog.locator(".modal-head h2")).toBeInViewport({ ratio: 1 });
+  await expect(dialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
   await expect(desktopIdentity).toBeInViewport({ ratio: 1 });
   await expect(desktopCriticalAlert).toBeInViewport({ ratio: 0.9 });
   const desktopIdentityBox = await desktopIdentity.boundingBox();
@@ -214,6 +217,8 @@ test("Dentist sees restricted encounter, signs append-only note and reads patien
   await expect(identity).toContainText(familyName);
   const criticalAlert = alertList.locator("li").first();
   await criticalAlert.evaluate(el => el.scrollIntoView({ block: "center" }));
+  await expect(page.getByRole("dialog").locator(".modal-head h2")).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole("dialog").locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
   await expect(identity).toBeInViewport({ ratio: 1 });
   await expect(criticalAlert).toBeInViewport({ ratio: 0.9 });
   const identityBox = await identity.boundingBox();

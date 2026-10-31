@@ -172,12 +172,14 @@ export function Modal({
   w,
   busy,
   close,
+  className,
   children,
 }: {
   title: string;
   w: Words;
   busy: boolean;
   close: () => void;
+  className?: string;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -202,6 +204,7 @@ export function Modal({
   }, []);
   return (
     <dialog
+      className={className}
       ref={ref}
       aria-labelledby={titleId}
       onKeyDown={(event) => {

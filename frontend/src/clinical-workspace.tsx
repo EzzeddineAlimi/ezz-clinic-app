@@ -161,7 +161,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const editable = !!data && !chart.loading && !chart.error && !saving && !unresolved &&
     !["CANCELLED", "NO_SHOW"].includes(data.visit.status);
   return (
-    <Modal title={t.title} busy={saving} w={w} close={close}>
+    <Modal title={t.title} busy={saving} w={w} close={close} className="clinical-dialog">
       <section className="clinical-workspace">
         <div className="patient-context">
           <strong><bdi>{nameOf(visit.patient)}</bdi> · #{visit.patient.fileNo}</strong>

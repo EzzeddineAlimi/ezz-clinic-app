@@ -1381,6 +1381,18 @@ dialog::backdrop {
 .clinical-workspace .cash-form label { display: grid; gap: 6px; font-size: 14px; }
 .clinical-workspace .cash-form button { justify-self: start; }
 
+/* Keep the dialog title and close control visible while its clinical body scrolls.
+   The patient identity stays pinned inside that body, without an offset guess. */
+dialog.clinical-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+dialog.clinical-dialog > .clinical-workspace {
+  min-height: 0;
+  overflow-y: auto;
+}
+
 /* Keep the current patient visible while reading lower clinical alerts at every viewport. */
 .clinical-workspace > .patient-context {
   position: sticky;
