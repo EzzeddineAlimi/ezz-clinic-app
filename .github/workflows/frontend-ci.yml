@@ -37,6 +37,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - run: npm --prefix frontend run test:e2e
+      - name: Install X11 desktop capture tool
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       # Dedicated headed test: real Chromium browser Ctrl+Plus, not CSS zoom or Playwright DPR emulation.
       - name: Native 200% desktop browser zoom for fictional dentist alerts
         working-directory: frontend
