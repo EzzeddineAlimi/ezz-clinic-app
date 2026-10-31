@@ -207,7 +207,7 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   await page.keyboard.press("Enter");
   const cash = page.locator(".owner-cash");
   await expect(cash).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Contrôle de caisse" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Contrôle de caisse", level: 1 })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("owner-fr-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/owner-fr-native-200pct-X11-desktop.png"),
