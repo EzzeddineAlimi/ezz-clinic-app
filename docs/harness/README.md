@@ -16,7 +16,7 @@
 
 This validator checks stable names of positive/negative test declarations and catches stale paths or fabricated catalog status. It does **not** execute PostgreSQL 16 tests, run Playwright, measure clinic staff tasks, evaluate 61 approved V1 items, or grant production clearance. Those proofs require their existing real-API/back-end workflows at **the exact current PR head**, independent review, and the founder's relevant acceptance.
 
-GitHub Action: `.github/workflows/harness-check.yml` executes the two commands on relevant PRs with `permissions: contents: read`. Existing backend/frontend workflows use path filters and may skip this docs/harness-only PR. Required-check branch enforcement is tracked by issue #68; a green catalog check is not a hard merge gate until enforced.
+GitHub Action: `.github/workflows/harness-check.yml` executes the two commands on relevant PRs with `permissions: contents: read`. Backend/frontend jobs run on every pull request since merged PR #92 (push paths can still be filtered); this harness job runs only on harness-path changes. Required-check branch enforcement is tracked by issue #68; a green catalog check is not a hard merge gate until enforced.
 
 ## Measurement workflow — what needs actual human observation
 
@@ -26,4 +26,4 @@ Status progression: **source referenced → exact-head tests executed → human 
 
 Relevant existing lanes: `R76_FEATURE_SCOPE_DECISIONS`, `V1_EVIDENCE_REFRESH_20261030`, `UX_MODEL_REPORTS`, `UX_BATCH_COMMAND`, `MODEL_INBOX`, `MOBILE_DASHBOARD`. All prior records remain authoritative and untouched.
 
-Read `TASK_CONTRACT.md`, `PERMISSIONS.md` and `scenarios.json`. For product/release acceptance see issue #69; for security/production gates see #72; for branch protection see #68.
+Read `TASK_CONTRACT.md`, `PERMISSIONS.md`, `scenarios.json` and [the Paperclip control-plane fit assessment](PAPERCLIP-FIT-2026-10-30.md). For product/release acceptance see issue #69; for security/production gates see #72; for branch protection see #68.
