@@ -7,13 +7,14 @@
     "node": ">=22.18.0 <23"
   },
   "scripts": {
+    "lint": "biome lint .",
+    "lint:verify": "node scripts/verify-lint-gate.mjs",
+    "format:check": "biome format .",
     "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc --noEmit && vite build",
     "test": "node --test test/*.test.ts",
-    "test:e2e": "playwright test",
-    "lint": "biome lint .",
-    "lint:verify": "node scripts/verify-lint-gate.mjs"
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "19.2.0",
