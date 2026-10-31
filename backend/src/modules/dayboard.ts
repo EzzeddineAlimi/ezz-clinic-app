@@ -16,6 +16,7 @@ import { fail } from '../platform/errors.ts';
 import { isUuid } from '../platform/validate.ts';
 import { can } from './identity.ts';
 import { clinicDay, clinicSettings } from './settings.ts';
+import { patientNameKeySql as nameKey } from './patient-name.ts';
 
 
 type Row = {
@@ -54,7 +55,11 @@ export async function dayBoard(tx: Tx, actor: Actor, query: URLSearchParams) {
     LEFT JOIN staff d ON d.clinic_id = v.clinic_id AND d.id = v.dentist_id
     LEFT JOIN visit_balances b ON b.visit_id = v.id
     LEFT JOIN LATERAL (SELECT jsonb_agg(o.file_no ORDER BY o.file_no) AS file_nos FROM patients o WHERE o.clinic_id = p.clinic_id AND o.id <> p.id
-        AND lower(o.family_name) = lower(p.family_name) AND lower(o.given_name) = lower(p.given_name)) sn ON true
+        AND ((${nameKey("o.family_name")} = ${nameKey("p.family_name")}
+          AND ${nameKey("o.given_name")} = ${nameKey("p.given_name")})
+          OR (o.name_ar IS NOT NULL AND btrim(o.name_ar) <> ''
+            AND p.name_ar IS NOT NULL AND btrim(p.name_ar) <> ''
+            AND ${nameKey("o.name_ar")} = ${nameKey("p.name_ar")}))) sn ON true
     WHERE v.clinic_id = $1 AND v.scheduled_at >= $2::date::timestamp AT TIME ZONE $4 AND v.scheduled_at < ($2::date + 1)::timestamp AT TIME ZONE $4
       AND ($3::uuid IS NULL OR v.dentist_id = $3::uuid)
       AND (NOT $5::boolean OR v.dentist_id = $6::uuid OR v.dentist_id IS NULL)

@@ -12,19 +12,21 @@ body {
 }
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 button {
   cursor: pointer;
 }
 button:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.55;
 }
 button,
 input,
-select {
+select,
+textarea {
   min-height: 44px;
 }
 button {
@@ -33,8 +35,9 @@ button {
   color: inherit;
 }
 input,
-select {
-  border: 1px solid var(--line);
+select,
+textarea {
+  border: 1px solid var(--field-border);
   border-radius: 9px;
   padding: 11px 13px;
   background: #fff;
@@ -43,8 +46,12 @@ select {
   min-width: 0;
 }
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: var(--teal);
+}
+textarea {
+  resize: vertical;
 }
 :focus-visible {
   outline: 3px solid #bd7545;
@@ -90,7 +97,7 @@ label {
   flex-direction: column;
   gap: 7px;
   font-weight: 500;
-  font-size: 13px;
+  font-size: 14px;
 }
 label small {
   color: var(--muted);
@@ -559,7 +566,7 @@ a {
 }
 .date-title small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   color: var(--muted);
   margin-top: 4px;
@@ -570,7 +577,7 @@ a {
   gap: 3px;
 }
 .date-controls input {
-  font-size: 11px;
+  font-size: 14px;
   max-width: 130px;
   min-height: 38px;
   padding: 7px;
@@ -596,6 +603,15 @@ a {
 [dir="rtl"] .date-controls .prev svg {
   transform: none;
 }
+.dayboard-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 26px 0;
+}
+@media (max-width: 600px) {
+  .dayboard-filters { grid-template-columns: minmax(0, 1fr); padding-inline: 16px; }
+}
 .filter-tabs {
   display: flex;
   gap: 5px;
@@ -605,7 +621,7 @@ a {
   flex-wrap: wrap;
 }
 .filter-tabs button {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--muted);
   padding: 7px 12px;
   min-height: 34px;
@@ -618,7 +634,7 @@ a {
 }
 .filter-tabs > span {
   margin-inline-start: auto;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--muted);
 }
 .visit-row {
@@ -639,7 +655,7 @@ a {
 .visit-time small {
   display: block;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 5px;
 }
 .visit-line {
@@ -981,6 +997,18 @@ dialog::backdrop {
   margin: 12px 0 24px;
   font-size: 11px;
 }
+.visit-status-form .patient-context {
+  display: block;
+  margin-bottom: 18px;
+}
+.visit-status-form .patient-context p {
+  margin-top: 6px;
+}
+.visit-status-form label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
 .search-row {
   display: flex;
   gap: 8px;
@@ -1257,6 +1285,9 @@ dialog::backdrop {
   }
 }
 @media (max-width: 380px) {
+  /* Three owner navigation tabs cannot fit in one 320px row at native 200% zoom. */
+  .sidebar nav { flex-wrap: wrap; }
+  .sidebar nav button { flex: 1 1 calc(50% - 8px); min-width: 0; }
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -1322,9 +1353,15 @@ dialog::backdrop {
 .owner-cash { max-width: 860px; }
 .cash-body { padding: 0 26px 28px; }
 .cash-form { display: grid; gap: 18px; max-width: 480px; margin-block: 24px; }
-.cash-form > label { display: grid; gap: 7px; font-size: 13px; }
+.cash-form > label { display: grid; gap: 7px; font-size: 14px; }
 .cash-form > button { justify-self: start; }
 .cash-view-tabs { display: flex; gap: 10px; margin-block: 24px; flex-wrap: wrap; }
+.cash-attempt-list { list-style: none; display: grid; gap: 12px; padding: 0; margin-block: 14px 24px; }
+.cash-attempt { border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; overflow-wrap: anywhere; }
+.cash-attempt h4 { margin: 0 0 10px; }
+.cash-attempt p { margin-block: 10px 0; }
+.cash-attempt .cash-figures { margin-block: 10px; }
+
 .cash-figures { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-block: 18px; padding: 20px; border-radius: 13px; background: #f4f7f4; }
 .cash-figures dd { margin: 0; font-variant-numeric: tabular-nums; font-weight: 650; text-align: end; }
 .cash-figures dt { min-width: 0; }
@@ -1338,11 +1375,52 @@ dialog::backdrop {
 /* Dentist-only encounter. Long text wraps, notes remain visibly attributed to authors. */
 .clinical-workspace { display: grid; gap: 16px; }
 .clinical-nav { display: flex; flex-wrap: wrap; gap: 8px; }
-.clinical-nav button { padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; font-size: 12px; }
+.clinical-nav button { padding: 10px 13px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; }
 .clinical-nav button[aria-pressed="true"] { background: #eaf1eb; color: #164b3e; font-weight: 650; }
 .clinical-entry { display: grid; gap: 7px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; margin-block: 10px; overflow-wrap: anywhere; }
 .clinical-entry small { color: var(--muted); }
 .clinical-workspace .cash-form { display: grid; gap: 15px; padding-top: 20px; }
 .clinical-workspace .cash-form fieldset { border: 0; display: grid; gap: 12px; padding: 0; }
-.clinical-workspace .cash-form label { display: grid; gap: 6px; font-size: 13px; }
+.clinical-workspace .cash-form label { display: grid; gap: 6px; font-size: 14px; }
 .clinical-workspace .cash-form button { justify-self: start; }
+
+/* Fix dialog header and patient identity outside the clinical scroll region.
+   At 200% zoom, content must never slide underneath the patient card. */
+dialog.clinical-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+dialog.clinical-dialog > .clinical-workspace {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The patient identity is a non-scrolling sibling of alert details. */
+.clinical-workspace > .patient-context {
+  flex-shrink: 0;
+  overflow-wrap: anywhere;
+}
+.clinical-workspace > .clinical-content {
+  display: grid;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Mobile web: preserve comfortable targets without changing desktop density. */
+@media (max-width: 760px) {
+  .date-controls .icon-button,
+  .language button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .filter-tabs button,
+  .clinical-nav button,
+  .compact {
+    min-height: 44px;
+  }
+}

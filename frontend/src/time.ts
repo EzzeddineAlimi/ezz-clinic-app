@@ -51,3 +51,13 @@ export function dateLabel(day: string, locale: string) {
     timeZone: "UTC",
   }).format(new Date(day + "T12:00:00Z"));
 }
+
+/** Render ledger timestamps in the same server-provided clinic zone as the dayboard. */
+export function clinicPaymentTime(value: string, lang: "fr" | "ar", timezone: string): string {
+  const when = new Date(value);
+  if (!Number.isFinite(when.getTime())) return "—";
+  return new Intl.DateTimeFormat(lang === "ar" ? "ar-TN-u-nu-latn" : "fr-TN", {
+    timeZone: timezone, day: "2-digit", month: "2-digit",
+    year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(when);
+}

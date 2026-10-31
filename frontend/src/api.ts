@@ -27,6 +27,10 @@ export const patientSchema = z.object({
   contactPreference: z.string(),
   preferredLanguage: z.string().optional(),
   phone: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional(),
+  birthYear: z.string().nullable().optional(),
+  phoneLast4: z.string().nullable().optional(),
+  hasSameNameInClinic: z.boolean().optional(),
 });
 export const visitSchema = z.object({
   id: z.string(),
@@ -46,6 +50,7 @@ export const visitSchema = z.object({
   flags: z.array(z.string()),
   waitingMinutes: z.number().nullable(),
   balanceDueMillimes: z.number().int().optional(),
+  statusReason: z.string().nullable().optional(),
 });
 export const boardSchema = z.object({
   day: z.string(),
@@ -230,6 +235,9 @@ export class Api {
       { signal },
     );
   }
+  patient(id: string, signal?: AbortSignal) {
+    return this.call(`/patients/${encodeURIComponent(id)}`, z.object({ patient: patientSchema }), { signal });
+  }
   register(body: Record<string, unknown>, key: string) {
     return this.call("/patients", z.object({ patient: patientSchema }), {
       body,
@@ -281,6 +289,11 @@ export class Api {
       body: sections, key,
     });
   }
+  addClinicalAddendum(noteId: string, body: Record<string, unknown>, key: string) {
+    return this.call(`/clinical-notes/${noteId}/addenda`, noteCreatedSchema, {
+      body, key,
+    });
+  }
   recordChartFinding(id: string, finding: Record<string, unknown>, key: string) {
     return this.call(`/visits/${id}/chart-findings`, findingCreatedSchema, {
       body: finding, key,
@@ -326,10 +339,17 @@ export class Api {
     );
   }
   arrive(id: string, key: string) {
+    return this.changeVisitStatus(id, { status: "ARRIVED" }, key);
+  }
+  changeVisitStatus(
+    id: string,
+    body: { status: "ARRIVED" | "NO_SHOW" | "CANCELLED"; reason?: string },
+    key: string,
+  ) {
     return this.call(
       `/visits/${id}/status`,
       z.object({ visit: z.object({ id: z.string(), status: z.string() }) }),
-      { body: { status: "ARRIVED" }, key },
+      { body, key },
     );
   }
 }
