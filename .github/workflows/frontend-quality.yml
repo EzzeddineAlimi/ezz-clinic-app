@@ -34,3 +34,14 @@ jobs:
         run: npm run lint
       - name: Verify RED/GREEN and fixture exclusion
         run: npm run lint:verify
+      - name: Measure formatter baseline without changing files
+        shell: bash
+        run: |
+          set +e
+          npm run format:check > "$RUNNER_TEMP/biome-format.log" 2>&1
+          format_status=$?
+          set -e
+          echo "Formatter exit status: $format_status"
+          tail -n 30 "$RUNNER_TEMP/biome-format.log"
+          echo "Biome formatter baseline exit status: $format_status (diagnostic only; not an enforced gate)" >> "$GITHUB_STEP_SUMMARY"
+          test -z "$(git status --porcelain -- .)"
