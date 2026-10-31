@@ -84,6 +84,11 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   await expect(critical).toContainText("ALLERGY_LATEX");
   await critical.evaluate(element => element.scrollIntoView({ block: "center" }));
   await expect(identity).toBeInViewport({ ratio: 1 });
+  const frPatientBox = await identity.boundingBox();
+  const frScrollBox = await dialog.locator(".clinical-workspace > .clinical-content").boundingBox();
+  expect(frPatientBox).not.toBeNull();
+  expect(frScrollBox).not.toBeNull();
+  expect(frScrollBox!.y).toBeGreaterThanOrEqual(frPatientBox!.y + frPatientBox!.height);
   await expect(critical).toBeInViewport({ ratio: 0.9 });
   await expect(dialog.locator(".modal-head h2")).toBeInViewport({ ratio: 1 });
   await expect(dialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });
@@ -101,7 +106,13 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   const arabicCritical = arabicDialog.getByTestId("clinical-alert-details").locator("li").first();
   await expect(arabicCritical).toContainText("ALLERGY_LATEX");
   await arabicCritical.evaluate(element => element.scrollIntoView({ block: "center" }));
-  await expect(arabicDialog.locator(".clinical-workspace > .patient-context")).toBeInViewport({ ratio: 1 });
+  const arIdentity = arabicDialog.locator(".clinical-workspace > .patient-context");
+  await expect(arIdentity).toBeInViewport({ ratio: 1 });
+  const arPatientBox = await arIdentity.boundingBox();
+  const arScrollBox = await arabicDialog.locator(".clinical-workspace > .clinical-content").boundingBox();
+  expect(arPatientBox).not.toBeNull();
+  expect(arScrollBox).not.toBeNull();
+  expect(arScrollBox!.y).toBeGreaterThanOrEqual(arPatientBox!.y + arPatientBox!.height);
   await expect(arabicCritical).toBeInViewport({ ratio: 0.9 });
   await expect(arabicDialog.locator(".modal-head h2")).toBeInViewport({ ratio: 1 });
   await expect(arabicDialog.locator(".modal-head .icon-button")).toBeInViewport({ ratio: 1 });

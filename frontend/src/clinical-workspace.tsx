@@ -166,6 +166,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         <div className="patient-context">
           <strong><bdi>{nameOf(visit.patient)}</bdi> · #{visit.patient.fileNo}</strong>
         </div>
+        <div className="clinical-content">
         <p className="warning">{t.fictional}</p>
         {chart.loading && <Loading label={w.loading} />}
         {chart.error !== undefined && <ErrorBox error={chart.error} w={w} />}
@@ -314,6 +315,7 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
             </>}
           </>
         )}
+        </div>
       </section>
     </Modal>
   );
