@@ -204,6 +204,11 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   await signInAtNativeZoom("owner");
   const cashNav = page.getByRole("button", { name: "Caisse", exact: true });
   await reachByKeyboardTab(cashNav);
+  await expect(cashNav).toBeFocused();
+  await test.info().attach("owner-fr-native-200pct-keyboard-focus-X11", {
+    body: captureDesktop("test-results/owner-fr-native-200pct-keyboard-focus-X11.png"),
+    contentType: "image/png",
+  });
   await page.keyboard.press("Enter");
   const cash = page.locator(".owner-cash");
   await expect(cash).toBeVisible();
@@ -213,12 +218,30 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     body: captureDesktop("test-results/owner-fr-native-200pct-X11-desktop.png"),
     contentType: "image/png",
   });
+  // C-38: verify and capture real cash controls below the fold, not just the page title.
+  const cashControl = cash.locator(".cash-form input, .checkout-summary dd").first();
+  await expect(cashControl).toBeVisible();
+  await cashControl.scrollIntoViewIfNeeded();
+  await expect(cashControl).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await test.info().attach("owner-fr-native-200pct-cash-body-X11", {
+    body: captureDesktop("test-results/owner-fr-native-200pct-cash-body-X11.png"),
+    contentType: "image/png",
+  });
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await expect(cash).toBeVisible();
+  await expect(page.getByRole("heading", { name: "مراقبة الصندوق", level: 1 })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("owner-ar-native-200pct-X11-desktop", {
     body: captureDesktop("test-results/owner-ar-native-200pct-X11-desktop.png"),
+    contentType: "image/png",
+  });
+  await cashControl.scrollIntoViewIfNeeded();
+  await expect(cashControl).toBeInViewport({ ratio: 1 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await test.info().attach("owner-ar-native-200pct-cash-body-X11", {
+    body: captureDesktop("test-results/owner-ar-native-200pct-cash-body-X11.png"),
     contentType: "image/png",
   });
 });
