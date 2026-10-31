@@ -49,7 +49,8 @@ Local execution used Node **22.22.0**, PostgreSQL **16.15**, `127.0.0.1:54316`, 
 | Local full compiled/build | PASS, exit 0: 371 tests / 370 pass / 0 fail / 1 optional real-TLS skip; 101.618s |
 | Exact new-head GitHub CI | Separate from local results; see PR for the exact SHA/run URLs and pending/completed status. Earlier main/PR63/PR100 green runs do not test this addition. |
 | Lint/format | NOT CONFIGURED in repository manifests; not reported as passing |
-| Local browser/UI, real TLS, complete local timezone matrix | NOT RUN for this test/document-only slice; no UI/screenshots changed. Existing optional real-TLS skip must remain explicit. CI timezone jobs are observed evidence only when complete at the exact new head. |
+| Local TLS | Full source and compiled suites each PASS `T-TLS-REAL-1..4`: real disposable PG16 TLS connection, unrelated-CA rejection, hostname mismatch, and whole-API encrypted connections. Separate optional `T-TLS-5` remains skipped because `EZZ_TEST_TLS_ROOTCERT` is not set. These are distinct tests. |
+| Local browser/UI and complete local timezone matrix | NOT RUN for this test/document-only slice; no UI/screenshots changed. CI timezone jobs are observed evidence only when complete at the exact new head. |
 
 ### Failures investigated, not concealed as a product RED
 
@@ -79,7 +80,9 @@ Both full suites completed successfully before commit. The unchanged test/runtim
 # todo 0
 ```
 
-Skip: `T-TLS-5` — `EZZ_TEST_TLS_ROOTCERT not set (CI service container runs without TLS)`. No real-TLS success is claimed. The new COVER tests all pass with no skip in both modes.
+Skip: `T-TLS-5` — `EZZ_TEST_TLS_ROOTCERT not set (CI service container runs without TLS)`. This optional-test skip does not negate the four independently provisioned `T-TLS-REAL-1..4` tests, which each passed in both full suites. The new COVER tests all pass with no skip in both modes.
+
+Evidence correction: the first documentation commit incorrectly grouped all local real TLS as NOT RUN. Reading the full source/compiled TAP and CI logs established the four passing real-TLS tests above. Only this evidence document changed in the correction; test/runtime blobs and their recorded local results are unchanged.
 
 SHA-256 provenance (local transcripts are temporary build output; durable results and commands are above, exact-head CI logs are linked in the PR):
 
