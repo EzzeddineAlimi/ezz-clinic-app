@@ -1424,3 +1424,22 @@ dialog.clinical-dialog > .clinical-workspace {
     min-height: 44px;
   }
 }
+
+/* U001 administrative-only receptionist enquiry queue */
+.enquiry-panel { min-width: 0; }
+.enquiry-form { padding: 8px 26px 24px; display: grid; gap: 12px; }
+.enquiry-form h3 { margin: 0; }
+.enquiry-reason { grid-column: 1 / -1; }
+.enquiry-reason textarea { min-height: 76px; resize: vertical; }
+.enquiry-notice { margin: 14px 26px; overflow-wrap: anywhere; }
+.enquiry-list { display: grid; gap: 12px; padding: 18px 26px; }
+.enquiry-entry { padding: 18px; border: 1px solid var(--line); border-radius: 12px; overflow-wrap: anywhere; }
+.enquiry-entry h3 { margin: 0 0 8px; }
+.enquiry-entry p { margin: 8px 0; }
+.enquiry-entry button { margin-top: 12px; min-height: 44px; }
+.enquiry-more { margin: 0 26px 24px; }
+@media (max-width: 760px) {
+  .enquiry-form, .enquiry-list { padding-inline: 16px; }
+  .enquiry-notice { margin-inline: 16px; }
+  .enquiry-more { margin-inline: 16px; }
+}
