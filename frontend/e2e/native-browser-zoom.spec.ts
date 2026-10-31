@@ -70,6 +70,11 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     body: await page.screenshot({ path: "test-results/dentist-fr-native-browser-200pct.png", animations: "disabled" }),
     contentType: "image/png",
   });
+  // Investigate blank full-viewport capture at native zoom: capture the actual dialog top-layer separately.
+  await test.info().attach("dentist-fr-native-browser-200pct-dialog", {
+    body: await dialog.screenshot({ path: "test-results/dentist-fr-native-browser-200pct-dialog.png", animations: "disabled" }),
+    contentType: "image/png",
+  });
 
   await dialog.getByRole("button", { name: "Fermer le formulaire" }).click();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
@@ -86,6 +91,10 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dentist-ar-native-browser-200pct", {
     body: await page.screenshot({ path: "test-results/dentist-ar-native-browser-200pct.png", animations: "disabled" }),
+    contentType: "image/png",
+  });
+  await test.info().attach("dentist-ar-native-browser-200pct-dialog", {
+    body: await arabicDialog.screenshot({ path: "test-results/dentist-ar-native-browser-200pct-dialog.png", animations: "disabled" }),
     contentType: "image/png",
   });
 });
