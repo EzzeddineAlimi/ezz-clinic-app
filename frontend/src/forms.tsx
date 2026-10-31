@@ -9,6 +9,28 @@ import { ErrorBox, Loading, Modal, useResource } from "./ui.tsx";
 export function nameOf(p: Patient) {
   return `${p.givenName} ${p.familyName}`;
 }
+/** Fetch a selected record only after a duplicate-name prompt, never a bulk list of full birth dates. */
+export function usePatientVerification(api: Api) {
+  const [selected, setSelected] = useState<Patient>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>();
+  async function open(summary: Patient) {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const { patient } = await api.patient(summary.id);
+      setSelected({
+        ...patient,
+        phoneLast4: patient.phone ? patient.phone.replace(/[^0-9]/g, "").slice(-4) : null,
+      });
+    } catch (cause) {
+      setError(cause);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return { selected, setSelected, busy, error, open };
+}
 export function PatientPicker({
   api,
   w,
@@ -20,6 +42,10 @@ export function PatientPicker({
 }) {
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
+  const {
+    selected: verifyPatient, setSelected: setVerifyPatient,
+    busy: verificationPending, error: verificationError, open: openVerification,
+  } = usePatientVerification(api);
   const resource = useResource(
     useCallback(
       (signal: AbortSignal) => api.patients(search, signal),
@@ -54,14 +80,37 @@ export function PatientPicker({
         <div className="picker-results">
           {resource.data?.patients.length === 0 && <p>{w.noPatients}</p>}
           {resource.data?.patients.map((p) => (
-            <button type="button" key={p.id} onClick={() => select(p)}>
+            <button type="button" key={p.id} disabled={verificationPending}
+              onClick={() => p.hasSameNameInClinic ? void openVerification(p) : select(p)}>
               <bdi>{nameOf(p)}</bdi>
-              <span>
-                {w.file} <bdi>#{p.fileNo}</bdi>
-              </span>
+              <span>{w.file} <bdi>#{p.fileNo}</bdi></span>
+              {(p.birthYear || p.phoneLast4) && <small>
+                {p.birthYear && <span>{w.birthYear}: <bdi>{p.birthYear}</bdi></span>}
+                {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
+              </small>}
             </button>
           ))}
         </div>
+      )}
+      {verificationPending && <Loading label={w.loading} />}
+      {verificationError !== undefined && <ErrorBox error={verificationError} w={w} />}
+      {verifyPatient && (
+        <Modal title={w.patientSafety} w={w} busy={false} close={() => setVerifyPatient(undefined)}>
+          <p role="alert">{w.identityCheck}</p>
+          <div className="patient-context">
+            <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
+            {verifyPatient.dateOfBirth && <p>{w.dob}: <bdi>{verifyPatient.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
+            {verifyPatient.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifyPatient.phoneLast4}</bdi></p>}
+          </div>
+          <div className="form-footer">
+            <button type="button" className="secondary" onClick={() => setVerifyPatient(undefined)}>{w.cancel}</button>
+            <button type="button" className="primary" onClick={() => {
+              const confirmed = verifyPatient;
+              setVerifyPatient(undefined);
+              select(confirmed);
+            }}>{w.confirmFile} · #{verifyPatient.fileNo}</button>
+          </div>
+        </Modal>
       )}
     </div>
   );

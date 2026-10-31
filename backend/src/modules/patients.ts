@@ -14,6 +14,7 @@ import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
 import { clinicDay, clinicTimezone } from './settings.ts';
+import { patientNameKeySql as nameKey } from './patient-name.ts';
 
 const NAME = { min: 1, max: 80 };
 const PHONE = /^\+?[0-9 ]{6,20}$/;
@@ -75,14 +76,22 @@ export const patientRoutes: Route[] = [
       await tx.query('INSERT INTO patient_file_counters (clinic_id) VALUES ($1) ON CONFLICT DO NOTHING', [actor!.clinicId]);
       const c = await tx.one<{ next_no: number }>('SELECT next_no FROM patient_file_counters WHERE clinic_id = $1 FOR UPDATE', [actor!.clinicId]);
       await tx.query('UPDATE patient_file_counters SET next_no = next_no + 1 WHERE clinic_id = $1', [actor!.clinicId]);
-      // Duplicate warning (C-135 AC-REG-3; B12): same normalised name, unless both phones are known and differ, or both
-      // birth dates are known and differ. A missing phone never clears the warning (elderly / no-phone patients). Warn, never merge.
+      // Duplicate warning (C-135 AC-REG-3; B12): for matching Latin names, known differing phones
+      // or birth dates clear a match. Matching Arabic names always warn even when these hints differ:
+      // transliterated Latin names may be different. Warn for manual identity review, never merge.
       const dup = await tx.query<{ id: string; file_no: number }>(
-        `SELECT id, file_no FROM patients WHERE lower(family_name) = lower($1) AND lower(given_name) = lower($2)
-           AND (phone IS NULL OR $3::text IS NULL OR phone = $3) AND (date_of_birth IS NULL OR $4::date IS NULL OR date_of_birth = $4) LIMIT 3`,
-        [familyName, givenName, phone, dob]);
+        `SELECT id, file_no FROM patients
+         WHERE ((${nameKey("family_name")} = ${nameKey("$1::text")}
+             AND ${nameKey("given_name")} = ${nameKey("$2::text")}
+             AND (phone IS NULL OR $3::text IS NULL OR phone = $3)
+             AND (date_of_birth IS NULL OR $4::date IS NULL OR date_of_birth = $4))
+           OR ($5::text IS NOT NULL AND btrim($5::text) <> ''
+             AND name_ar IS NOT NULL AND btrim(name_ar) <> ''
+             AND ${nameKey("name_ar")} = ${nameKey("$5::text")}))
+         LIMIT 3`,
+        [familyName, givenName, phone, dob, nameAr]);
       if (dup.rowCount > 0 && b.confirmNotDuplicate !== true) {
-        fail('CONFLICT', 'A patient with the same name and phone exists; confirm it is a different person', { possibleDuplicates: dup.rows.map(r => ({ id: r.id, fileNo: r.file_no })), retryWith: { confirmNotDuplicate: true } });
+        fail('CONFLICT', 'A potentially matching patient exists; verify the file before creating a separate patient', { possibleDuplicates: dup.rows.map(r => ({ id: r.id, fileNo: r.file_no })), retryWith: { confirmNotDuplicate: true } });
       }
       const p = await tx.one<{ id: string }>(`INSERT INTO patients (clinic_id, file_no, family_name, given_name, name_ar, date_of_birth, sex, phone, contact_preference, preferred_language, created_by)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
@@ -95,9 +104,32 @@ export const patientRoutes: Route[] = [
     method: 'GET', path: '/api/v1/patients', permission: 'patient.read',
     handler: async ({ tx, query }) => {
       const q = (query.get('q') ?? '').trim().slice(0, 80);
-      const rows = (await tx.query(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName", name_ar AS "nameAr", contact_preference AS "contactPreference"
-        FROM patients WHERE $1 = '' OR lower(family_name) LIKE lower($1) || '%' OR lower(given_name) LIKE lower($1) || '%' OR file_no::text = $1 OR phone = $1
-        ORDER BY family_name, given_name LIMIT 50`, [q])).rows;
+      // Canonical literal substring matching (not LIKE) prevents %/_ wildcard expansion.
+      // Keep Arabic name searchable and tolerate spaces/punctuation in a phone search.
+      // Only birth year and last four phone digits are returned in bulk; full DOB needs a selected-file GET.
+      const rows = (await tx.query(`SELECT id, file_no AS "fileNo", family_name AS "familyName", given_name AS "givenName",
+          name_ar AS "nameAr", contact_preference AS "contactPreference",
+          to_char(date_of_birth, 'YYYY') AS "birthYear",
+          CASE WHEN phone IS NULL THEN NULL
+               ELSE right(regexp_replace(phone, '[^0-9]', '', 'g'), 4) END AS "phoneLast4",
+          EXISTS (SELECT 1 FROM patients other
+                  WHERE other.id <> p.id
+                    AND ((${nameKey("other.family_name")} = ${nameKey("p.family_name")}
+                       AND ${nameKey("other.given_name")} = ${nameKey("p.given_name")})
+                      OR (other.name_ar IS NOT NULL AND btrim(other.name_ar) <> ''
+                        AND p.name_ar IS NOT NULL AND btrim(p.name_ar) <> ''
+                        AND ${nameKey("other.name_ar")} = ${nameKey("p.name_ar")}))) AS "hasSameNameInClinic"
+        FROM patients p
+        WHERE $1 = ''
+           OR strpos(${nameKey("family_name")}, ${nameKey("$1::text")}) > 0
+           OR strpos(${nameKey("given_name")}, ${nameKey("$1::text")}) > 0
+           OR strpos(${nameKey("given_name || ' ' || family_name")}, ${nameKey("$1::text")}) > 0
+           OR strpos(${nameKey("coalesce(name_ar, '')")}, ${nameKey("$1::text")}) > 0
+           OR file_no::text = $1
+           OR (length(regexp_replace($1, '[^0-9]', '', 'g')) >= 6
+               AND regexp_replace(coalesce(phone, ''), '[^0-9]', '', 'g') =
+                   regexp_replace($1, '[^0-9]', '', 'g'))
+        ORDER BY family_name, given_name, file_no LIMIT 50`, [q])).rows;
       return { status: 200, body: { patients: rows } };
     },
   },
@@ -166,14 +198,14 @@ export const patientRoutes: Route[] = [
       const v = await getVisitForUpdate(tx, params.id!);
       if (!DESK_TRANSITIONS[v.status]!.includes(to)) fail('CONFLICT', `Cannot change visit from ${v.status} to ${to}`);
       // A no-show is a fact about a time that has passed; recording it in advance would hide a visit (CH-018).
-      if (to === 'NO_SHOW' && new Date(v.scheduled_at).getTime() > Date.now()) fail('CONFLICT', 'A visit cannot be marked no-show before its appointment time; cancel it with a reason instead');
+      if (to === 'NO_SHOW' && new Date(v.scheduled_at).getTime() > Date.now()) fail('CONFLICT', 'A visit cannot be marked no-show before its appointment time; cancel it with a reason instead', { reason: 'NO_SHOW_BEFORE_START' });
       if (to === 'NO_SHOW' || to === 'CANCELLED') {
         const care = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM care_items WHERE visit_id = $1', [v.id]);
-        if (care.n > 0) fail('CONFLICT', 'Visit has dentist-confirmed care; it cannot be cancelled or marked no-show');
+        if (care.n > 0) fail('CONFLICT', 'Visit has dentist-confirmed care; it cannot be cancelled or marked no-show', { reason: 'VISIT_HAS_DOCUMENTED_CARE' });
         // CH-018: signed clinical documentation means the patient was seen; the desk cannot erase that visit.
         const doc = await tx.one<{ n: number }>(`SELECT ((SELECT count(*) FROM clinical_notes WHERE visit_id = $1)
             + (SELECT count(*) FROM chart_findings WHERE visit_id = $1))::int AS n`, [v.id]);
-        if (doc.n > 0) fail('CONFLICT', 'The dentist has documented this visit; it cannot be cancelled or marked no-show');
+        if (doc.n > 0) fail('CONFLICT', 'The dentist has documented this visit; it cannot be cancelled or marked no-show', { reason: 'VISIT_HAS_DOCUMENTED_CARE' });
       }
       await tx.query('UPDATE visits SET status = $2, status_changed_at = now(), status_changed_by = $3, status_reason = $4 WHERE id = $1', [v.id, to, actor!.staffId, reason]);
       await appendAudit(tx, actor!, 'visit.status_changed', 'visit', v.id, { from: v.status, to, reason });
