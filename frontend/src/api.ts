@@ -108,7 +108,6 @@ export class Api {
       response = await fetch("/api/v1" + path, {
         method: options.body === undefined ? "GET" : "POST",
         credentials: typeof window === "undefined" ? "omit" : credentialsForOrigin(window.location.origin),
-        credentials: "omit",
         cache: "no-store",
         redirect: "error",
         headers: {
