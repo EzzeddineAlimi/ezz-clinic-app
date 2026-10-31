@@ -3,6 +3,7 @@
 - Exact base and head SHA; parent PR if stacked:
 - Existing owner/workstream checked; no duplicate parallel implementation:
 - Open-PR queue preflight: number open, stack root/depth/age, integration target and closure owner; if three linked drafts already exist, reconcile rather than extend the stack:
+- Claim provenance (exclusive create-if-absent proof if used; otherwise no atomic lock claimed):
 
 ## Behavior and evidence
 - Intended user flow, success/empty/loading/error/offline/retry states (FR/Arabic if relevant):
@@ -14,12 +15,14 @@
 - Failure / rollback or paper fallback, migrations and operational observability impact:
 
 ## Verification
+- Run ID (or NOT_EXPOSED), and run outcome (IMPLEMENTED_DRAFT / REVIEW_ONLY / BLOCKED / NO_APPROVED_WORK / FAILED):
 - Commands **actually run**: tests, lint/format **only if scripts exist**, typecheck, build, versions and environment; PASS/FAIL/SKIP/NOT AVAILABLE (don't fabricate a lint run):
 - RED evidence / reproduction before bug fix, and GREEN after:
 - Exact-head GitHub CI (or "not run / skipped", with reason):
 - Independent reviewer and exact SHA reviewed; unresolved findings:
+- Task acceptance separately: OPEN / IN_REVIEW / DONE_WITH_ACCEPTANCE (include evidence; no CI=acceptance shortcut):
 
 ## Release gates
 - [ ] Fictional data only; no production secrets, real patients, payment execution or legal/fiscal claims
-- [ ] No production deployment or merge without separate explicit founder authorization
-- [ ] Main required-check status and any skipped path-filtered workflows checked
+- [ ] No production deployment; merge only within founder's standing low-risk delegation after exact-head CI, ancestry and required independent review. Hold high-risk security/clinical/payment/CNAM/data changes for explicit approval
+- [ ] Actual GitHub required-check enforcement verified (issue #68); all applicable latest-head CI results, including any skipped jobs, checked
