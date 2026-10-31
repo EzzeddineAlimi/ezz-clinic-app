@@ -164,7 +164,7 @@ test("Dentist alerts and dialog controls remain readable at native Chromium 200%
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     for (let step = 0; step < 60; step++) {
       await page.keyboard.press("Tab");
-      if (await target.isFocused()) return;
+      if (await target.evaluate(element => element === document.activeElement)) return;
     }
     throw new Error("Navigation target not reachable by Tab at native 200% zoom");
   };
