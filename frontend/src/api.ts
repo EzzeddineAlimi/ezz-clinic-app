@@ -1,3 +1,14 @@
+/**
+ * GitHub Codespaces' *private* forwarded ports use a GitHub-owned session cookie.
+ * Allow the browser to send that cookie to this exact HTTPS preview origin only.
+ * EZZ itself still stores no cookies and always requires its own bearer token.
+ */
+export function credentialsForOrigin(origin: string): RequestCredentials {
+  return /^https:\/\/[a-z0-9-]+-5173\.app\.github\.dev$/.test(origin)
+    ? "same-origin"
+    : "omit";
+}
+
 import { z } from "zod";
 import { ownerCashPeriodSchema, openCashPeriodSchema, submittedCashCountSchema, cashReviewSchema, closedCashPeriodSchema } from "./cash-contracts.ts";
 import { encounterSchema, noteCreatedSchema, findingCreatedSchema, planItemCreatedSchema } from "./clinical-contracts.ts";
@@ -101,7 +112,7 @@ export class Api {
     try {
       response = await fetch("/api/v1" + path, {
         method: options.body === undefined ? "GET" : "POST",
-        credentials: "omit",
+        credentials: typeof window === "undefined" ? "omit" : credentialsForOrigin(window.location.origin),
         cache: "no-store",
         redirect: "error",
         headers: {
