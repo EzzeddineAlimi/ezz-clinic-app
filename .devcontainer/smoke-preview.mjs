@@ -60,6 +60,17 @@ const board = await request("/api/v1/day-board", { token: data.token });
 assert.equal(board.status, 200);
 const result = JSON.parse(board.text);
 assert.ok(Array.isArray(result.visits) && result.visits.length >= 5);
+// API auth and origin checks are independent of GitHub's private-port login.
+const anonymous = await request("/api/v1/day-board");
+assert.equal(anonymous.status, 401, "Protected day board must reject anonymous access");
+assert.equal(JSON.parse(anonymous.text).error?.code, "UNAUTHENTICATED");
+const wrongOrigin = await request("/api/v1/session/login", {
+  method: "POST",
+  originHeader: "https://attacker.example",
+  body: { clinicCode: "web-fictional", username: "desk", password: "fictional-pass-123" }
+});
+assert.equal(wrongOrigin.status, 403, "API must reject a cross-origin login attempt");
+assert.equal(JSON.parse(wrongOrigin.text).error?.code, "FORBIDDEN_ORIGIN");
 const denied = await request("/", { hostHeader: "attacker.example" });
 assert.notEqual(denied.status, 200, "Unapproved host must be rejected");
-console.log("PASS: built UI, strict host, real fictional API login and seeded day board.");
+console.log("PASS: built UI, strict host/origin, anonymous 401, fictional API login and seeded day board.");
