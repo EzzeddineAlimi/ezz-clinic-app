@@ -15,8 +15,9 @@ before(async () => { db = await createTestDb(); api = await startApi(db.appUrl);
 after(async () => { await api.close(); await db.drop(); });
 
 const CLINIC_ZONE = 'Africa/Tunis'; // The standard fixture's configured clinic timezone.
-const TODAY = localDate(CLINIC_ZONE);
-const day = (n: number) => localDate(CLINIC_ZONE, new Date(Date.now() + n * 86400_000));
+const fixtureNow = new Date();
+const day = (n: number) => localDate(CLINIC_ZONE, new Date(fixtureNow.getTime() + n * 86400_000));
+const TODAY = day(0);
 const HEADER = 'date,amount_tnd,type,terminal_ref,card_last4,description';
 const csv = (...rows: string[]) => [HEADER, ...rows].join('\n');
 
