@@ -71,6 +71,10 @@ Open **http://127.0.0.1:5173**. Use only the seeded **fictional** clinic and sta
 
 For exact setup requirements, test commands, port assumptions, teardown and troubleshooting, follow the [frontend run instructions](frontend/README.md) rather than improvising production configuration.
 
+## Private phone preview (fictional data only)
+
+The temporary GitHub Codespaces configuration is in [draft PR #44](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/44). It requires a signed-in GitHub owner and a **Private** forwarded port. It is NOT production hosting. Start only from the preview branch with the [Codespaces guide](docs/operations/CODESPACES-FICTIONAL-PREVIEW.md); verify the port is Private before using it, enter only fictional records, and shut it down afterwards.
+
 ## Engineering and verification
 
 The application uses server-derived staff identity and clinic scope, PostgreSQL-enforced data boundaries, integer **millimes** for monetary amounts, unique write-intent idempotency keys, and audit records for sensitive changes. The frontend shows server-authorized results; hiding buttons is **not** a security boundary.
