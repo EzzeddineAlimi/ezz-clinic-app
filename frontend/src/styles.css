@@ -1285,6 +1285,9 @@ dialog::backdrop {
   }
 }
 @media (max-width: 380px) {
+  /* Three owner navigation tabs cannot fit in one 320px row at native 200% zoom. */
+  .sidebar nav { flex-wrap: wrap; }
+  .sidebar nav button { flex: 1 1 calc(50% - 8px); min-width: 0; }
   .form-grid {
     grid-template-columns: 1fr;
   }
