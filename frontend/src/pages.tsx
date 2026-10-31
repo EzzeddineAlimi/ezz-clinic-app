@@ -1,12 +1,17 @@
 import { Checkout } from "./checkout.tsx";
+import { VisitStatusModal } from "./visit-status.tsx";
 import { ClinicalWorkspace } from "./clinical-workspace.tsx";
 import { clinicalText } from "./clinical-text.ts";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Api, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
 import type { Words, Lang } from "./i18n.ts";
-import { nameOf } from "./forms.tsx";
-import { Empty, ErrorBox, Icon, Loading, useResource } from "./ui.tsx";
+import { nameOf, usePatientVerification } from "./forms.tsx";
+import { Empty, ErrorBox, Icon, Loading, Modal, useResource } from "./ui.tsx";
+function patientNameKey(value: string): string {
+  return value.normalize("NFD").replace(/[\u0300-\u036f\u0640\u064b-\u065f\u0670]/g, "")
+    .toLocaleLowerCase().replace(/[أإآٱ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي");
+}
 export function DayBoard({
   board,
   w,
@@ -29,11 +34,42 @@ export function DayBoard({
   confirmCare: (visit: Visit) => void;
 }) {
   const [filter, setFilter] = useState("all");
-  const visits = board.visits.filter(
-    (v) => filter === "all" || v.status === filter,
+  const [patientQuery, setPatientQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [dentistId, setDentistId] = useState("all");
+  const dentists = [...new Map(board.visits.flatMap(v =>
+    v.dentist ? [[v.dentist.id, v.dentist] as const] : [],
+  )).values()].sort((a, b) => (a.name ?? "").localeCompare(b.name ?? ""));
+  const query = patientNameKey(patientQuery.trim());
+  const hasFilters = filter !== "all" || patientQuery.trim().length > 0 || dentistId !== "all";
+  const clearFilters = () => {
+    setFilter("all");
+    setPatientQuery("");
+    setDentistId("all");
+    searchRef.current?.focus();
+  };
+  const visits = board.visits.filter(v =>
+    (filter === "all" || v.status === filter) &&
+    (dentistId === "all" || v.dentist?.id === dentistId) &&
+    (!query ||
+      patientNameKey(nameOf(v.patient)).includes(query) ||
+      (!!v.patient.nameAr && patientNameKey(v.patient.nameAr).includes(query)) ||
+      String(v.patient.fileNo) === patientQuery.trim().replace(/^#/, "")),
   );
   return (
     <>
+      <div className="dayboard-filters">
+        <label>{w.boardSearch}
+          <input ref={searchRef} type="search" value={patientQuery} maxLength={80}
+            onChange={e => setPatientQuery(e.target.value)} />
+        </label>
+        <label>{w.dentist}
+          <select value={dentistId} onChange={e => setDentistId(e.target.value)}>
+            <option value="all">{w.allDentists}</option>
+            {dentists.map(d => <option key={d.id} value={d.id}>{d.name ?? w.unnamed}</option>)}
+          </select>
+        </label>
+      </div>
       <div className="filter-tabs" aria-label={w.status}>
         {["all", "SCHEDULED", "ARRIVED", "COMPLETED"].map((s) => (
           <button
@@ -44,12 +80,16 @@ export function DayBoard({
             {s === "all" ? w.all : w[s as Visit["status"]]}
           </button>
         ))}
-        <span>
-          <bdi>{visits.length}</bdi> {w.total.toLowerCase()}
+        <span data-testid="dayboard-result-count" role="status">
+          <bdi>{visits.length}</bdi>{hasFilters && <> / <bdi>{board.visits.length}</bdi></>} {w.total.toLowerCase()}
         </span>
       </div>
       {visits.length === 0 ? (
-        <Empty title={w.emptyBoard} text={w.emptyBoardHint} />
+        <Empty
+          title={hasFilters ? w.noMatchingVisits : w.emptyBoard}
+          text={hasFilters ? w.noMatchingVisitsHint : w.emptyBoardHint}
+          action={hasFilters ? <button type="button" className="secondary" onClick={clearFilters}>{w.clearBoardFilters}</button> : undefined}
+        />
       ) : (
         <div className="visit-list">
           {visits.map((v) => (
@@ -58,6 +98,7 @@ export function DayBoard({
               visit={v}
               w={w}
               lang={lang}
+              timezone={board.timezone}
               writable={writable}
               api={api}
               refreshed={refreshed}
@@ -75,6 +116,7 @@ function VisitRow({
   visit: v,
   w,
   lang,
+  timezone,
   writable,
   api,
   refreshed,
@@ -85,6 +127,7 @@ function VisitRow({
   visit: Visit;
   w: Words;
   lang: Lang;
+  timezone: string;
   writable: boolean;
   api: Api;
   refreshed: () => void;
@@ -93,6 +136,7 @@ function VisitRow({
   confirmCare: (visit: Visit) => void;
 }) {
   const [checkout, setCheckout] = useState(false);
+  const [statusAction, setStatusAction] = useState<"NO_SHOW" | "CANCELLED">();
   const [clinical, setClinical] = useState(false);
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
@@ -155,6 +199,9 @@ function VisitRow({
             <span className="flag">{w.late}</span>
           )}
         </div>
+        {(v.status === "NO_SHOW" || v.status === "CANCELLED") && v.statusReason && (
+          <p className="muted">{w.visitReason}: <bdi>{v.statusReason}</bdi></p>
+        )}
         {error !== undefined && <ErrorBox error={error} w={w} />}
         {intent.uncertain && (
           <p role="alert" className="uncertain">
@@ -166,10 +213,29 @@ function VisitRow({
         <ClinicalWorkspace api={api} visit={v} lang={lang} w={w}
           close={() => setClinical(false)} />
       )}
+      {statusAction && (
+        <VisitStatusModal
+          api={api}
+          visit={v}
+          status={statusAction}
+          w={w}
+          close={() => setStatusAction(undefined)}
+          saved={() => {
+            notify(statusAction === "NO_SHOW" ? w.savedNoShow : w.savedCancellation);
+            setStatusAction(undefined);
+            refreshed();
+          }}
+          uncertainClose={() => {
+            notify(w.ambiguousClosed);
+            refreshed();
+          }}
+        />
+      )}
       {checkout && (
         <Checkout
           api={api}
           visit={v}
+          timezone={timezone}
           w={w}
           close={() => {
             setCheckout(false);
@@ -206,6 +272,17 @@ function VisitRow({
             {pending ? w.saving : intent.uncertain ? w.retry : w.arrival}
           </button>
         )}
+        {writable && v.status === "SCHEDULED" &&
+          new Date(v.scheduledAt).getTime() <= Date.now() && (
+            <button className="secondary compact" disabled={pending} onClick={() => setStatusAction("NO_SHOW")}>
+              {w.markNoShow}
+            </button>
+          )}
+        {writable && ["SCHEDULED", "ARRIVED"].includes(v.status) && (
+          <button className="secondary compact" disabled={pending} onClick={() => setStatusAction("CANCELLED")}>
+            {w.cancelVisit}
+          </button>
+        )}
       </div>
     </article>
   );
@@ -227,12 +304,21 @@ export function PatientDirectory({
 }) {
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
+  const {
+    selected: verifyPatient, setSelected: setVerifyPatient,
+    busy: verificationPending, error: verificationError, open: openVerification,
+  } = usePatientVerification(api);
   const resource = useResource(
     useCallback(
       (signal: AbortSignal) => api.patients(search, signal),
       [api, search],
     ),
   );
+  const sameVisibleName = (p: Patient) =>
+    !!p.hasSameNameInClinic || (resource.data?.patients ?? []).filter(other =>
+      patientNameKey(nameOf(other)) === patientNameKey(nameOf(p)) ||
+      (!!p.nameAr && !!other.nameAr && patientNameKey(other.nameAr) === patientNameKey(p.nameAr)),
+    ).length > 1;
   const contact: Record<string, string> = {
     IN_PERSON: w.inPerson,
     NONE: w.none,
@@ -301,6 +387,12 @@ export function PatientDirectory({
                     </>
                   )}
                 </span>
+                {(p.birthYear || p.phoneLast4) && (
+                  <small className="patient-identity-hints">
+                    {p.birthYear && <span>{w.birthYear}: <bdi>{p.birthYear}</bdi></span>}
+                    {p.phoneLast4 && <span> · {w.phoneEnding} <bdi>••••{p.phoneLast4}</bdi></span>}
+                  </small>
+                )}
               </div>
               <span className="contact-label">
                 {contact[p.contactPreference] ?? p.contactPreference}
@@ -308,8 +400,8 @@ export function PatientDirectory({
               {writable && (
                 <button
                   className="secondary"
-                  disabled={!scheduleReady}
-                  onClick={() => schedule(p)}
+                  disabled={!scheduleReady || verificationPending}
+                  onClick={() => sameVisibleName(p) ? void openVerification(p) : schedule(p)}
                 >
                   {w.scheduleFor}
                   <Icon name="arrow" size={16} />
@@ -318,6 +410,26 @@ export function PatientDirectory({
             </article>
           ))}
         </div>
+      )}
+      {verificationPending && <Loading label={w.loading} />}
+      {verificationError !== undefined && <ErrorBox error={verificationError} w={w} />}
+      {verifyPatient && (
+        <Modal title={w.patientSafety} w={w} busy={false} close={() => setVerifyPatient(undefined)}>
+          <p role="alert">{w.identityCheck}</p>
+          <div className="patient-context">
+            <strong><bdi>{nameOf(verifyPatient)}</bdi> · {w.file} <bdi>#{verifyPatient.fileNo}</bdi></strong>
+            {verifyPatient.dateOfBirth && <p>{w.dob}: <bdi>{verifyPatient.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
+            {verifyPatient.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifyPatient.phoneLast4}</bdi></p>}
+          </div>
+          <div className="form-footer">
+            <button type="button" className="secondary" onClick={() => setVerifyPatient(undefined)}>{w.cancel}</button>
+            <button type="button" className="primary" onClick={() => {
+              const confirmed = verifyPatient;
+              setVerifyPatient(undefined);
+              schedule(confirmed);
+            }}>{w.confirmFile} · #{verifyPatient.fileNo}</button>
+          </div>
+        </Modal>
       )}
     </section>
   );

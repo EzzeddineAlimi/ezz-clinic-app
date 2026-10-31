@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Visit } from "./api.ts";
@@ -12,7 +12,7 @@ import { nameOf } from "./forms.tsx";
 import { amount } from "./billing.ts";
 
 type ClinicalMutation = {
-  kind: "finding" | "plan" | "status"; targetId: string;
+  kind: "finding" | "plan" | "status" | "addendum"; targetId: string;
   body: Record<string, unknown>; key: string;
 };
 
@@ -29,7 +29,31 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
   const [unresolved, setUnresolved] = useState<ClinicalMutation | null>(null);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
-  const [mode, setMode] = useState<"notes" | "findings" | "plans">("notes");
+  const [mode, setMode] = useState<"overview" | "notes" | "findings" | "plans">("overview");
+  const [addendumTargetId, setAddendumTargetId] = useState<string | null>(null);
+  const [signedLocally, setSignedLocally] = useState(false);
+  const signedAgainst = useRef<typeof chart.data>(undefined);
+  const addendumToggleRef = useRef<HTMLButtonElement>(null);
+  const focusAfterAddendum = useRef<{ targetId: string; against: typeof chart.data } | null>(null);
+  // Only a newly fetched authoritative chart can release the local post-sign guard.
+  useEffect(() => {
+    if (signedLocally && chart.data && chart.data !== signedAgainst.current &&
+        !chart.data.notes.some(n => n.kind === "NOTE" && !n.enteredInError)) {
+      setSignedLocally(false);
+    }
+  }, [chart.data, signedLocally]);
+  // The toggle is disabled while saving/loading; focus only after a fresh chart has rendered.
+  useEffect(() => {
+    const pending = focusAfterAddendum.current;
+    if (!pending) return;
+    if (chart.error) { focusAfterAddendum.current = null; return; }
+    if (!chart.data || chart.data === pending.against || chart.loading || saving) return;
+    const eligible = chart.data.notes.some(n => n.id === pending.targetId &&
+      !n.enteredInError && n.integrity !== "CONTENT_HASH_MISMATCH");
+    const toggle = addendumToggleRef.current;
+    if (eligible && toggle && !toggle.disabled) toggle.focus();
+    focusAfterAddendum.current = null;
+  }, [chart.data, chart.loading, chart.error, saving]);
   async function runClinicalWrite(
     action: ClinicalMutation, form?: HTMLFormElement,
   ): Promise<void> {
@@ -44,6 +68,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         await api.recordChartFinding(action.targetId, action.body, action.key);
       } else if (action.kind === "plan") {
         await api.addTreatmentPlanItem(action.targetId, action.body, action.key);
+      } else if (action.kind === "addendum") {
+        await api.addClinicalAddendum(action.targetId, action.body, action.key);
       } else {
         const body = action.body as {
           status: "ACCEPTED" | "DECLINED" | "CANCELLED";
@@ -52,6 +78,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
         await api.transitionTreatmentPlanItem(action.targetId, body, action.key);
       }
       setUnresolved(null);
+      if (action.kind === "addendum") {
+        focusAfterAddendum.current = { targetId: action.targetId, against: chart.data };
+        setAddendumTargetId(null);
+      }
       if (form?.isConnected) form.reset();
       setNotice(lang === "fr" ? "Écriture clinique enregistrée." : "تم تسجيل التغيير السريري.");
       chart.refresh();
@@ -109,6 +139,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
     setError(undefined);
     try {
       await api.signClinicalNote(visit.id, intent.payload(body), intent.key);
+      signedAgainst.current = chart.data;
+      setSignedLocally(true); // A successful write must never expose another initial-sign action while refreshing.
       setIntent(new WriteIntent());
       setNotice(lang === "fr" ? "Note signée et enregistrée." : "تم توقيع وتسجيل الملاحظة.");
       form.reset();
@@ -122,6 +154,10 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
     } finally { setSaving(false); lock.current = false; }
   }
   const data = chart.data;
+  const initialNoteSigned = signedLocally || !!data?.notes.some(n => n.kind === "NOTE" && !n.enteredInError);
+  const soapSections = ["subjective", "objective", "assessment", "plan"] as const;
+  const soapLabels = { subjective: t.subjective, objective: t.objective,
+    assessment: t.assessment, plan: t.planSection };
   const editable = !!data && !chart.loading && !chart.error && !saving && !unresolved &&
     !["CANCELLED", "NO_SHOW"].includes(data.visit.status);
   return (
@@ -148,32 +184,92 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
             {data.medical.activeAlerts.length > 0 &&
               <p className="warning" role="alert">{t.warning} · {data.medical.activeAlerts.length}</p>}
             <nav className="clinical-nav" aria-label={t.title}>
+              <button type="button" aria-pressed={mode === "overview"} onClick={() => setMode("overview")}>{t.overview}</button>
               <button type="button" aria-pressed={mode === "notes"} onClick={() => setMode("notes")}>{t.note} ({data.notes.length})</button>
               <button type="button" aria-pressed={mode === "findings"} onClick={() => setMode("findings")}>{t.findings} ({data.findings.length})</button>
               <button type="button" aria-pressed={mode === "plans"} onClick={() => setMode("plans")}>{t.plan} ({data.planItems.length})</button>
             </nav>
+            {mode === "overview" && (
+              <section className="clinical-entry" data-testid="clinical-overview">
+                <h3>{t.overview}</h3>
+                <p><strong>{t.visitStatus}:</strong> {t.visitStatuses[data.visit.status as keyof typeof t.visitStatuses] ?? data.visit.status}</p>
+                <p><strong>{t.assignedDentist}:</strong> <bdi>{visit.dentist?.name ?? t.unassigned}</bdi></p>
+                <p><strong>{t.medicalAlerts}:</strong> <bdi>{data.medical.activeAlerts.length}</bdi></p>
+                {data.medical.activeAlerts.length > 0 && (
+                  <ul data-testid="clinical-alert-details">
+                    {[...data.medical.activeAlerts].sort((a, b) =>
+                      (a.severity === "CRITICAL" ? 0 : 1) - (b.severity === "CRITICAL" ? 0 : 1)
+                    ).map(alert => (
+                      <li key={alert.id}>
+                        <strong><bdi>{alert.code}</bdi></strong>
+                        {" · "}{alert.severity === "CRITICAL" ? t.alertCritical : t.alertCaution}
+                        {" · "}{alert.source === "PATIENT_DECLARED" ? t.alertDeclared : t.alertVerified}
+                        {alert.detail ? <p><bdi>{alert.detail}</bdi></p> : <p className="warning" data-testid="clinical-alert-missing-detail">{t.alertDetailMissing}</p>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="warning">{t.overviewHint}</p>
+              </section>
+            )}
             {mode === "notes" && <>
-              {data.notes.length === 0 && <p>{t.empty}</p>}
+              {data.notes.length === 0 && !initialNoteSigned && <p>{t.empty}</p>}
               {data.notes.map(n => (
                 <article className="clinical-entry" key={n.id}>
-                  <strong>{n.kind} · <bdi>{n.signedByName}</bdi></strong>
-                  <small><bdi>{n.signedAt}</bdi></small>
+                  <strong>{t.noteKinds[n.kind]} · <bdi>{n.signedByName}</bdi></strong>
+                  <small>{t.signedStatus} · <bdi>{n.signedAt}</bdi></small>
                   {n.integrity === "CONTENT_HASH_MISMATCH" && <p role="alert" className="error-box">{t.warning}</p>}
-                  {n.enteredInError && <p className="warning">{n.enteredInError.reason}</p>}
-                  {(["subjective","objective","assessment","plan"] as const).map(k =>
-                    n[k] && <p key={k}><bdi>{n[k]}</bdi></p>)}
+                  {n.enteredInError && <p className="warning">{t.struck}: <bdi>{n.enteredInError.reason}</bdi></p>}
+                  {soapSections.map(k =>
+                    n[k] && <p key={k}><strong>{soapLabels[k]}:</strong> <bdi>{n[k]}</bdi></p>)}
+                  {(n.kind === "NOTE" || n.kind === "LATE_ENTRY") &&
+                    !n.enteredInError && n.integrity !== "CONTENT_HASH_MISMATCH" && (
+                    <button type="button" className="secondary" disabled={!editable || intent.uncertain}
+                      ref={addendumTargetId === n.id || focusAfterAddendum.current?.targetId === n.id
+                        ? addendumToggleRef : undefined}
+                      aria-expanded={addendumTargetId === n.id}
+                      onClick={() => {
+                        if (focusAfterAddendum.current?.targetId !== n.id) focusAfterAddendum.current = null;
+                        setAddendumTargetId(addendumTargetId === n.id ? null : n.id);
+                      }}>
+                      {t.addendum}
+                    </button>
+                  )}
+                  {addendumTargetId === n.id && (
+                    <form data-testid="clinical-addendum-form" className="cash-form"
+                      onSubmit={e => fromForm(e, "addendum", n.id, fields => {
+                        const sections = Object.fromEntries(soapSections.map(k =>
+                          [k, String(fields.get(k) ?? "").trim()])) as Record<typeof soapSections[number], string>;
+                        if (!nonemptyNote(sections)) throw new ApiError("VALIDATION_FAILED");
+                        const reason = String(fields.get("reason") ?? "").trim();
+                        return { kind: "ADDENDUM", ...sections, ...(reason ? { reason } : {}) };
+                      })}>
+                      <p className="muted">{t.addendumHint}</p>
+                      <fieldset disabled={!editable || intent.uncertain}>
+                        {soapSections.map(k => (
+                          <label key={k}>{soapLabels[k]}<textarea name={k} maxLength={4000} rows={2} /></label>
+                        ))}
+                        <label>{t.reason}<input name="reason" maxLength={300} /></label>
+                      </fieldset>
+                      <button className="primary" type="submit" disabled={!editable || intent.uncertain}>
+                        {saving ? t.saving : t.signAddendum}
+                      </button>
+                    </form>
+                  )}
                 </article>
               ))}
-              <form className="cash-form" onSubmit={e => void sign(e)}>
-                <fieldset disabled={!editable || intent.uncertain}>
-                  {(["subjective","objective","assessment","plan"] as const).map(k => (
-                    <label key={k}>{k}<textarea name={k} maxLength={4000} rows={2} /></label>
-                  ))}
-                </fieldset>
-                <button className="primary" type="submit" disabled={!editable}>
-                  {saving ? t.saving : intent.uncertain ? t.retry : t.sign}
-                </button>
-              </form>
+              {initialNoteSigned ? <p role="status" className="muted">{t.initialSigned}</p> : (
+                <form data-testid="clinical-initial-note-form" className="cash-form" onSubmit={e => void sign(e)}>
+                  <fieldset disabled={!editable || intent.uncertain}>
+                    {soapSections.map(k => (
+                      <label key={k}>{soapLabels[k]}<textarea name={k} maxLength={4000} rows={2} /></label>
+                    ))}
+                  </fieldset>
+                  <button className="primary" type="submit" disabled={!editable}>
+                    {saving ? t.saving : intent.uncertain ? t.retry : t.sign}
+                  </button>
+                </form>
+              )}
             </>}
             {mode === "findings" && <>
               {data.findings.length === 0 && <p>{t.empty}</p>}
@@ -196,8 +292,8 @@ export function ClinicalWorkspace({ api, visit, lang, w, close }: {
               {data.planItems.length === 0 && <p>{t.empty}</p>}
               {data.planItems.map(p => <article className="clinical-entry" key={p.id}>
                 <strong><bdi>{p.procedureCode} · {p.procedureLabel}</bdi></strong>
-                <p>{t.tooth}: {p.toothFdi ?? "—"} · {p.status}</p>
-                <p>{p.estimatedFeeMillimes === null ? "—" : amount(p.estimatedFeeMillimes)}</p>
+                <p>{t.tooth}: {p.toothFdi ?? "—"} · <span data-testid="plan-status">{t.planStatuses[p.status]}</span></p>
+                <p>{t.planEstimate}: <bdi>{p.estimatedFeeMillimes === null ? "—" : amount(p.estimatedFeeMillimes)}</bdi></p>
                 {(p.status === "PROPOSED" || p.status === "ACCEPTED") && (
                   <PlanStatusForm lang={lang} status={p.status}
                     disabled={!editable || intent.uncertain}
