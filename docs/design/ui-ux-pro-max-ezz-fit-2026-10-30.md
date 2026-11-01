@@ -43,7 +43,7 @@ The `Healthcare App` product row prescribes **Neumorphism + Accessible & Ethical
 | Upstream priority/category | EZZ-specific adoption and verification |
 |---|---|
 | 1. Accessibility — CRITICAL | Audit text/nontext contrast, focus visible and not hidden, headings/skip link, dialog/keyboard focus, meaningful SVG name/ARIA state, translated form errors, 200% zoom, French/Arabic screen reader labeling, patient ID number isolation. Axe alone is not complete proof |
-| 2. Touch/interaction — CRITICAL | Comfortable web touch targets and separation, one obvious action, loading/disabled state, prevention of duplicate payment resubmit, tap+keyboard access, avoid hover-only actions; do not misapply iOS pt/Android dp as mandatory web px |
+| 2. Touch/interaction — CRITICAL | Comfortable web touch targets and separation (WCAG 2.2 AA web target size at least **24×24 CSS px** or a documented exception; don't confuse it with larger ergonomic recommendations), one obvious action, loading/disabled state, prevention of duplicate payment resubmit, tap+keyboard access, avoid hover-only actions; do not misapply iOS pt/Android dp as mandatory web px |
 | 3. Performance — HIGH | Measure real page load, large lists and layout shift before adding memoization/virtualization; reserve sizes, avoid third-party scripts and fonts; do not slow receptionist with animations |
 | 4. Style — HIGH | Keep Clean Professional identity, one icon system, clear severity/evidence badges with text not color only, no emoji nav, no translucent low-contrast medical dialogs |
 | 5. Layout/responsive — HIGH | Desktop primary, mobile functional; 320/360/390/768/1024/1440/1920, landscape, scroll/zoom, RTL mirroring, safe-area inset for fixed controls, no clipped long Arabic labels or TND values |
@@ -54,6 +54,8 @@ The `Healthcare App` product row prescribes **Neumorphism + Accessible & Ethical
 | 10. Charts/data — LOW | Owner-first exception table for cash/settlement with evidence labels and actual time period, accessible values and table fallback; don't invent real-time sources, counts or "theft detected" certainty |
 
 **Clinic-specific overrides that upstream generic rules do not cover:** patient identity ambiguity; clinician-authored notes and medical alerts; planned versus performed care; receipt numbering and frozen payment intent after uncertain response; cash blind count before any expected value; staff-reported card tender versus external settlement; paper-first outage; no patient-phone assumption; FR/Arabic RTL in all risk states.
+
+**2026-11-01 upstream recheck:** [Current upstream web accessibility reference](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill/blob/bf41cbc3ce63e30c922e58ef48741ba6133f9aa9/src/ui-ux-pro-max/templates/base/quick-reference.md) explicitly checks accessible pointer-target size and keyboard-focus visibility beneath fixed/sticky overlays. In EZZ, validate actual hit areas, exceptions, focus occlusion and FR/Arabic 200% zoom with rendered evidence; this is not a claim current screens failed WCAG or that the upstream CLI was installed.
 
 ## Current EZZ implementation evidence
 
