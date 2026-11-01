@@ -14,9 +14,10 @@ export function usePatientVerification(api: Api) {
   const [selected, setSelected] = useState<Patient>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
-  async function open(summary: Patient) {
+  async function open(summary: Pick<Patient, "id">) {
     setBusy(true);
     setError(undefined);
+    setSelected(undefined);
     try {
       const { patient } = await api.patient(summary.id);
       setSelected({
@@ -116,17 +117,21 @@ export function PatientPicker({
   );
 }
 
+type DuplicateCandidate = { id: string; fileNo: number };
+
 export function Registration({
   api,
   w,
   close,
   saved,
+  existing,
   uncertainClose,
 }: {
   api: Api;
   w: Words;
   close: () => void;
   saved: (p: Patient) => void;
+  existing: (p: Patient) => void;
   uncertainClose: () => void;
 }) {
   const [intent] = useState(() => new WriteIntent()),
@@ -134,7 +139,16 @@ export function Registration({
     [error, setError] = useState<unknown>(),
     [duplicate, setDuplicate] = useState(false),
     [confirmed, setConfirmed] = useState(false),
-    [contact, setContact] = useState("IN_PERSON");
+    [contact, setContact] = useState("IN_PERSON"),
+    [candidates, setCandidates] = useState<DuplicateCandidate[]>([]),
+    [reviewedIds, setReviewedIds] = useState<string[]>([]);
+  const {
+    selected: verifiedCandidate,
+    setSelected: setVerifiedCandidate,
+    busy: verificationPending,
+    error: verificationError,
+    open: openVerification,
+  } = usePatientVerification(api);
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -156,10 +170,18 @@ export function Registration({
     } catch (err) {
       intent.failed(err);
       setError(err);
-      setDuplicate(
-        err instanceof ApiError &&
-          Array.isArray(err.details.possibleDuplicates),
-      );
+      const possible = err instanceof ApiError && Array.isArray(err.details.possibleDuplicates)
+        ? err.details.possibleDuplicates
+        : null;
+      setDuplicate(possible !== null);
+      setCandidates(possible?.filter((candidate): candidate is DuplicateCandidate =>
+        typeof candidate === "object" && candidate !== null &&
+        "id" in candidate && typeof candidate.id === "string" &&
+        "fileNo" in candidate && typeof candidate.fileNo === "number",
+      ) ?? []);
+      setReviewedIds([]);
+      setVerifiedCandidate(undefined);
+      setConfirmed(false);
     } finally {
       setPending(false);
     }
@@ -180,39 +202,61 @@ export function Registration({
         )}
         {duplicate && (
           <div className="warning">
-            <p>{w.duplicate}</p>
-            {error instanceof ApiError &&
-              Array.isArray(error.details.possibleDuplicates) && (
-                <ul>
-                  {error.details.possibleDuplicates.map(
-                    (item: unknown, index: number) => (
-                      <li key={index}>
-                        {w.file}{" "}
-                        <bdi>
-                          #
-                          {typeof item === "object" &&
-                          item !== null &&
-                          "fileNo" in item &&
-                          typeof item.fileNo === "number"
-                            ? item.fileNo
-                            : "—"}
-                        </bdi>
-                      </li>
-                    ),
-                  )}
-                </ul>
-              )}
+            <p role="alert">{w.duplicate}</p>
+            <p>{w.identityCheck}</p>
+            <ul>
+              {candidates.map((candidate) => (
+                <li key={candidate.id}>
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={pending || verificationPending || intent.uncertain}
+                    onClick={() => void openVerification(candidate)}
+                  >
+                    {w.reviewExistingFile} · {w.file} <bdi>#{candidate.fileNo}</bdi>
+                  </button>
+                  {reviewedIds.includes(candidate.id) && <span> ✓ {w.reviewedFile}</span>}
+                </li>
+              ))}
+            </ul>
+            {verificationPending && <Loading label={w.loading} />}
+            {verificationError !== undefined && <ErrorBox error={verificationError} w={w} />}
+            {verifiedCandidate && candidates.some((candidate) => candidate.id === verifiedCandidate.id) && (
+              <div className="patient-context">
+                <strong><bdi>{nameOf(verifiedCandidate)}</bdi> · {w.file} <bdi>#{verifiedCandidate.fileNo}</bdi></strong>
+                {verifiedCandidate.dateOfBirth && <p>{w.dob}: <bdi>{verifiedCandidate.dateOfBirth.split("-").reverse().join("/")}</bdi></p>}
+                {verifiedCandidate.phoneLast4 && <p>{w.phoneEnding} <bdi>••••{verifiedCandidate.phoneLast4}</bdi></p>}
+                <div className="form-footer">
+                  <button type="button" className="secondary" onClick={() => existing(verifiedCandidate)}>{w.useExistingFile}</button>
+                  <button type="button" className="secondary" disabled={reviewedIds.includes(verifiedCandidate.id)}
+                    onClick={() => setReviewedIds((ids) => ids.includes(verifiedCandidate.id) ? ids : [...ids, verifiedCandidate.id])}>
+                    {w.markReviewedFile}
+                  </button>
+                </div>
+              </div>
+            )}
             <label className="check-label">
               <input
                 type="checkbox"
                 checked={confirmed}
+                disabled={verificationPending || candidates.length === 0 || reviewedIds.length !== candidates.length}
                 onChange={(e) => setConfirmed(e.target.checked)}
               />
               {w.confirmDuplicate}
             </label>
           </div>
         )}
-        <fieldset disabled={pending || intent.uncertain} className="form-grid">
+        <fieldset disabled={pending || intent.uncertain} className="form-grid"
+          onChangeCapture={() => {
+            if (duplicate) {
+              setDuplicate(false);
+              setConfirmed(false);
+              setCandidates([]);
+              setReviewedIds([]);
+              setVerifiedCandidate(undefined);
+              setError(undefined);
+            }
+          }}>
           <label>
             {w.familyName} *
             <input
@@ -287,7 +331,7 @@ export function Registration({
           </button>
           <button
             className="primary"
-            disabled={pending || (duplicate && !confirmed)}
+            disabled={pending || verificationPending || (duplicate && (!confirmed || candidates.length === 0 || reviewedIds.length !== candidates.length))}
           >
             {pending ? w.saving : intent.uncertain ? w.retry : w.savePatient}
           </button>

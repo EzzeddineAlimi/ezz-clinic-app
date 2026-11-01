@@ -135,7 +135,14 @@ test("Duplicate warning requires human decision; no automatic retry", async ({
   await expect(
     d.getByRole("button", { name: "Créer le dossier" }),
   ).toBeDisabled();
-  await d.getByLabel("J’ai vérifié : il s’agit d’un autre patient").check();
+  const checkbox = d.getByLabel("J’ai vérifié tous les dossiers : il s’agit d’un autre patient");
+  await expect(checkbox).toBeDisabled();
+  await d.getByRole("button", { name: /Examiner.*Dossier #/ }).first().click();
+  await expect(d.getByText("Youssef Trabelsi", { exact: false })).toBeVisible();
+  await expect(checkbox).toBeDisabled();
+  await d.getByRole("button", { name: "J’ai comparé ce dossier" }).click();
+  await expect(checkbox).toBeEnabled();
+  await checkbox.check();
   await d.getByRole("button", { name: "Créer le dossier" }).click();
   await expect(d).not.toBeVisible();
   await page
@@ -143,6 +150,24 @@ test("Duplicate warning requires human decision; no automatic retry", async ({
     .fill("Trabelsi");
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.locator(".patient-row")).toHaveCount(2);
+});
+test("C-17: Arabic mobile duplicate cannot be bypassed when candidate verification fails", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.getByRole("button", { name: "العربية" }).click();
+  await page.getByRole("button", { name: "المرضى", exact: true }).click();
+  await page.getByRole("button", { name: "مريض جديد", exact: true }).click();
+  const d = page.getByRole("dialog");
+  await d.getByLabel("اللقب *", { exact: true }).fill("Trabelsi");
+  await d.getByLabel("الاسم *", { exact: true }).fill("Youssef");
+  await d.getByRole("button", { name: "إنشاء الملف" }).click();
+  const checkbox = d.getByLabel("راجعت جميع الملفات: هذا مريض آخر");
+  await expect(checkbox).toBeDisabled();
+  await page.route("**/api/v1/patients/*", (route) => route.abort("failed"));
+  await d.getByRole("button", { name: /مراجعة.*الملف/ }).first().click();
+  await expect(d.getByRole("alert").filter({ hasText: "الاتصال غير متاح" })).toBeVisible();
+  await expect(checkbox).toBeDisabled();
+  await expect(d.getByRole("button", { name: "إنشاء الملف" })).toBeDisabled();
 });
 test("Lost response after actual database commit: retry same body/key creates only one file", async ({
   page,

@@ -125,7 +125,11 @@ export const copy = {
     paymentCancelled: "Cette intention est annulée. Relisez les paiements avant une nouvelle opération.",
     duplicate:
       "Un dossier similaire existe. Vérifiez avant de créer un autre dossier.",
-    confirmDuplicate: "J’ai vérifié : il s’agit d’un autre patient",
+    confirmDuplicate: "J’ai vérifié tous les dossiers : il s’agit d’un autre patient",
+    reviewExistingFile: "Examiner",
+    markReviewedFile: "J’ai comparé ce dossier",
+    reviewedFile: "Examiné",
+    useExistingFile: "Utiliser ce dossier pour un rendez-vous",
     confirmOverlap: "J’ai vérifié : autoriser ce chevauchement",
     overlapConflict: "Le praticien a déjà un rendez-vous sur ce créneau.",
     badTime:
@@ -306,7 +310,11 @@ export const copy = {
     paymentStale: "تغيّر سجل الدفع. راجع السجل وحلّ العملية المعلقة قبل أي تسجيل جديد.",
     paymentCancelled: "أُلغيت هذه العملية. راجع الدفعات قبل بدء عملية جديدة.",
     duplicate: "يوجد ملف مشابه. تحققوا قبل إنشاء ملف آخر.",
-    confirmDuplicate: "تحققت: هذا مريض آخر",
+    confirmDuplicate: "راجعت جميع الملفات: هذا مريض آخر",
+    reviewExistingFile: "مراجعة",
+    markReviewedFile: "قارنت هذا الملف",
+    reviewedFile: "تمت مراجعته",
+    useExistingFile: "استخدام هذا الملف لموعد",
     confirmOverlap: "تحققت: أسمح بتداخل المواعيد",
     overlapConflict: "للطبيب موعد آخر في هذا الوقت.",
     badTime:
