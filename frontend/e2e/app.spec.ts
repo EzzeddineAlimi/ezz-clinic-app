@@ -245,6 +245,59 @@ for (const lang of ["fr", "ar"] as const) {
   });
 }
 
+for (const lang of ["fr", "ar"] as const) {
+  test(`C-17 two matching files require both reviews and support existing-file scheduling in ${lang}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const session = await login(page);
+    const familyName = lang === "fr" ? "DeuxDoublonsC17FR" : "DeuxDoublonsC17AR";
+    const givenName = "Fictional";
+    const authHeaders = { Authorization: "Bearer " + session.token };
+    const records = [
+      { phone: "20 111 111", dateOfBirth: "1988-01-10" },
+      { phone: "20 222 222", dateOfBirth: "1999-02-20" },
+    ];
+    for (const record of records) {
+      const created = await page.request.post("/api/v1/patients", {
+        headers: { ...authHeaders, "Idempotency-Key": crypto.randomUUID() },
+        data: { ...record, familyName, givenName, isSynthetic: true, confirmNotDuplicate: true },
+      });
+      expect(created.status()).toBe(201);
+    }
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Patients" : "المرضى", exact: true }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Nouveau patient" : "مريض جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(lang === "fr" ? "Nom *" : "اللقب *", { exact: true }).fill(familyName);
+    await dialog.getByLabel(lang === "fr" ? "Prénom *" : "الاسم *", { exact: true }).fill(givenName);
+    const save = dialog.getByRole("button", { name: lang === "fr" ? "Créer le dossier" : "إنشاء الملف" });
+    await save.click();
+    const verifyButtons = dialog.getByRole("button", { name: new RegExp(lang === "fr" ? "Examiner.*Dossier #" : "مراجعة.*الملف") });
+    await expect(verifyButtons).toHaveCount(2);
+    const reviewAll = dialog.getByLabel(lang === "fr"
+      ? "J’ai vérifié tous les dossiers : il s’agit d’un autre patient"
+      : "راجعت جميع الملفات: هذا مريض آخر");
+    await expect(reviewAll).toBeDisabled();
+    await verifyButtons.first().click();
+    await expect(dialog.getByText("10/01/1988")).toBeVisible();
+    await expect(dialog.getByText(/1111/)).toBeVisible();
+    await dialog.getByRole("button", { name: lang === "fr" ? "J’ai comparé ce dossier" : "قارنت هذا الملف" }).click();
+    await expect(reviewAll).toBeDisabled();
+    await verifyButtons.nth(1).click();
+    await expect(dialog.getByText("20/02/1999")).toBeVisible();
+    await expect(dialog.getByText(/2222/)).toBeVisible();
+    await dialog.getByRole("button", { name: lang === "fr" ? "J’ai comparé ce dossier" : "قارنت هذا الملف" }).click();
+    await expect(reviewAll).toBeEnabled();
+    await dialog.getByRole("button", { name: lang === "fr"
+      ? "Utiliser ce dossier pour un rendez-vous"
+      : "استخدام هذا الملف لموعد" }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: lang === "fr"
+      ? "Planifier un rendez-vous" : "حجز موعد" })).toBeVisible();
+    const patients = await page.request.get("/api/v1/patients?q=" + familyName, { headers: authHeaders });
+    expect(patients.status()).toBe(200);
+    expect((await patients.json()).patients).toHaveLength(2);
+  });
+}
+
 test("Lost response after actual database commit: retry same body/key creates only one file", async ({
   page,
 }) => {
