@@ -18,7 +18,7 @@
 | **Receipt** | A system-numbered record of a recorded payment or reversal, with print/reprint events. | An approved Tunisian fiscal document or verified patient handoff. |
 | **Cash period** | The cash drawer's opening, movements, coverage window, count and owner close/review. | A statement about who physically held the drawer. |
 | **Blind count** | A physical amount entered **without displaying the expected amount beforehand**; server controls protect the software sequence. | Independent observation of the real person counting; physical independence requires operational proof. |
-| **Count discrepancy** | Expected recorded cash minus a physically reported count for a period. | A determination that theft occurred or who caused it. |
+| **Count discrepancy** | **Counted cash minus expected cash**, in millimes, for a submitted period count. A negative value indicates a shortage; a positive value indicates a surplus. | A determination that theft occurred or who caused it. |
 | **Card desk claim** | A card payment entered by staff without verified settlement evidence. | A provider-confirmed payment. |
 | **Owner-reviewed statement** | Reconciliation evidence an authorized owner imported and reviewed. | Direct verification from the card provider or a guaranteed settlement. |
 | **Audit event / checkpoint** | Append-only application evidence, plus an owner-held checkpoint that can reveal some later tampering or rollback. | Prevention of all fraud, physical-custody proof or protection from every privileged operator. |
