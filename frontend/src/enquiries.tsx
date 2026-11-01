@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Enquiry, EnquiryStatus } from "./enquiry-contracts.ts";
@@ -42,7 +42,8 @@ type PendingUpdate = { id: string; body: UpdateBody; key: string };
 export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
   const t = enquiryText[lang], w = copy[lang];
   const nameRef = useRef<HTMLInputElement>(null);
-  const refreshRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const [focusTarget, setFocusTarget] = useState<"name" | "heading" | null>(null);
   const [status, setStatus] = useState<EnquiryStatus>("OPEN");
   const [before, setBefore] = useState<string>();
   const [entries, setEntries] = useState<Enquiry[]>([]);
@@ -53,6 +54,11 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<unknown>();
   const [notice, setNotice] = useState("");
+  useEffect(() => {
+    if (working || !focusTarget) return;
+    (focusTarget === "name" ? nameRef : headingRef).current?.focus();
+    setFocusTarget(null);
+  }, [working, focusTarget]);
   const list = useResource(useCallback(signal => api.enquiries(status, before, signal), [api, status, before]));
   const current = before ? entries : list.data?.enquiries ?? [];
   const rows = before ? [...entries, ...(list.data?.enquiries ?? []).filter(x => !entries.some(y => y.id === x.id))] : current;
@@ -83,7 +89,7 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
       await api.createEnquiry(createIntent.payload(body) as CreateBody, createIntent.key);
       setCreateIntent(new WriteIntent());
       setName(""); setReason(""); setCallback("");
-      nameRef.current?.focus();
+      setFocusTarget("name");
       chooseStatus("OPEN");
       setNotice(t.saved);
       reload();
@@ -99,7 +105,7 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
       await api.updateEnquiry(action.id, action.body, action.key);
       setPendingUpdate(undefined);
       setNotice(t.updated);
-      refreshRef.current?.focus();
+      setFocusTarget("heading");
       reload();
     } catch (cause) {
       const ambiguous = cause instanceof ApiError && (cause.code === "NETWORK" || cause.status >= 500);
@@ -123,8 +129,8 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
   return (
     <section className="board-panel enquiry-panel" aria-label={t.title}>
       <div className="panel-heading">
-        <div><h2>{t.title}</h2><p>{t.warning}</p></div>
-        <button ref={refreshRef} className="secondary" type="button" onClick={reload} disabled={working}>{t.refresh}</button>
+        <div><h2 ref={headingRef} tabIndex={-1}>{t.title}</h2><p>{t.warning}</p></div>
+        <button className="secondary" type="button" onClick={reload} disabled={working}>{t.refresh}</button>
       </div>
       {notice && <p className="enquiry-notice" role="status">{notice}</p>}
       {error !== undefined && <div className="enquiry-notice" role="alert">
