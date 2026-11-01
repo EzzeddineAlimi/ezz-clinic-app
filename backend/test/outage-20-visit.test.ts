@@ -17,6 +17,7 @@ test('R46-PAPER 20 fictional visits: 16 partial cash, 2 void, 1 unused, 1 missin
   assert.equal(issue.status,201,JSON.stringify(issue.body));
   const book=issue.body.book.id as string;
   const path='/api/v1/paper-books/'+book+'/entries',unusedPath='/api/v1/paper-books/'+book+'/declare-unused';
+  const recPath='/api/v1/paper-books/'+book+'/reconciliation?outageFrom=2026-11-03T08:00:00Z&outageTo=2026-11-03T12:00:00Z';
   const slips:{slipNo:number;kind:'USED';amountMillimes:number;tender:'CASH';visitId:string;writtenOn:string}[]=[];
   const amounts=Array.from({length:16},(_,i)=>20000+i*1000),sum=amounts.reduce((a,b)=>a+b,0);
   assert.equal(sum,440000);
@@ -40,7 +41,7 @@ test('R46-PAPER 20 fictional visits: 16 partial cash, 2 void, 1 unused, 1 missin
   assert.equal(dup.body.results[0].outcome,'DUPLICATE_ENTRY');
   const conflicting=await api.call('POST',path,{token:desk,body:{slips:[{...slips[8]!,amountMillimes:slips[8]!.amountMillimes+9000}]}});
   assert.equal(conflicting.body.results[0].outcome,'CONFLICT');
-  const rec=await api.call('GET','/api/v1/paper-books/'+book+'/reconciliation',{token:owner});
+  const rec=await api.call('GET',recPath,{token:owner});
   assert.equal(rec.status,200);
   assert.equal(rec.body.used.length,16);
   assert.deepEqual(rec.body.void,['P-117','P-118']);
@@ -49,10 +50,38 @@ test('R46-PAPER 20 fictional visits: 16 partial cash, 2 void, 1 unused, 1 missin
   assert.equal(rec.body.postedTotalMillimes,sum);
   assert.ok(rec.body.reviewItems.some((r:{kind:string;slip:string})=>r.kind==='DUPLICATE_ENTRY'&&r.slip==='P-105'));
   assert.ok(rec.body.reviewItems.some((r:{kind:string;slip:string})=>r.kind==='CONFLICT'&&r.slip==='P-109'));
+  // All 16 USED slips omit a paper patient file number: retain neutral owner identity warnings.
+  const expectedMissingRefs=Array.from({length:16},(_,i)=>`P-${101+i}`);
+  const missingRefs=rec.body.reviewItems.filter((r:{kind:string})=>r.kind==='NO_PATIENT_REFERENCE');
+  assert.deepEqual(missingRefs.map((r:{slip:string})=>r.slip),expectedMissingRefs);
+  assert.ok(missingRefs.every((r:{wording:string})=>/patient copy/i.test(r.wording)));
+  // Independently known fictional care: 16 partial balances 480000 + four unpaid visits 270000.
+  assert.deepEqual(rec.body.careVsSlips.totals,{slips:16,visits:16,slipTotalMillimes:sum,chargedMillimes:920000,paidOtherwiseMillimes:0,balanceMillimes:480000});
+  assert.equal(rec.body.careWithoutPayment.visits.length,4);
+  const unpaidBalance=rec.body.careWithoutPayment.visits.reduce((n:number,r:{balanceMillimes:number})=>n+r.balanceMillimes,0);
+  assert.equal(unpaidBalance,270000);
+  assert.equal(rec.body.careVsSlips.totals.balanceMillimes+unpaidBalance,750000);
   second=await startApi(db.appUrl);
   const token=await second.login('outage20','desk');
   const replay=await second.call('POST',path,{token,body:{slips}});
   assert.deepEqual(replay.body.summary,{posted:0,flagged:16,rejected:0});
+  // A second independent API restart must preserve the paper-book ledger and idempotent replay.
+  await second.close();
+  second=undefined;
+  second=await startApi(db.appUrl);
+  const ownerAgain=await second.login('outage20','owner');
+  const deskAgain=await second.login('outage20','desk');
+  const recAgain=await second.call('GET',recPath,{token:ownerAgain});
+  assert.equal(recAgain.status,200,JSON.stringify(recAgain.body));
+  assert.equal(recAgain.body.postedTotalMillimes,sum);
+  assert.deepEqual(recAgain.body.unaccounted,['P-120']);
+  const missingRefsAgain=recAgain.body.reviewItems.filter((r:{kind:string})=>r.kind==='NO_PATIENT_REFERENCE');
+  assert.deepEqual(missingRefsAgain.map((r:{slip:string})=>r.slip),expectedMissingRefs);
+  assert.ok(missingRefsAgain.every((r:{wording:string})=>/patient copy/i.test(r.wording)));
+  assert.deepEqual(recAgain.body.careVsSlips.totals,rec.body.careVsSlips.totals);
+  assert.deepEqual(recAgain.body.careWithoutPayment.visits,rec.body.careWithoutPayment.visits);
+  const replayAgain=await second.call('POST',path,{token:deskAgain,body:{slips}});
+  assert.deepEqual(replayAgain.body.summary,{posted:0,flagged:16,rejected:0});
   const a=await adminConn(db.name);
   try {
    const row=(await a.query<{n:number;total:number}>("SELECT count(*)::int AS n, coalesce(sum(amount_millimes),0)::bigint AS total FROM payments WHERE source='PAPER_OUTAGE'")).rows[0]!;
