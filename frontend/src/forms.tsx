@@ -142,6 +142,7 @@ export function Registration({
     [contact, setContact] = useState("IN_PERSON"),
     [candidates, setCandidates] = useState<DuplicateCandidate[]>([]),
     [tooManyDuplicates, setTooManyDuplicates] = useState(false),
+    [reviewResetNotice, setReviewResetNotice] = useState(false),
     [reviewedIds, setReviewedIds] = useState<string[]>([]);
   const {
     selected: verifiedCandidate,
@@ -165,6 +166,7 @@ export function Registration({
       if (String(f.get(k) ?? "").trim()) body[k] = String(f.get(k)).trim();
     setPending(true);
     setError(undefined);
+    setReviewResetNotice(false);
     try {
       const r = await api.register(intent.payload(body), intent.key);
       saved(r.patient);
@@ -202,11 +204,13 @@ export function Registration({
             {w.uncertain}
           </p>
         )}
+        {reviewResetNotice && <p className="warning" role="status">{w.duplicateReviewReset}</p>}
         {duplicate && (
           <div className="warning">
             <p role="alert">{w.duplicate}</p>
             <p>{w.identityCheck}</p>
             {tooManyDuplicates && <p role="alert">{w.duplicateOverflow}</p>}
+            {candidates.length === 0 && <p role="alert">{w.duplicateCandidatesUnavailable}</p>}
             <ul>
               {candidates.map((candidate) => (
                 <li key={candidate.id}>
@@ -238,15 +242,17 @@ export function Registration({
                 </div>
               </div>
             )}
-            <label className="check-label">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                disabled={verificationPending || tooManyDuplicates || candidates.length === 0 || reviewedIds.length !== candidates.length}
-                onChange={(e) => setConfirmed(e.target.checked)}
-              />
-              {w.confirmDuplicate}
-            </label>
+            {candidates.length > 0 && (
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  disabled={verificationPending || tooManyDuplicates || reviewedIds.length !== candidates.length}
+                  onChange={(e) => setConfirmed(e.target.checked)}
+                />
+                {w.confirmDuplicate}
+              </label>
+            )}
           </div>
         )}
         <fieldset disabled={pending || intent.uncertain} className="form-grid"
@@ -254,6 +260,7 @@ export function Registration({
             if (duplicate) {
               setDuplicate(false);
               setConfirmed(false);
+              setReviewResetNotice(true);
               setCandidates([]);
               setTooManyDuplicates(false);
               setReviewedIds([]);

@@ -126,6 +126,8 @@ export const copy = {
     duplicate:
       "Un dossier similaire existe. Vérifiez avant de créer un autre dossier.",
     duplicateOverflow: "Plus de trois dossiers similaires : la liste est incomplète. Création bloquée. Recherchez le dossier existant ou demandez une vérification au responsable.",
+    duplicateCandidatesUnavailable: "Impossible de consulter les dossiers similaires. Modifiez les informations puis réessayez, ou fermez le formulaire et contactez le responsable.",
+    duplicateReviewReset: "Informations modifiées : la vérification précédente est annulée. Vérifiez à nouveau les dossiers avant de continuer.",
     confirmDuplicate: "J’ai vérifié tous les dossiers : il s’agit d’un autre patient",
     reviewExistingFile: "Examiner",
     markReviewedFile: "J’ai comparé ce dossier",
@@ -312,6 +314,8 @@ export const copy = {
     paymentCancelled: "أُلغيت هذه العملية. راجع الدفعات قبل بدء عملية جديدة.",
     duplicate: "يوجد ملف مشابه. تحققوا قبل إنشاء ملف آخر.",
     duplicateOverflow: "يوجد أكثر من ثلاثة ملفات متشابهة: القائمة غير مكتملة. تم منع إنشاء ملف جديد. ابحثوا عن الملف الصحيح أو اطلبوا مراجعة المسؤول.",
+    duplicateCandidatesUnavailable: "تعذرت مراجعة الملفات المتشابهة. غيّروا المعلومات ثم حاولوا مجدداً، أو أغلقوا الاستمارة واطلبوا مساعدة المسؤول.",
+    duplicateReviewReset: "تم تعديل المعلومات وأُلغيت المراجعة السابقة. راجعوا الملفات من جديد قبل المتابعة.",
     confirmDuplicate: "راجعت جميع الملفات: هذا مريض آخر",
     reviewExistingFile: "مراجعة",
     markReviewedFile: "قارنت هذا الملف",
