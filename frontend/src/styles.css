@@ -1135,6 +1135,7 @@ dialog::backdrop {
     grid-column: 1/-1;
     grid-row: 2;
     flex-direction: row;
+    flex-wrap: wrap;
   }
   .sidebar nav button {
     flex: 1;

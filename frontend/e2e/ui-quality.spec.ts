@@ -90,14 +90,6 @@ test("UI quality: French and Arabic 200% CSS zoom stress without horizontal page
   await page.setViewportSize({ width: 640, height: 900 });
   await page.evaluate(() => { document.body.style.zoom = "2"; });
   await expect(page.getByRole("heading", { name: "Le fil de la journée" })).toBeVisible();
-  console.info("ZOOM_OVERFLOW_DIAGNOSTIC", JSON.stringify(await page.evaluate(() => ({
-    viewport: innerWidth, documentWidth: document.documentElement.scrollWidth,
-    protruding: [...document.querySelectorAll<HTMLElement>("body *")].map(el => ({
-      tag: el.tagName, className: typeof el.className === "string" ? el.className : "",
-      id: el.id, right: Math.round(el.getBoundingClientRect().right),
-      width: Math.round(el.getBoundingClientRect().width),
-    })).filter(el => el.right > innerWidth + 1).sort((a,b) => b.right - a.right).slice(0, 16),
-  }))));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await test.info().attach("dayboard-fr-200pct-css-zoom", {
     body: await page.screenshot({ path: "../docs/images/sprint3b/dayboard-fr-200pct-css-zoom.png", animations: "disabled" }),
