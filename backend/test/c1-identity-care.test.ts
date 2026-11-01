@@ -237,6 +237,34 @@ test('T-PAT-1 patient contact change keeps old and new values in the audit chain
   } finally { a.end(); }
 });
 
+test('T-PAT-2 contact updates reject phone-only channels without a phone and leave the patient unchanged', async () => {
+  const created = await api.call('POST', '/api/v1/patients', { token: A.desk, body: {
+    familyName: 'ContactInvariant', givenName: 'Fictional', contactPreference: 'IN_PERSON', isSynthetic: true,
+  } });
+  assert.equal(created.status, 201);
+  const id = created.body.patient.id as string;
+  for (const contactPreference of ['SMS', 'BASIC_PHONE_CALL'] as const) {
+    const denied = await api.call('POST', `/api/v1/patients/${id}/contact`, { token: A.desk, body: {
+      phone: null, contactPreference, reason: 'Fictional preference change',
+    } });
+    assert.equal(denied.status, 400, `${contactPreference} requires a phone`);
+    assert.equal(denied.body.error.code, 'VALIDATION_FAILED');
+    const current = await api.call('GET', `/api/v1/patients/${id}`, { token: A.desk });
+    assert.equal(current.body.patient.phone, null);
+    assert.equal(current.body.patient.contactPreference, 'IN_PERSON');
+  }
+  const c = await adminConn(db.name);
+  try {
+    const audit = await c.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM audit_events WHERE action = 'patient.contact_changed' AND entity_id = $1", [id]);
+    assert.equal(audit.rows[0]!.n, 0, 'failed updates must not append contact-change events');
+  } finally { c.end(); }
+  const allowed = await api.call('POST', `/api/v1/patients/${id}/contact`, { token: A.desk, body: {
+    phone: null, contactPreference: 'IN_PERSON', reason: 'Remain in person',
+  } });
+  assert.equal(allowed.status, 200, 'no-phone in-person care remains supported');
+});
+
 test('T-IDEM-0 idempotency key is mandatory on writes', async () => {
   const r = await api.call('POST', '/api/v1/patients', { token: A.desk, idem: false, body: { familyName: 'x', givenName: 'y', isSynthetic: true } });
   assert.equal(r.status, 400);
