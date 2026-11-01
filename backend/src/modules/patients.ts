@@ -13,7 +13,7 @@ import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
 import { asBody, str, optStr, oneOf, isoTime, isoDate, int, uuid, isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
-import { clinicDay, clinicTimezone } from './settings.ts';
+import { clinicDay, clinicTimezone, assertClinicOpen } from './settings.ts';
 import { patientNameKeySql as nameKey } from './patient-name.ts';
 
 const NAME = { min: 1, max: 80 };
@@ -166,6 +166,9 @@ export const patientRoutes: Route[] = [
         const d = await tx.maybeOne(`SELECT 1 FROM staff s JOIN staff_roles r ON r.staff_id = s.id AND r.role = 'DENTIST' WHERE s.id = $1 AND s.active`, [dentistId]);
         if (!d) fail('VALIDATION_FAILED', 'dentistId is not an active dentist of this clinic', { field: 'dentistId' });
       }
+      // The calendar update and booking share this lock: neither can invalidate the other.
+      await advisoryLock(tx, 'clinic_calendar', actor!.clinicId);
+      await assertClinicOpen(tx, actor!.clinicId, scheduledAt, duration);
       // Serialize check + insert for this clinic/dentist, including an empty calendar.
       if (dentistId) await advisoryLock(tx, 'visit_schedule', actor!.clinicId + ':' + dentistId);
       // Overlap warning for the same dentist (C-135 AC-APP-3), never silent.

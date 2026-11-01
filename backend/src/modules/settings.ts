@@ -13,7 +13,7 @@
 import { advisoryLock, type Tx } from '../platform/db.ts';
 import type { Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
-import { asBody, str } from '../platform/validate.ts';
+import { asBody, str, isUuid } from '../platform/validate.ts';
 import { appendAudit } from './audit.ts';
 
 export interface ClinicSettings { timezone: string; checkpointDueDays: number; notArrivedGraceMinutes: number; labUnbilledDays: number }
@@ -47,6 +47,15 @@ export async function clinicTimezone(tx: Tx, clinicId: string): Promise<string> 
 /** YYYY-MM-DD of an instant in a timezone (the clinic day). */
 export const localDate = (timezone: string, at: Date = new Date()) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(at);
+
+/** Local wall-clock minutes, including seconds, from a real instant; one timezone authority for scheduling. */
+export function localClockMinutes(timezone: string, at: Date): number {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: timezone, hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit',
+  }).formatToParts(at);
+  const value = (type: string) => Number(parts.find(p => p.type === type)!.value);
+  return value('hour') * 60 + value('minute') + value('second') / 60 + at.getUTCMilliseconds() / 60_000;
+}
 
 /** A clinic-local calendar day from a query parameter (default: today in that timezone). */
 export function clinicDay(query: URLSearchParams, tz: string): string {
@@ -96,6 +105,14 @@ export const settingsRoutes: Route[] = [
           const v = await tx.one<{ n: number }>('SELECT count(*)::int AS n FROM visits WHERE clinic_id = $1', [actor!.clinicId]);
           if (v.n > 0) fail('CONFLICT', `This clinic has ${v.n} visits: day lists, receipts and reports will show their dates in ${to} from now on. Confirm with confirmTimezoneImpact: true.`, { visits: v.n, retryWith: { confirmTimezoneImpact: true } });
         }
+        if (k === 'timezone') {
+          // The calendar and visit writers use the same lock, so a zone change cannot silently
+          // invalidate future bookings under a configured U014 calendar.
+          await advisoryLock(tx, 'clinic_calendar', actor!.clinicId);
+          const calendar = await loadCalendar(tx, actor!.clinicId);
+          const incompatible = await incompatibleFutureVisits(tx, actor!.clinicId, calendar, String(to));
+          if (incompatible > 0) fail('CONFLICT', 'Timezone change would put existing future visits outside clinic hours', { reason: 'EXISTING_VISITS', visits: incompatible });
+        }
         const row = await tx.one<{ id: string }>('INSERT INTO clinic_setting_changes (clinic_id, key, value, previous, reason, changed_by) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id',
           [actor!.clinicId, COLUMN[k], JSON.stringify(to), JSON.stringify(from), reason, actor!.staffId]);
         await appendAudit(tx, actor!, 'clinic.setting_changed', 'clinic_setting_change', row.id, { key: k, from, to, hasReason: true });
@@ -112,6 +129,127 @@ export const settingsRoutes: Route[] = [
         `SELECT c.id, c.key, c.value, c.previous, c.reason, c.changed_at, s.display_name AS name FROM clinic_setting_changes c
            JOIN staff s ON s.clinic_id = c.clinic_id AND s.id = c.changed_by WHERE c.clinic_id = $1 ORDER BY c.changed_at DESC, c.id DESC LIMIT 200`, [actor!.clinicId])).rows;
       return { status: 200, body: { changes: rows.map(r => ({ id: r.id, key: KEY_OF[r.key] ?? r.key, from: r.previous, to: r.value, reason: r.reason, changedBy: r.name, changedAt: new Date(r.changed_at).toISOString() })) } };
+    },
+  },
+];
+
+/*
+ * U014: one append-only clinic calendar snapshot in clinic_setting_changes, key clinic_calendar.
+ * Weekly windows are Sunday-first, local HH:mm; closed dates are explicitly entered, never inferred.
+ * Null weeklyHours means unconfigured (legacy booking behavior). A configured empty day is closed.
+ */
+type OpeningWindow = { start: string; end: string };
+interface CalendarPolicy { weeklyHours: OpeningWindow[][] | null; closedDays: string[] }
+type CalendarSnapshot = CalendarPolicy & { revision: string | null };
+const DEFAULT_CALENDAR: CalendarPolicy = { weeklyHours: null, closedDays: [] };
+const HHMM = /^(?:[01][0-9]|2[0-3]):[0-5][0-9]$/;
+const END_HHMM = /^(?:(?:[01][0-9]|2[0-3]):[0-5][0-9]|24:00)$/;
+const clockMinutes = (s: string) => { const [h, m] = s.split(':').map(Number); return h! * 60 + m!; };
+
+async function loadCalendar(tx: Tx, clinicId: string): Promise<CalendarSnapshot> {
+  const row = await tx.maybeOne<{ id: string; value: CalendarPolicy }>(
+    "SELECT id, value FROM clinic_setting_changes WHERE clinic_id = $1 AND key = 'clinic_calendar' ORDER BY changed_at DESC, id DESC LIMIT 1", [clinicId]);
+  const policy = row?.value ?? DEFAULT_CALENDAR;
+  return { weeklyHours: policy.weeklyHours, closedDays: policy.closedDays, revision: row?.id ?? null };
+}
+
+function validateCalendar(b: Record<string, unknown>): CalendarPolicy {
+  if (!Object.hasOwn(b, 'weeklyHours') || !Object.hasOwn(b, 'closedDays')) fail('VALIDATION_FAILED', 'weeklyHours and closedDays are required');
+  let weeklyHours: OpeningWindow[][] | null = null;
+  if (b.weeklyHours !== null) {
+    if (!Array.isArray(b.weeklyHours) || b.weeklyHours.length !== 7) fail('VALIDATION_FAILED', 'weeklyHours must be null or seven Sunday-first day arrays', { field: 'weeklyHours' });
+    weeklyHours = (b.weeklyHours as unknown[]).map((rawDay, dayIndex) => {
+      if (!Array.isArray(rawDay) || rawDay.length > 4) fail('VALIDATION_FAILED', 'Each day must have zero to four opening windows', { field: 'weeklyHours', dayIndex });
+      let previousEnd = 0;
+      return (rawDay as unknown[]).map(raw => {
+        const w = asBody(raw);
+        const start = str(w, 'start', { min: 5, max: 5, pattern: HHMM });
+        const end = str(w, 'end', { min: 5, max: 5, pattern: END_HHMM });
+        const from = clockMinutes(start), to = clockMinutes(end);
+        if (from >= to || from < previousEnd) fail('VALIDATION_FAILED', 'Opening windows must be sorted, non-overlapping, and within one day', { field: 'weeklyHours', dayIndex });
+        previousEnd = to;
+        return { start, end };
+      });
+    });
+  }
+  if (!Array.isArray(b.closedDays) || b.closedDays.length > 366) fail('VALIDATION_FAILED', 'closedDays must be at most 366 manually confirmed dates', { field: 'closedDays' });
+  const closedDays = (b.closedDays as unknown[]).map(raw => {
+    if (typeof raw !== 'string') fail('VALIDATION_FAILED', 'closedDays entries must be YYYY-MM-DD', { field: 'closedDays' });
+    clinicDay(new URLSearchParams({ day: raw as string }), 'UTC');
+    return raw as string;
+  });
+  if (new Set(closedDays).size !== closedDays.length) fail('VALIDATION_FAILED', 'closedDays must not contain duplicate dates', { field: 'closedDays' });
+  return { weeklyHours, closedDays: closedDays.sort() };
+}
+
+type SlotProblem = 'CLINIC_CLOSED' | 'OUTSIDE_OPENING_HOURS';
+function slotProblem(calendar: CalendarPolicy, timezone: string, scheduledAt: string, durationMin: number): SlotProblem | null {
+  const start = new Date(scheduledAt);
+  const end = new Date(start.getTime() + durationMin * 60_000);
+  const day = localDate(timezone, start);
+  const lastDay = localDate(timezone, new Date(end.getTime() - 1));
+  if (calendar.closedDays.includes(day) || calendar.closedDays.includes(lastDay)) return 'CLINIC_CLOSED';
+  if (calendar.weeklyHours === null) return null;
+  if (lastDay !== day) return 'OUTSIDE_OPENING_HOURS'; // No unreviewed overnight hours.
+  const weekday = new Date(day + 'T00:00:00Z').getUTCDay();
+  const from = localClockMinutes(timezone, start);
+  const to = localDate(timezone, end) === day ? localClockMinutes(timezone, end) : 1440;
+  if (to <= from) return 'OUTSIDE_OPENING_HOURS'; // Fail closed across a repeated DST hour.
+  return calendar.weeklyHours[weekday]!.some(w => from >= clockMinutes(w.start) && to <= clockMinutes(w.end))
+    ? null : 'OUTSIDE_OPENING_HOURS';
+}
+
+async function incompatibleFutureVisits(tx: Tx, clinicId: string, calendar: CalendarPolicy, timezone: string): Promise<number> {
+  const rows = (await tx.query<{ scheduled_at: string; duration_min: number }>(
+    "SELECT scheduled_at, duration_min FROM visits WHERE clinic_id = $1 AND scheduled_at >= now() AND status NOT IN ('CANCELLED','NO_SHOW')", [clinicId])).rows;
+  return rows.filter(v => slotProblem(calendar, timezone, v.scheduled_at, v.duration_min) !== null).length;
+}
+
+/** Called after clinic_calendar advisoryLock; an overlap override NEVER overrides a closed clinic. */
+export async function assertClinicOpen(tx: Tx, clinicId: string, scheduledAt: string, durationMin: number): Promise<void> {
+  const calendar = await loadCalendar(tx, clinicId);
+  const timezone = await clinicTimezone(tx, clinicId);
+  const problem = slotProblem(calendar, timezone, scheduledAt, durationMin);
+  if (problem) fail('CONFLICT', problem === 'CLINIC_CLOSED' ? 'The clinic is closed on this date' : 'Appointment is outside configured clinic opening hours',
+    { reason: problem });
+}
+
+export const calendarRoutes: Route[] = [
+  {
+    method: 'GET', path: '/api/v1/clinic/schedule', permission: 'visit.read',
+    handler: async ({ tx, actor }) => {
+      const calendar = await loadCalendar(tx, actor!.clinicId);
+      return { status: 200, body: { ...calendar, timezone: await clinicTimezone(tx, actor!.clinicId) } };
+    },
+  },
+  {
+    method: 'POST', path: '/api/v1/clinic/schedule', permission: 'visit.schedule', reauth: true, idempotent: true,
+    handler: async ({ tx, actor, body }) => {
+      const b = asBody(body);
+      if (!Object.hasOwn(b, 'expectedRevision') || (b.expectedRevision !== null &&
+          (typeof b.expectedRevision !== 'string' || !isUuid(b.expectedRevision)))) {
+        fail('VALIDATION_FAILED', 'expectedRevision must be the revision from GET, or null for the first change', { field: 'expectedRevision' });
+      }
+      const reason = str(b, 'reason', { min: 3, max: 300 });
+      const next = validateCalendar(b);
+      await advisoryLock(tx, 'clinic_calendar', actor!.clinicId);
+      const current = await loadCalendar(tx, actor!.clinicId);
+      if (b.expectedRevision !== current.revision) fail('CONFLICT', 'Clinic calendar was changed by another staff member; refresh before saving',
+        { reason: 'STALE_REVISION' });
+      const previous: CalendarPolicy = { weeklyHours: current.weeklyHours, closedDays: current.closedDays };
+      if (JSON.stringify(previous) === JSON.stringify(next)) {
+        return { status: 200, body: { ...current, timezone: await clinicTimezone(tx, actor!.clinicId) } };
+      }
+      const timezone = await clinicTimezone(tx, actor!.clinicId);
+      const incompatible = await incompatibleFutureVisits(tx, actor!.clinicId, next, timezone);
+      if (incompatible > 0) fail('CONFLICT', 'Existing future appointments must be rescheduled before closing these hours',
+        { reason: 'EXISTING_VISITS', visits: incompatible });
+      const row = await tx.one<{ id: string }>(
+        "INSERT INTO clinic_setting_changes (clinic_id, key, value, previous, reason, changed_by) VALUES ($1, 'clinic_calendar', $2::jsonb, $3::jsonb, $4, $5) RETURNING id",
+        [actor!.clinicId, JSON.stringify(next), JSON.stringify(previous), reason, actor!.staffId]);
+      await appendAudit(tx, actor!, 'clinic.setting_changed', 'clinic_setting_change', row.id,
+        { key: 'clinic_calendar', from: previous, to: next, hasReason: true });
+      return { status: 200, body: { ...next, revision: row.id, timezone } };
     },
   },
 ];
