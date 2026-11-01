@@ -237,6 +237,29 @@ test('T-PAT-1 patient contact change keeps old and new values in the audit chain
   } finally { a.end(); }
 });
 
+test('C-17-OVERFLOW four matching fictional files deny manual duplicate bypass', async () => {
+  const familyName = 'FourMatchesC17';
+  const givenName = 'Synthetic';
+  for (let i = 0; i < 4; i++) {
+    const created = await api.call('POST', '/api/v1/patients', { token: A.desk, body: {
+      familyName, givenName, isSynthetic: true, confirmNotDuplicate: true,
+    } });
+    assert.equal(created.status, 201);
+  }
+  const body = { familyName, givenName, isSynthetic: true };
+  const warning = await api.call('POST', '/api/v1/patients', { token: A.desk, body });
+  assert.equal(warning.status, 409);
+  assert.equal(warning.body.error.code, 'CONFLICT');
+  assert.equal(warning.body.error.details.tooManyPossibleDuplicates, true);
+  assert.equal(warning.body.error.details.possibleDuplicates.length, 3);
+  assert.equal(warning.body.error.details.retryWith, undefined);
+  const override = await api.call('POST', '/api/v1/patients', { token: A.desk, body: { ...body, confirmNotDuplicate: true } });
+  assert.equal(override.status, 409);
+  const search = await api.call('GET', '/api/v1/patients?q=' + familyName, { token: A.desk });
+  assert.equal(search.status, 200);
+  assert.equal(search.body.patients.length, 4, 'failed override does not create a fifth patient');
+});
+
 test('T-IDEM-0 idempotency key is mandatory on writes', async () => {
   const r = await api.call('POST', '/api/v1/patients', { token: A.desk, idem: false, body: { familyName: 'x', givenName: 'y', isSynthetic: true } });
   assert.equal(r.status, 400);

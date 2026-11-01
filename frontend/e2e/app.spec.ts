@@ -135,7 +135,21 @@ test("Duplicate warning requires human decision; no automatic retry", async ({
   await expect(
     d.getByRole("button", { name: "Créer le dossier" }),
   ).toBeDisabled();
-  await d.getByLabel("J’ai vérifié : il s’agit d’un autre patient").check();
+  const checkbox = d.getByLabel("J’ai vérifié tous les dossiers : il s’agit d’un autre patient");
+  await expect(checkbox).toBeDisabled();
+  await d.getByRole("button", { name: /Examiner.*Dossier #/ }).first().click();
+  await expect(d.getByText("Youssef Trabelsi", { exact: false })).toBeVisible();
+  await expect(checkbox).toBeDisabled();
+  await d.getByRole("button", { name: "J’ai comparé ce dossier" }).click();
+  await expect(checkbox).toBeEnabled();
+  await d.getByLabel("Téléphone (facultatif)").fill("20 123456");
+  await expect(d.getByRole("status")).toContainText("Informations modifiées");
+  await expect(checkbox).not.toBeVisible();
+  await d.getByRole("button", { name: "Créer le dossier" }).click();
+  await expect(checkbox).toBeDisabled();
+  await d.getByRole("button", { name: /Examiner.*Dossier #/ }).first().click();
+  await d.getByRole("button", { name: "J’ai comparé ce dossier" }).click();
+  await checkbox.check();
   await d.getByRole("button", { name: "Créer le dossier" }).click();
   await expect(d).not.toBeVisible();
   await page
@@ -144,6 +158,146 @@ test("Duplicate warning requires human decision; no automatic retry", async ({
   await page.getByRole("button", { name: "Rechercher", exact: true }).click();
   await expect(page.locator(".patient-row")).toHaveCount(2);
 });
+test("C-17: Arabic mobile duplicate cannot be bypassed when candidate verification fails", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.getByRole("button", { name: "العربية" }).click();
+  await page.getByRole("button", { name: "المرضى", exact: true }).click();
+  await page.getByRole("button", { name: "مريض جديد", exact: true }).click();
+  const d = page.getByRole("dialog");
+  await d.getByLabel("اللقب *", { exact: true }).fill("Trabelsi");
+  await d.getByLabel("الاسم *", { exact: true }).fill("Youssef");
+  await d.getByRole("button", { name: "إنشاء الملف" }).click();
+  const checkbox = d.getByLabel("راجعت جميع الملفات: هذا مريض آخر");
+  await expect(checkbox).toBeDisabled();
+  await page.route("**/api/v1/patients/*", (route) => route.abort("failed"));
+  await d.getByRole("button", { name: /مراجعة.*الملف/ }).first().click();
+  await expect(d.getByRole("alert").filter({ hasText: "الاتصال غير متاح" })).toBeVisible();
+  await expect(checkbox).toBeDisabled();
+  await expect(d.getByRole("button", { name: "إنشاء الملف" })).toBeDisabled();
+});
+for (const lang of ["fr", "ar"] as const) {
+  test(`C-17 overflow blocks incomplete duplicate review in ${lang} at 390px`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const session = await login(page);
+    const familyName = lang === "fr" ? "QuatreDoublonsFR" : "QuatreDoublonsAR";
+    const givenName = "Synthetic";
+    for (let i = 0; i < 4; i++) {
+      const created = await page.request.post("/api/v1/patients", {
+        headers: { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() },
+        data: { familyName, givenName, isSynthetic: true, confirmNotDuplicate: true },
+      });
+      expect(created.status()).toBe(201);
+    }
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Patients" : "المرضى", exact: true }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Nouveau patient" : "مريض جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(lang === "fr" ? "Nom *" : "اللقب *", { exact: true }).fill(familyName);
+    await dialog.getByLabel(lang === "fr" ? "Prénom *" : "الاسم *", { exact: true }).fill(givenName);
+    const save = dialog.getByRole("button", { name: lang === "fr" ? "Créer le dossier" : "إنشاء الملف" });
+    await save.click();
+    await expect(dialog.getByText(lang === "fr" ? /Plus de trois dossiers similaires/ : /يوجد أكثر من ثلاثة ملفات متشابهة/)).toBeVisible();
+    const checkbox = dialog.getByLabel(lang === "fr"
+      ? "J’ai vérifié tous les dossiers : il s’agit d’un autre patient"
+      : "راجعت جميع الملفات: هذا مريض آخر");
+    await expect(checkbox).toBeDisabled();
+    await expect(save).toBeDisabled();
+    const forced = await page.request.post("/api/v1/patients", {
+      headers: { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() },
+      data: { familyName, givenName, isSynthetic: true, confirmNotDuplicate: true },
+    });
+    expect(forced.status()).toBe(409);
+    const list = await page.request.get("/api/v1/patients?q=" + familyName, {
+      headers: { Authorization: "Bearer " + session.token },
+    });
+    expect(list.status()).toBe(200);
+    expect((await list.json()).patients).toHaveLength(4);
+  });
+}
+
+for (const lang of ["fr", "ar"] as const) {
+  test(`C-17 malformed empty duplicate list stays safe and recoverable in ${lang}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    await page.route("**/api/v1/patients", (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      return route.fulfill({
+        status: 409,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "CONFLICT", details: { possibleDuplicates: [] } } }),
+      });
+    });
+    await page.getByRole("button", { name: lang === "fr" ? "Patients" : "المرضى", exact: true }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Nouveau patient" : "مريض جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    const family = dialog.getByLabel(lang === "fr" ? "Nom *" : "اللقب *", { exact: true });
+    await family.fill("EmptyCandidatesTest");
+    await dialog.getByLabel(lang === "fr" ? "Prénom *" : "الاسم *", { exact: true }).fill("Synthetic");
+    const save = dialog.getByRole("button", { name: lang === "fr" ? "Créer le dossier" : "إنشاء الملف" });
+    await save.click();
+    await expect(dialog.getByText(lang === "fr" ? /Impossible de consulter les dossiers similaires/ : /تعذرت مراجعة الملفات المتشابهة/)).toBeVisible();
+    await expect(save).toBeDisabled();
+    await family.fill("CorrectedCandidatesTest");
+    await expect(dialog.getByRole("status")).toBeVisible();
+    await expect(save).toBeEnabled();
+  });
+}
+
+for (const lang of ["fr", "ar"] as const) {
+  test(`C-17 two matching files require both reviews and support existing-file scheduling in ${lang}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const session = await login(page);
+    const familyName = lang === "fr" ? "DeuxDoublonsC17FR" : "DeuxDoublonsC17AR";
+    const givenName = "Fictional";
+    const authHeaders = { Authorization: "Bearer " + session.token };
+    const records = [
+      { phone: "20 111 111", dateOfBirth: "1988-01-10" },
+      { phone: "20 222 222", dateOfBirth: "1999-02-20" },
+    ];
+    for (const record of records) {
+      const created = await page.request.post("/api/v1/patients", {
+        headers: { ...authHeaders, "Idempotency-Key": crypto.randomUUID() },
+        data: { ...record, familyName, givenName, isSynthetic: true, confirmNotDuplicate: true },
+      });
+      expect(created.status()).toBe(201);
+    }
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Patients" : "المرضى", exact: true }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Nouveau patient" : "مريض جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(lang === "fr" ? "Nom *" : "اللقب *", { exact: true }).fill(familyName);
+    await dialog.getByLabel(lang === "fr" ? "Prénom *" : "الاسم *", { exact: true }).fill(givenName);
+    const save = dialog.getByRole("button", { name: lang === "fr" ? "Créer le dossier" : "إنشاء الملف" });
+    await save.click();
+    const verifyButtons = dialog.getByRole("button", { name: new RegExp(lang === "fr" ? "Examiner.*Dossier #" : "مراجعة.*الملف") });
+    await expect(verifyButtons).toHaveCount(2);
+    const reviewAll = dialog.getByLabel(lang === "fr"
+      ? "J’ai vérifié tous les dossiers : il s’agit d’un autre patient"
+      : "راجعت جميع الملفات: هذا مريض آخر");
+    await expect(reviewAll).toBeDisabled();
+    await verifyButtons.first().click();
+    await expect(dialog.getByText("10/01/1988")).toBeVisible();
+    await expect(dialog.getByText(/1111/)).toBeVisible();
+    await dialog.getByRole("button", { name: lang === "fr" ? "J’ai comparé ce dossier" : "قارنت هذا الملف" }).click();
+    await expect(reviewAll).toBeDisabled();
+    await verifyButtons.nth(1).click();
+    await expect(dialog.getByText("20/02/1999")).toBeVisible();
+    await expect(dialog.getByText(/2222/)).toBeVisible();
+    await dialog.getByRole("button", { name: lang === "fr" ? "J’ai comparé ce dossier" : "قارنت هذا الملف" }).click();
+    await expect(reviewAll).toBeEnabled();
+    await dialog.getByRole("button", { name: lang === "fr"
+      ? "Utiliser ce dossier pour un rendez-vous"
+      : "استخدام هذا الملف لموعد" }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: lang === "fr"
+      ? "Planifier un rendez-vous" : "حجز موعد" })).toBeVisible();
+    const patients = await page.request.get("/api/v1/patients?q=" + familyName, { headers: authHeaders });
+    expect(patients.status()).toBe(200);
+    expect((await patients.json()).patients).toHaveLength(2);
+  });
+}
+
 test("Lost response after actual database commit: retry same body/key creates only one file", async ({
   page,
 }) => {

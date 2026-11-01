@@ -412,6 +412,7 @@ function Workspace({
             setToast(`${w.savedPatient} ${nameOf(p)} · #${p.fileNo}`);
             setPatientRevision((r) => r + 1);
           }}
+          existing={(p) => plan(p)}
         />
       )}
       {modal === "schedule" && current && (

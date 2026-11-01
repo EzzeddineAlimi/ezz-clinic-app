@@ -88,10 +88,17 @@ export const patientRoutes: Route[] = [
            OR ($5::text IS NOT NULL AND btrim($5::text) <> ''
              AND name_ar IS NOT NULL AND btrim(name_ar) <> ''
              AND ${nameKey("name_ar")} = ${nameKey("$5::text")}))
-         LIMIT 3`,
+         ORDER BY file_no, id LIMIT 4`,
         [familyName, givenName, phone, dob, nameAr]);
-      if (dup.rowCount > 0 && b.confirmNotDuplicate !== true) {
-        fail('CONFLICT', 'A potentially matching patient exists; verify the file before creating a separate patient', { possibleDuplicates: dup.rows.map(r => ({ id: r.id, fileNo: r.file_no })), retryWith: { confirmNotDuplicate: true } });
+      // Bound the disclosed list to three, but detect an additional match.
+      // No manual override is safe when the returned list is incomplete.
+      const tooManyPossibleDuplicates = dup.rowCount > 3;
+      if (tooManyPossibleDuplicates || (dup.rowCount > 0 && b.confirmNotDuplicate !== true)) {
+        fail('CONFLICT', 'A potentially matching patient exists; verify the file before creating a separate patient', {
+          possibleDuplicates: dup.rows.slice(0, 3).map(r => ({ id: r.id, fileNo: r.file_no })),
+          tooManyPossibleDuplicates,
+          ...(tooManyPossibleDuplicates ? {} : { retryWith: { confirmNotDuplicate: true } }),
+        });
       }
       const p = await tx.one<{ id: string }>(`INSERT INTO patients (clinic_id, file_no, family_name, given_name, name_ar, date_of_birth, sex, phone, contact_preference, preferred_language, created_by)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
