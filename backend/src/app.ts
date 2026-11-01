@@ -24,7 +24,7 @@ import { reviewRoutes } from './modules/review.ts';
 import { dayBoardRoutes } from './modules/dayboard.ts';
 import { printRoutes } from './modules/print.ts';
 import { checkpointRoutes } from './modules/checkpoints.ts';
-import { settingsRoutes } from './modules/settings.ts';
+import { settingsRoutes, calendarRoutes } from './modules/settings.ts';
 import { documentRoutes, type DocumentDeps } from './modules/documents.ts';
 import { labRoutes } from './modules/lab.ts';
 import { stockRoutes } from './modules/stock.ts';
@@ -61,6 +61,7 @@ export function buildRoutes(db: Db, documents: Partial<DocumentDeps> = {}): Rout
     ...auditRoutes,
     ...checkpointRoutes,
     ...settingsRoutes,
+    ...calendarRoutes,
     ...patientRoutes,
     ...documentRoutes({ store: documents.store ?? new PgBlobStore(), screener: documents.screener ?? structuralScreener }),
     ...workbenchRoutes,

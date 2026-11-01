@@ -152,6 +152,47 @@
       "response": {
         "period": null
       }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Read manually configured clinic hours and closures",
+      "role": "RECEPTIONIST",
+      "method": "GET",
+      "route": "/api/v1/clinic/schedule",
+      "path": "/api/v1/clinic/schedule",
+      "request": null,
+      "status": 200,
+      "response": {
+        "weeklyHours": null,
+        "closedDays": [],
+        "revision": null,
+        "timezone": "Africa/Tunis"
+      }
+    },
+    {
+      "file": "desk-extras",
+      "title": "Record a fictional confirmed closure day",
+      "role": "RECEPTIONIST",
+      "method": "POST",
+      "route": "/api/v1/clinic/schedule",
+      "path": "/api/v1/clinic/schedule",
+      "request": {
+        "expectedRevision": null,
+        "weeklyHours": null,
+        "closedDays": [
+          "2027-12-25"
+        ],
+        "reason": "Fictional confirmed closure"
+      },
+      "status": 200,
+      "response": {
+        "weeklyHours": null,
+        "closedDays": [
+          "2027-12-25"
+        ],
+        "revision": "<id-61>",
+        "timezone": "Africa/Tunis"
+      }
     }
   ]
 }
