@@ -2,8 +2,10 @@ import { Checkout } from "./checkout.tsx";
 import { VisitStatusModal } from "./visit-status.tsx";
 import { ClinicalWorkspace } from "./clinical-workspace.tsx";
 import { clinicalText } from "./clinical-text.ts";
+import { printableAppointment, assertPrintableUnchanged } from "./appointment-slip.ts";
+import { dateLabel } from "./time.ts";
 import { useState, useCallback, useRef } from "react";
-import { Api, WriteIntent } from "./api.ts";
+import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Board, Visit, Patient } from "./api.ts";
 import type { Words, Lang } from "./i18n.ts";
 import { nameOf, usePatientVerification } from "./forms.tsx";
@@ -99,6 +101,7 @@ export function DayBoard({
               w={w}
               lang={lang}
               timezone={board.timezone}
+              day={board.day}
               writable={writable}
               api={api}
               refreshed={refreshed}
@@ -117,6 +120,7 @@ function VisitRow({
   w,
   lang,
   timezone,
+  day,
   writable,
   api,
   refreshed,
@@ -128,6 +132,7 @@ function VisitRow({
   w: Words;
   lang: Lang;
   timezone: string;
+  day: string;
   writable: boolean;
   api: Api;
   refreshed: () => void;
@@ -138,9 +143,48 @@ function VisitRow({
   const [checkout, setCheckout] = useState(false);
   const [statusAction, setStatusAction] = useState<"NO_SHOW" | "CANCELLED">();
   const [clinical, setClinical] = useState(false);
+  const [slip, setSlip] = useState<{ visit: Visit; day: string; timezone: string }>();
   const [error, setError] = useState<unknown>(),
     [pending, setPending] = useState(false),
     [intent] = useState(() => new WriteIntent());
+  function handleSlipFailure(err: unknown) {
+    setSlip(undefined);
+    if (err instanceof ApiError && err.code === "CONFLICT") {
+      setError(undefined);
+      notify(w.slipStale);
+      refreshed();
+    } else {
+      setError(err);
+      notify(w.slipUnavailable);
+    }
+  }
+  async function prepareSlip() {
+    setPending(true);
+    setError(undefined);
+    try {
+      const fresh = await api.board(day);
+      const current = printableAppointment(fresh, v.id, v.patient.id);
+      setSlip({ visit: current, day: fresh.day, timezone: fresh.timezone });
+    } catch (err) {
+      handleSlipFailure(err);
+    } finally {
+      setPending(false);
+    }
+  }
+  async function printSlip() {
+    if (!slip) return;
+    setPending(true);
+    setError(undefined);
+    try {
+      const fresh = await api.board(slip.day);
+      assertPrintableUnchanged(fresh, slip);
+      window.print();
+    } catch (err) {
+      handleSlipFailure(err);
+    } finally {
+      setPending(false);
+    }
+  }
   async function arrive() {
     setPending(true);
     setError(undefined);
@@ -209,6 +253,23 @@ function VisitRow({
           </p>
         )}
       </div>
+      {slip && (
+        <Modal title={w.appointmentSlip} w={w} busy={pending} close={() => setSlip(undefined)}>
+          <p className="muted">{w.slipPrivacy} <bdi>{nameOf(slip.visit.patient)}</bdi></p>
+          <section id="appointment-slip-print" className="appointment-slip-preview" lang={lang} dir={lang === "ar" ? "rtl" : "ltr"}>
+            <p className="eyebrow">EZZ CLINIC</p>
+            <h3>{w.appointmentSlip}</h3>
+            <dl>
+              <div><dt>{w.day}</dt><dd className="slip-date"><bdi>{dateLabel(slip.day, lang)}</bdi></dd></div>
+              <div><dt>{w.time}</dt><dd className="slip-time"><bdi>{slip.visit.localTime}</bdi></dd></div>
+            </dl>
+            <small>{slip.timezone === "Africa/Tunis" ? w.slipTunisTime : <>{w.clinicTime} · <bdi>{slip.timezone}</bdi></>}</small>
+            <p className="slip-fictional">{w.fictional}</p>
+          </section>
+          <p role="status" className="muted">{w.slipNoProof}</p>
+          <button type="button" className="primary" disabled={pending} onClick={() => void printSlip()}>{w.slipPrint}</button>
+        </Modal>
+      )}
       {clinical && (
         <ClinicalWorkspace api={api} visit={v} lang={lang} w={w}
           close={() => setClinical(false)} />
@@ -263,6 +324,9 @@ function VisitRow({
           <i />
           {w[v.status]}
         </span>
+        {writable && v.status === "SCHEDULED" && (
+          <button type="button" className="secondary compact" disabled={pending} onClick={() => void prepareSlip()}>{w.prepareSlip}</button>
+        )}
         {writable && v.status === "SCHEDULED" && (
           <button
             className="secondary compact"

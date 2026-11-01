@@ -838,6 +838,7 @@ a {
   margin-bottom: 20px;
   font-size: 13px;
 }
+.toast.toast-error { background: #fcf0ef; color: #853c37; border-color: #edcfcb; }
 .toast > .icon-button {
   margin-inline-start: auto;
 }
@@ -1339,11 +1340,28 @@ dialog::backdrop {
 .receipt-preview {border:1px solid #c7d6d1;padding:20px;border-radius:16px;margin-block:20px}
 #receipt-print {overflow-wrap:anywhere}
 #receipt-print dd {margin-inline-start:0;font-weight:600}
+.appointment-slip-preview { border: 1px solid var(--line); border-radius: 12px; padding: 22px; margin-block: 18px; overflow-wrap: anywhere; }
+.appointment-slip-preview h3 { font-size: 1.45rem; margin-block: 10px 18px; }
+.appointment-slip-preview dl { display: grid; gap: 18px; }
+.appointment-slip-preview dt { font-weight: 600; }
+.appointment-slip-preview dd { margin-inline-start: 0; font-weight: 700; }
+.appointment-slip-preview .slip-date { font-size: clamp(1.4rem, 5vw, 1.8rem); }
+.appointment-slip-preview .slip-time { font-size: clamp(2rem, 8vw, 3rem); font-variant-numeric: tabular-nums; }
+.appointment-slip-preview .slip-fictional { margin-block: 24px 0; font-size: 0.75rem; }
 @media print {
  body * {visibility:hidden}
+ /* Do not paginate the invisible dayboard behind the appointment card. */
+ body:has(#appointment-slip-print) *:not(:has(#appointment-slip-print)):not(#appointment-slip-print):not(#appointment-slip-print *) {display:none}
  dialog {position:absolute;inset:0;max-height:none;overflow:visible;border:0}
- #receipt-print,#receipt-print * {visibility:visible}
- #receipt-print {position:absolute;inset:0;background:white;color:black}
+ #receipt-print,#receipt-print *,#appointment-slip-print,#appointment-slip-print * {visibility:visible}
+ #receipt-print,#appointment-slip-print {position:absolute;inset:0;background:white;color:black}
+ #appointment-slip-print {border:0;padding:16mm;max-width:none}
+ #appointment-slip-print .slip-date {font-size:24pt}
+ #appointment-slip-print .slip-time {font-size:34pt}
+ .app-layout:has(#appointment-slip-print),.workspace:has(#appointment-slip-print){min-height:0;height:0;overflow:visible}
+ dialog:has(#appointment-slip-print){inset:0 auto auto 0;margin:0;padding:0;width:100%;max-width:none;border-radius:0;box-shadow:none;background:white}
+ #appointment-slip-print{position:relative;inset:auto;margin:0}
+ body:has(#appointment-slip-print){background:white}
  dialog::backdrop {background:white}
 }
 
