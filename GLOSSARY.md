@@ -21,7 +21,8 @@
 | **Count discrepancy** | **Counted cash minus expected cash**, in millimes, for a submitted period count. A negative value indicates a shortage; a positive value indicates a surplus. | A determination that theft occurred or who caused it. |
 | **Card desk claim** | A card payment entered by staff without verified settlement evidence. | A provider-confirmed payment. |
 | **Owner-reviewed statement** | Reconciliation evidence an authorized owner imported and reviewed. | Direct verification from the card provider or a guaranteed settlement. |
-| **Audit event / checkpoint** | Append-only application evidence, plus an owner-held checkpoint that can reveal some later tampering or rollback. | Prevention of all fraud, physical-custody proof or protection from every privileged operator. |
+| **Audit event** | An actor-attributed record of an application change in the clinic's database audit history. | Proof that an unrecorded event occurred or independent preservation outside the database. |
+| **External owner checkpoint** | A snapshot of the recorded audit history that becomes independent evidence **only when the owner keeps it outside the clinic database**, allowing later comparison for changes or rollback. | The database's own checkpoint copy, physical-custody proof or evidence of unrecorded care or money. |
 | **Paper outage slip** | A numbered paper record later reconciled and entered once after an outage. | An electronic write queued while offline, or proof of physical delivery without a human check. |
 | **CNAM dossier** | A local, paper-oriented workflow to prepare and track an insurance-related case using recorded clinic facts. | Official CNAM eligibility, approved rates, government integration or a reimbursement guarantee. |
 | **V1 scope group** | One of **61 founder-approved** first-release requirement groups. | A delivered or independently accepted feature. |

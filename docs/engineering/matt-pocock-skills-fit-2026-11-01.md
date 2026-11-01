@@ -61,6 +61,8 @@ Adaptations are independently worded, not a verbatim vendor skill bundle. Source
 
 No external plugin installation means the playbooks are **only guaranteed to influence an agent when it follows `AGENTS.md` and opens the relevant local file**. Actual plugin/skill auto-discovery varies by agent product; this change makes no claim about such registration. No production, clinical validation, payment processing, CNAM approval, migration, auth change, runtime dependency, schedule change, self-merge or release is included.
 
+**Final evidence-definition refinement:** The prior glossary combined an in-database audit event and a separately kept owner checkpoint. [Actual audit.ts](../../backend/src/modules/audit.ts) and [checkpoints.ts](../../backend/src/modules/checkpoints.ts) distinguish them: a database-only checkpoint copy is not independent, whereas the owner-held copy outside the database can reveal later rewriting or rollback of recorded history. These are now two glossary terms; their contents are descriptive, not a new control or V1 acceptance assertion.
+
 **Second-pass correction:** The first docs draft inverted the backend's persisted cash discrepancy sign. The corrected definition follows `cash.ts` at the pinned base; the authoritative documentation index now links the local playbooks and uses `UX_PAGE_INVENTORY` instead of historical `UX_BATCH_COMMAND`. Writing-for-agents is adopted as a concise prompt maintenance rule, not another plugin or worker.
 
 **Verification required for this docs-only PR:** inspect each new path and Markdown link at the exact head, verify no source/test/lockfile/workflow modifications, and wait for independent reviewer and CI outcomes before any merge.
