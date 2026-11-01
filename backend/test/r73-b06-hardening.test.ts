@@ -74,6 +74,22 @@ test('T-INT-CASH-0 a clean cash day (payments, movement, count, refund, close, c
   assert.deepEqual(await checks(f), []);
 });
 
+test('T-INT-CASH-CLOSE-1 a privileged edit to closed-period handover is detected against its audit event', async () => {
+  const f = await clinic();
+  const acceptedCountId = await count(f, 50_000);
+  await reauth(api, f.owner);
+  const close = await api.call('POST', `/api/v1/cash/periods/${f.periodId}/close`, {
+    token: f.owner, body: { acceptedCountId, handoverMillimes: 10_000 },
+  });
+  assert.equal(close.status, 200, JSON.stringify(close.body));
+  assert.deepEqual(await checks(f), [], 'the unchanged fictional close is consistent');
+
+  await tamper([['UPDATE cash_periods SET handover_millimes = handover_millimes + 1000 WHERE id = $1', [f.periodId]]]);
+  const findings = await checks(f);
+  assert.ok(findings.some(x => x.check === 'CASH_PERIOD_AUDIT_VALUE_MISMATCH' && x.detail.includes('handoverMillimes')),
+    'a changed handover must disagree with cash.period_closed: ' + JSON.stringify(findings));
+});
+
 test('T-INT-CASH-A (M-267 1) opening float + stored expected edited together is reported (first period and a carry-forward period)', async () => {
   const f = await clinic();
   await confirmCare(api, f.dentist, f.visitId, 100_000);
