@@ -21,7 +21,7 @@ test("U001 receptionist creates, closes and reopens a fictional pre-booking enqu
   await expect(entry.getByText("Reçue le:", { exact: true })).toBeVisible();
   await expect(entry.getByText("Dernière mise à jour:", { exact: true })).toBeVisible();
   await expect(entry.locator("time")).toHaveCount(2);
-  await expect(entry.locator("time").first()).toHaveAttribute("datetime", /^\\d{4}-\\d{2}-\\d{2}T/);
+  await expect(entry.locator("time").first()).toHaveAttribute("datetime", /^\d{4}-\d{2}-\d{2}T/);
   await expect(page.getByText("Demande enregistrée, sans créer de dossier patient.")).toBeVisible();
   await expect(page.getByLabel("Nom indiqué")).toBeFocused();
   await entry.getByRole("button", { name: "Clore" }).click();
