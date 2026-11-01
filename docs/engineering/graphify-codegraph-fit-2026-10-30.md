@@ -26,8 +26,8 @@ The official project on PyPI is **graphifyy** (double y), Python >=3.10. Its SQL
 From a fresh local checkout containing **only source and fictional test data**, after inspecting local files for unexpected secrets:
 
     graphout="$(mktemp -d)"
-    GRAPHIFY_BACKEND=none uvx --from 'graphifyy[sql]==0.9.98' graphify extract . --code-only --out "$graphout"
-    GRAPHIFY_BACKEND=none uvx --from 'graphifyy[sql]==0.9.98' graphify affected 'backend/src/modules/billing.ts' --graph "$graphout/graphify-out/graph.json"
+    GRAPHIFY_BACKEND=none GRAPHIFY_QUERY_LOG_DISABLE=1 uvx --from 'graphifyy[sql]==0.9.98' graphify extract . --code-only --out "$graphout"
+    GRAPHIFY_BACKEND=none GRAPHIFY_QUERY_LOG_DISABLE=1 uvx --from 'graphifyy[sql]==0.9.98' graphify affected 'backend/src/modules/billing.ts' --graph "$graphout/graphify-out/graph.json"
 
 Prerequisites: Python 3.10+, uv/uvx, package download access, a clean disposable checkout. The first command downloads third-party Python dependencies, so it needs a normal supply-chain review before a developer or runner executes it. We **have not executed or validated this package on EZZ** (the available analysis runtime had no GitHub network access). Commands deliberately omit --postgres, --backend, --no-gitignore, --watch, --mcp, --global, --dedup-llm and all cloud/hosted features. Output is in a temporary folder outside the repository; do not upload graph JSON, HTML, caches or raw corpus to GitHub, Mission Control or a third-party service. The repo's .gitignore also excludes graphify-out/ to prevent accidental local default-path commits. A clean process should have no provider credentials exposed to the scanner.
 
@@ -41,6 +41,8 @@ At the **same SHA**, for each case independently record the relevant hand-verifi
 4. **CNAM paper dossier:** backend/src/modules/cnam.ts and backend/migrations/0015_cnam_paper_dossiers.sql. Code links do not validate legal eligibility, tariffs or form acceptance.
 
 Record **true-positive source locations, missing essential links, misleading/false inferred edges, run time, output size, local tool cost and measured prompt-token effects** if available. Use the current reviewed main/PR SHA, not an old baseline. For each case report both where the graph helped and where manually reading authoritative sources was still required. If Graphify changes which tests a reviewer selects, confirm those tests cover every permission, negative, idempotency, timezone, cash and privacy boundary; never skip existing critical tests just because no edge was returned. If it fails any clinical/financial traceability case, do not adopt graph-based review automation.
+
+**2026-11-01 upstream recheck:** Graphify v8 advanced to [f5155badddaa3286c78a51653791131e9e2e4d29](https://github.com/Graphify-Labs/graphify/tree/f5155badddaa3286c78a51653791131e9e2e4d29), 43 commits after the audited snapshot. Its [README](https://github.com/Graphify-Labs/graphify/blob/f5155badddaa3286c78a51653791131e9e2e4d29/README.md) says `query`/`path`/`explain`/MCP queries log question text to local `~/.cache/graphify-queries.log` by default. `GRAPHIFY_QUERY_LOG_DISABLE=1` opts out. The still-unrun fictional-only pilot now sets it explicitly; no Graphify adoption, vendor version bump, CI runner or permission change is implied. "No telemetry" does not mean no local prompt/query persistence.
 
 ## No changes to EZZ's authority structure
 
