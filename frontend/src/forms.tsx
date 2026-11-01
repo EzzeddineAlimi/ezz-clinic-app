@@ -178,11 +178,13 @@ export function Registration({
         : null;
       setDuplicate(possible !== null);
       setTooManyDuplicates(err instanceof ApiError && err.details.tooManyPossibleDuplicates === true);
-      setCandidates(possible?.filter((candidate): candidate is DuplicateCandidate =>
+      const validCandidates = possible?.filter((candidate): candidate is DuplicateCandidate =>
         typeof candidate === "object" && candidate !== null &&
         "id" in candidate && typeof candidate.id === "string" &&
         "fileNo" in candidate && typeof candidate.fileNo === "number",
-      ) ?? []);
+      ) ?? [];
+      // An incomplete response must never enable a partial candidate review.
+      setCandidates(possible?.length === validCandidates.length ? validCandidates : []);
       setReviewedIds([]);
       setVerifiedCandidate(undefined);
       setConfirmed(false);

@@ -246,6 +246,35 @@ for (const lang of ["fr", "ar"] as const) {
 }
 
 for (const lang of ["fr", "ar"] as const) {
+  test(`C-17 mixed malformed duplicate candidates fail closed in ${lang}`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    await page.route("**/api/v1/patients", (route) => {
+      if (route.request().method() !== "POST") return route.continue();
+      return route.fulfill({
+        status: 409,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "CONFLICT", details: { possibleDuplicates: [
+          { id: "not-an-existing-id", fileNo: 37 },
+          { id: "malformed-candidate", fileNo: "invalid" },
+        ] } } }),
+      });
+    });
+    await page.getByRole("button", { name: lang === "fr" ? "Patients" : "المرضى", exact: true }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Nouveau patient" : "مريض جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(lang === "fr" ? "Nom *" : "اللقب *", { exact: true }).fill("MalformedListC17");
+    await dialog.getByLabel(lang === "fr" ? "Prénom *" : "الاسم *", { exact: true }).fill("Synthetic");
+    const save = dialog.getByRole("button", { name: lang === "fr" ? "Créer le dossier" : "إنشاء الملف" });
+    await save.click();
+    await expect(dialog.getByText(lang === "fr" ? /Impossible de consulter les dossiers similaires/ : /تعذرت مراجعة الملفات المتشابهة/)).toBeVisible();
+    await expect(dialog.getByRole("button", { name: lang === "fr" ? /Examiner.*Dossier/ : /مراجعة.*الملف/ })).toHaveCount(0);
+    await expect(save).toBeDisabled();
+  });
+}
+
+for (const lang of ["fr", "ar"] as const) {
   test(`C-17 two matching files require both reviews and support existing-file scheduling in ${lang}`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const session = await login(page);
