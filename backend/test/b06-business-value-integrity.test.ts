@@ -263,3 +263,37 @@ test('T-INT-LIMIT-1 honest limit: an edit that also rewrites the audit chain is 
   assert.equal(anchored.ok, false);
   assert.ok(codes(anchored).includes('AUDIT_ANCHOR_HASH_MISMATCH'), JSON.stringify(anchored.findings));
 });
+
+test('T-INT-OWNER-1 a tampered payment is a neutral owner exception, never a theft verdict or cross-clinic disclosure', async () => {
+  const a = await scenario();
+  const b = await scenario();
+  await tamper('UPDATE payments SET amount_millimes = 7000 WHERE id = $1', [a.paymentId]);
+
+  const path = '/api/v1/owner/exceptions?asOf=2026-10-29';
+  const owner = await api.call('GET', path, { token: a.owner });
+  assert.equal(owner.status, 200, JSON.stringify(owner.body));
+  type Item = { kind: string; evidence: string; severity: string; wording: string; known: string; unknown: string; nextStep: string };
+  const item = (owner.body.open as Item[]).find(e => e.kind === 'INTEGRITY_PAYMENT_AUDIT_VALUE_MISMATCH' && e.wording.includes(a.paymentId));
+  assert.ok(item, JSON.stringify(owner.body.open));
+  assert.equal(item.evidence, 'SYSTEM_CHECK');
+  assert.equal(item.severity, 'HIGH');
+  assert.match(item.wording, /data-consistency finding: it does not by itself show who changed it, why, or that money was lost/);
+  assert.equal(item.known, 'Detected by recomputation');
+  assert.equal(item.unknown, 'Who changed the data outside the app');
+  assert.match(item.nextStep, /owner checkpoint and backup/);
+
+  // The owner finding must be recomputed from durable PostgreSQL rows after a fresh API server starts.
+  await api.close();
+  api = await startApi(db.appUrl);
+  const reopened = await api.call('GET', path, { token: a.owner });
+  assert.equal(reopened.status, 200, JSON.stringify(reopened.body));
+  assert.ok((reopened.body.open as Item[]).some(e => e.kind === 'INTEGRITY_PAYMENT_AUDIT_VALUE_MISMATCH' && e.wording.includes(a.paymentId)),
+    'recorded mismatch must survive an API server restart');
+
+  assert.equal((await api.call('GET', path, { token: a.desk })).status, 403);
+  const foreign = await api.call('GET', path, { token: b.owner });
+  assert.equal(foreign.status, 200, JSON.stringify(foreign.body));
+  assert.ok(!JSON.stringify(foreign.body).includes(a.paymentId), 'other clinic must not see payment ID');
+  assert.ok(!(foreign.body.open as Item[]).some(e => e.kind === 'INTEGRITY_PAYMENT_AUDIT_VALUE_MISMATCH'),
+    'other clinic must not inherit this finding');
+});
