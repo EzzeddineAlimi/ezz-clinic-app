@@ -29,6 +29,10 @@
 | **Tested slice** | A defined behavior tested against a known code SHA and environment. | Whole-feature acceptance, production certification or final human approval. |
 | **Independent review** | Findings written by a reviewer distinct from the implementer, against the **exact current head SHA**. | A green author's CI run, a self-review or a stale pass from an earlier commit. |
 
+### User-interface wording (French and Arabic)
+
+For UI-facing owner-cash concepts, use the already shipped `cashText.fr` and `cashText.ar` in [the owner cash interface](frontend/src/owner-cash.tsx): `blind` supplies the displayed **Blind count** explanation and `difference` supplies the **Count discrepancy** label. Both languages must preserve the rule that the expected cash amount stays hidden before the first count and the counted-minus-expected sign. For any other UI-facing glossary term, locate its actual FR/AR UI keys and obtain the relevant UX review before adding a new screen label; do not invent translations here. Terms used only by engineers/reviewers do not require UI labels.
+
 ### Authoritative pointers
 
 - [Documentation index](docs/INDEX.md) and [founder-approved scope](https://docs.google.com/spreadsheets/d/1tsLppkHcR6nK5Ovc-NcOfFV-qg8Tzcgvh-M5cksRM7g/edit) — product definitions and release scope.
