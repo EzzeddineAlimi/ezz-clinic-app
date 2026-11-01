@@ -378,7 +378,7 @@ function Workspace({
               </section>
             </>
           ) : tab === "enquiries" && auth.session.staff.roles.includes("RECEPTIONIST") ? (
-            <Enquiries api={auth.api} lang={lang} />
+            <Enquiries api={auth.api} lang={lang} timezone={current?.timezone ?? "UTC"} />
           ) : tab === "cash" && auth.session.staff.roles.includes("OWNER") ? (
             <OwnerCashControl api={auth.api} lang={lang} w={w} />
           ) : (

@@ -18,7 +18,7 @@ export const enquiryText = {
     updated: "État mis à jour.", duplicate: "Une demande identique existe. Vérifiez la liste avant un nouvel enregistrement.",
     stale: "Cette demande a changé. Actualisez avant de décider.",
     uncertain: "Résultat non confirmé : ne créez pas une deuxième demande. Réessayez exactement la même opération.",
-    retry: "Réessayer la même demande", closeMeaning: "Clore signifie retirer de la liste active, pas confirmer un contact ou un rendez-vous.",
+    retry: "Réessayer la même demande", created: "Reçue le", modified: "Dernière mise à jour", closeMeaning: "Clore signifie retirer de la liste active, pas confirmer un contact ou un rendez-vous.",
   },
   ar: {
     title: "الطلبات", subtitle: "طلبات قبل إنشاء أي ملف مريض.",
@@ -31,7 +31,7 @@ export const enquiryText = {
     updated: "تم تحديث الحالة.", duplicate: "يوجد طلب مطابق. راجع القائمة قبل تسجيل طلب جديد.",
     stale: "تغير هذا الطلب. حدّث القائمة قبل المتابعة.",
     uncertain: "النتيجة غير مؤكدة: لا تنشئ طلبًا ثانيًا. أعد محاولة نفس العملية دون تغييرها.",
-    retry: "إعادة نفس الطلب", closeMeaning: "الإغلاق يزيل الطلب من قائمة المتابعة ولا يؤكد الاتصال أو حجز موعد.",
+    retry: "إعادة نفس الطلب", created: "تاريخ الاستلام", modified: "آخر تحديث", closeMeaning: "الإغلاق يزيل الطلب من قائمة المتابعة ولا يؤكد الاتصال أو حجز موعد.",
   },
 } as const;
 
@@ -39,7 +39,16 @@ type CreateBody = { name: string; reason: string; callback: string | null; isSyn
 type UpdateBody = CreateBody & { status: EnquiryStatus; expectedVersion: number };
 type PendingUpdate = { id: string; body: UpdateBody; key: string };
 
-export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
+function enquiryTime(value: string, lang: Lang, timezone: string) {
+  const instant = new Date(value);
+  if (!Number.isFinite(instant.getTime())) return "—";
+  return new Intl.DateTimeFormat(lang === "ar" ? "ar-TN-u-nu-latn" : "fr-TN", {
+    timeZone: timezone, day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZoneName: "short",
+  }).format(instant);
+}
+
+export function Enquiries({ api, lang, timezone }: { api: Api; lang: Lang; timezone: string }) {
   const t = enquiryText[lang], w = copy[lang];
   const nameRef = useRef<HTMLInputElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -164,6 +173,8 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
           <article key={entry.id} className="enquiry-entry">
             <h3><bdi>{entry.name}</bdi></h3>
             <p><bdi>{entry.reason}</bdi></p>
+            <p><strong>{t.created}: </strong><time dateTime={entry.createdAt}><bdi>{enquiryTime(entry.createdAt, lang, timezone)}</bdi></time></p>
+            <p><strong>{t.modified}: </strong><time dateTime={entry.updatedAt}><bdi>{enquiryTime(entry.updatedAt, lang, timezone)}</bdi></time></p>
             {entry.callback && <p><strong>{t.callback}: </strong><bdi>{entry.callback}</bdi></p>}
             <button type="button" className="secondary" disabled={working || createIntent.uncertain}
               onClick={() => changeStatus(entry)}>{entry.status === "OPEN" ? t.close : t.reopen}</button>

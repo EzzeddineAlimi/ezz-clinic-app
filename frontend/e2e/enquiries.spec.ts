@@ -18,6 +18,10 @@ test("U001 receptionist creates, closes and reopens a fictional pre-booking enqu
   await page.getByRole("button", { name: "Ajouter à la liste" }).click();
   const entry = page.locator(".enquiry-entry").filter({ hasText: marker });
   await expect(entry).toBeVisible();
+  await expect(entry.getByText("Reçue le:", { exact: true })).toBeVisible();
+  await expect(entry.getByText("Dernière mise à jour:", { exact: true })).toBeVisible();
+  await expect(entry.locator("time")).toHaveCount(2);
+  await expect(entry.locator("time").first()).toHaveAttribute("datetime", /^\\d{4}-\\d{2}-\\d{2}T/);
   await expect(page.getByText("Demande enregistrée, sans créer de dossier patient.")).toBeVisible();
   await expect(page.getByLabel("Nom indiqué")).toBeFocused();
   await entry.getByRole("button", { name: "Clore" }).click();
@@ -27,6 +31,8 @@ test("U001 receptionist creates, closes and reopens a fictional pre-booking enqu
   await expect(entry).toBeVisible();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(entry.getByText("تاريخ الاستلام:", { exact: true })).toBeVisible();
+  await expect(entry.getByText("آخر تحديث:", { exact: true })).toBeVisible();
   await entry.getByRole("button", { name: "إعادة فتح" }).click();
   await expect(entry).toHaveCount(0);
   await expect(page.locator(".enquiry-panel h2")).toBeFocused();
