@@ -21,6 +21,19 @@
 - Use expensive reasoning for difficult architecture/security questions, and cheaper models for bounded routine work **when selected by the operator**. This file cannot switch models or guarantee vendor cache hits.
 - Keep independent adversarial review for payment, authorization, privacy, clinical, and release-critical changes. A model must not self-certify its own high-risk work.
 
+## Repository-local engineering skills
+
+Use the smallest relevant repo-local playbook when the task fits. These are **adapted guides**, not new workers, automatic background executions or permission to install an external plugin. Open the linked `SKILL.md` before work; existing repo standards and clinical/financial/privacy/release gates take priority.
+
+| Trigger | Read this playbook |
+| --- | --- |
+| Bug, flaky test, performance regression or a failure without a proven cause | [Evidence-first diagnosis](.agents/skills/ezz-bug-diagnosis/SKILL.md) |
+| Implementing or fixing a behavior with testable contracts | [One vertical red/green slice](.agents/skills/ezz-vertical-tdd/SKILL.md) |
+| Reviewing a PR or changed code | [Two-axis standards + requirement review](.agents/skills/ezz-two-axis-review/SKILL.md) |
+| Authoring a PR description or merge handoff | [Concise PR evidence](.agents/skills/ezz-pr-evidence/SKILL.md) |
+
+Use [`GLOSSARY.md`](GLOSSARY.md) for the shared meaning of clinical/financial evidence terms. If code, a current authoritative decision, and the glossary disagree, **do not silently rename data or change a business rule**: identify the conflict, report it and update the glossary only when the approved meaning is established. The [upstream skills fit audit](docs/engineering/matt-pocock-skills-fit-2026-11-01.md) records adopted and rejected ideas; it is not a live task queue.
+
 ## UI/UX quality contract (all future visual work)
 - Read `docs/design/ui-ux-pro-max-ezz-fit-2026-10-30.md` and the relevant current role-workspace spec before changing frontend UI. External UI/UX Pro Max suggestions are advisory; verify them against React/Vite implementation, clinic workflows, current accepted design direction, accessibility and domain safety.
 - Resolve verified best-practice conflicts, even when existing draft UI PRs need reconciliation. Fix shared primitives at their source, one focused PR at a time; preserve active ownership, ancestry, actual test evidence and independent review. Do not broadly re-theme, install unreviewed upstream scripts or invent unsupported interactions.
