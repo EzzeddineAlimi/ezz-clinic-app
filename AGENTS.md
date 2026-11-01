@@ -24,7 +24,7 @@
 
 ## Repository-local engineering skills
 
-Use the smallest relevant repo-local playbook when the task fits. These are **adapted guides**, not new workers, automatic background executions or permission to install an external plugin. Open the linked `SKILL.md` before work; existing repo standards and clinical/financial/privacy/release gates take priority.
+Use the smallest relevant repo-local playbook when the task fits. These are **adapted guides**, not new workers, automatic background executions or permission to install an external plugin. Open the linked `SKILL.md` before work; existing repo standards and clinical/financial/privacy/release gates take priority. **If a failure's cause is unproven, start with diagnosis; once the cause and expected contract are established, use vertical TDD.**
 
 | Trigger | Read this playbook |
 | --- | --- |
@@ -45,5 +45,5 @@ Use [`GLOSSARY.md`](GLOSSARY.md) for the shared meaning of clinical/financial ev
 - Run `npm --prefix backend run lint` and `npm --prefix backend run lint:verify` for the configured authored-backend quality gate; its scope and baseline are in `docs/engineering/backend-quality.md`.
 - For applicable frontend changes run `npm --prefix frontend test` and `npm --prefix frontend run build`; run `npm --prefix frontend run test:e2e` against the configured fictional real-API environment when affected. Leave GitHub Actions as the authoritative CI check on the exact PR head.
 - Report exact commit/PR SHA, goal and acceptance checks, scope, commands **actually run**, pass/fail/skip, remaining risks, and reviewer action. For intentional refactors, compare pre-change and post-change tests. Never claim unrun tests passed.
-- Backend lint is configured with an explicit initial correctness rule set; frontend lint and repository formatting checks remain **NOT CONFIGURED**, not PASS. See `docs/engineering/backend-quality.md` for the measured formatter baseline and remaining issue #74 scope. Avoid mass reformatting unrelated files.
+- Backend and frontend authored-source lint checks and read-only `format:check` scripts are configured. A passing lint check does **not** prove the formatter baseline is clean or formatter enforcement is enabled. See `docs/engineering/backend-quality.md` and issue #74 for remaining formatter work. Avoid mass reformatting unrelated files.
 - Persist durable outcomes and handoffs in GitHub PRs/docs and the approved Mission Control lane—not solely in a local agent workspace. Avoid duplicating old evidence; link it by immutable SHA.
