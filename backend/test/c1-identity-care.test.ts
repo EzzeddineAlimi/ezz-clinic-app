@@ -155,6 +155,41 @@ test('T-SESS-1 employee departure: deactivation revokes live sessions immediatel
   assert.equal(relogin.status, 401);
 });
 
+test('SEC-ROLE-1 live role downgrade revokes dentist authority before same-key replay', async () => {
+  const C = await standardFixture(api, db, 'clinic-d');
+  const careKey = key();
+  const path = `/api/v1/visits/${C.visitId}/care`;
+  const confirmed = await api.call('POST', path, { token: C.dentist, idem: careKey, body: careBody });
+  assert.equal(confirmed.status, 201);
+
+  const foreign = await api.call('POST', `/api/v1/staff/${C.clinic.staff.dentist}/roles`, {
+    token: B.owner, body: { role: 'DENTIST', op: 'REVOKE' },
+  });
+  assert.equal(foreign.status, 404, 'foreign owner cannot alter another clinic staff roles');
+  const grant = await api.call('POST', `/api/v1/staff/${C.clinic.staff.dentist}/roles`, {
+    token: C.owner, body: { role: 'RECEPTIONIST', op: 'GRANT' },
+  });
+  assert.equal(grant.status, 200);
+  const revoke = await api.call('POST', `/api/v1/staff/${C.clinic.staff.dentist}/roles`, {
+    token: C.owner, body: { role: 'DENTIST', op: 'REVOKE' },
+  });
+  assert.equal(revoke.status, 200);
+
+  const session = await api.call('GET', '/api/v1/session', { token: C.dentist });
+  assert.equal(session.status, 200, 'remaining receptionist role keeps the same session usable');
+  assert.deepEqual(session.body.staff.roles, ['RECEPTIONIST']);
+  for (const idem of [careKey, key()]) {
+    const denied = await api.call('POST', path, { token: C.dentist, idem, body: careBody });
+    assert.equal(denied.status, 403, 'replay and fresh writes must use current roles');
+    assert.equal(denied.body.error.code, 'FORBIDDEN_ROLE');
+  }
+  assert.equal((await api.call('GET', `/api/v1/patients/${C.patientId}`, { token: C.dentist })).status, 200);
+  const original = await api.call('GET', path, { token: C.owner });
+  assert.equal(original.status, 200);
+  assert.equal(original.body.items.length, 1, 'original signed care remains unchanged');
+  assert.equal(original.body.items[0].confirmedBy, C.clinic.staff.dentist);
+});
+
 test('T-SESS-2 lockout after 5 failures: correct password then refused (423)', async () => {
   for (let i = 0; i < 5; i++) {
     const r = await api.call('POST', '/api/v1/session/login', { body: { clinicCode: 'clinic-a', username: 'dentist', password: 'wrong-password-xx' }, idem: false });
