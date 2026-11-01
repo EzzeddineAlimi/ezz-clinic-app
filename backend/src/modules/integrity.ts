@@ -254,8 +254,8 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
   // count time, payment/movement/refund times) is itself compared, so editing inputs and expected together is visible.
   const present = new Set([...adjustments.map(r => `adjustment:${r.id}`), ...care.map(r => `care_item:${r.id}`)]);
   if (withCash) {
-    const periods = (await tx.query<{ id: string; period_no: number; opened_at: string; opening_float_millimes: number; opening_basis: string; previous_period_id: string | null; status: string; cutoff_at: string | null; drawer_id: string }>(
-      'SELECT id, period_no, opened_at, opening_float_millimes, opening_basis, previous_period_id, status, cutoff_at, drawer_id FROM cash_periods WHERE clinic_id = $1', [clinicId])).rows;
+    const periods = (await tx.query<{ id: string; period_no: number; opened_at: string; opening_float_millimes: number; opening_basis: string; previous_period_id: string | null; status: string; cutoff_at: string | null; drawer_id: string; handover_millimes: number | null }>(
+      'SELECT id, period_no, opened_at, opening_float_millimes, opening_basis, previous_period_id, status, cutoff_at, drawer_id, handover_millimes FROM cash_periods WHERE clinic_id = $1', [clinicId])).rows;
     const periodById = new Map(periods.map(p => [p.id, p]));
     const counts = (await tx.query<{ id: string; period_id: string; attempt_no: number; counted_millimes: number; expected_millimes: number; submitted_at: string; denominations: Record<string, number> | null }>(
       'SELECT id, period_id, attempt_no, counted_millimes, expected_millimes, submitted_at, denominations FROM cash_counts WHERE clinic_id = $1', [clinicId])).rows;
@@ -277,6 +277,11 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
         const start = typeof closed.payload.nextOpenedAt === 'string' ? closed.payload.nextOpenedAt : acceptedCutoff.get(String(closed.payload.acceptedCountId));
         if (start !== undefined && Date.parse(start) !== Date.parse(p.opened_at))
           mismatch('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'openedAt', p.opened_at, typeof closed.payload.nextOpenedAt === 'string' ? start : `${start} (cut-off of accepted count ${String(closed.payload.acceptedCountId)}; pre-R73-H event)`);
+      }
+      if (p.status === 'CLOSED') {
+        const close = one('cash_period', p.id, ['cash.period_closed']);
+        if (close.length) compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id,
+          [['handoverMillimes', p.handover_millimes, close[0]!.payload.handoverMillimes]]);
       }
     }
     for (const c of counts) {
