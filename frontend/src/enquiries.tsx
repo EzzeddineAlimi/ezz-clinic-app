@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { Api, ApiError, WriteIntent } from "./api.ts";
 import type { Enquiry, EnquiryStatus } from "./enquiry-contracts.ts";
@@ -41,6 +41,8 @@ type PendingUpdate = { id: string; body: UpdateBody; key: string };
 
 export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
   const t = enquiryText[lang], w = copy[lang];
+  const nameRef = useRef<HTMLInputElement>(null);
+  const refreshRef = useRef<HTMLButtonElement>(null);
   const [status, setStatus] = useState<EnquiryStatus>("OPEN");
   const [before, setBefore] = useState<string>();
   const [entries, setEntries] = useState<Enquiry[]>([]);
@@ -81,6 +83,7 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
       await api.createEnquiry(createIntent.payload(body) as CreateBody, createIntent.key);
       setCreateIntent(new WriteIntent());
       setName(""); setReason(""); setCallback("");
+      nameRef.current?.focus();
       chooseStatus("OPEN");
       setNotice(t.saved);
       reload();
@@ -96,6 +99,7 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
       await api.updateEnquiry(action.id, action.body, action.key);
       setPendingUpdate(undefined);
       setNotice(t.updated);
+      refreshRef.current?.focus();
       reload();
     } catch (cause) {
       const ambiguous = cause instanceof ApiError && (cause.code === "NETWORK" || cause.status >= 500);
@@ -120,7 +124,7 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
     <section className="board-panel enquiry-panel" aria-label={t.title}>
       <div className="panel-heading">
         <div><h2>{t.title}</h2><p>{t.warning}</p></div>
-        <button className="secondary" type="button" onClick={reload} disabled={working}>{t.refresh}</button>
+        <button ref={refreshRef} className="secondary" type="button" onClick={reload} disabled={working}>{t.refresh}</button>
       </div>
       {notice && <p className="enquiry-notice" role="status">{notice}</p>}
       {error !== undefined && <div className="enquiry-notice" role="alert">
@@ -129,7 +133,7 @@ export function Enquiries({ api, lang }: { api: Api; lang: Lang }) {
       <form className="enquiry-form" onSubmit={e => void create(e)}>
         <h3>{t.new}</h3>
         <fieldset className="form-grid" disabled={working || createIntent.uncertain || !!pendingUpdate}>
-          <label>{t.name} *<input required maxLength={160} value={name} onChange={e => setName(e.target.value)} /></label>
+          <label>{t.name} *<input ref={nameRef} required maxLength={160} value={name} onChange={e => setName(e.target.value)} /></label>
           <label>{t.callback}<input maxLength={40} value={callback} onChange={e => setCallback(e.target.value)} /></label>
           <label className="enquiry-reason">{t.reason} *<textarea required maxLength={240}
             value={reason} onChange={e => setReason(e.target.value)} /></label>

@@ -19,14 +19,17 @@ test("U001 receptionist creates, closes and reopens a fictional pre-booking enqu
   const entry = page.locator(".enquiry-entry").filter({ hasText: marker });
   await expect(entry).toBeVisible();
   await expect(page.getByText("Demande enregistrée, sans créer de dossier patient.")).toBeVisible();
+  await expect(page.getByLabel("Nom indiqué")).toBeFocused();
   await entry.getByRole("button", { name: "Clore" }).click();
   await expect(entry).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Actualiser" })).toBeFocused();
   await page.getByRole("button", { name: "Terminées" }).click();
   await expect(entry).toBeVisible();
   await page.getByRole("button", { name: "العربية", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   await entry.getByRole("button", { name: "إعادة فتح" }).click();
   await expect(entry).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "تحديث", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "قيد المتابعة" }).click();
   await expect(entry).toBeVisible();
   expect(patientWrites).toBe(0);
