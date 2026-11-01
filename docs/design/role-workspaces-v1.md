@@ -89,3 +89,9 @@ Build high-fidelity **1440px desktop + 390px mobile** designs and French/Arabic 
 - Verify `pnpm/npm` frontend typecheck/build, axe, 320/390px, 200% zoom, keyboard, RTL, print, mobile Safari limitations, and **real-PG16 API Playwright** tests. Add screenshot baselines for at least five core screens and high-risk states, not just ideal dashboards.
 - No clinician's eye-candy: readability, 1–2 minute task completion and clear corrections outrank visual novelty.
 - Founder reviews visuals for direction; independent reviewers inspect missing states/unsafe affordances. User does not manually run or test the app.
+
+## U029 — paper appointment reminder (draft, not accepted)
+
+Receptionists may prepare a large-print appointment card for a currently SCHEDULED fictional visit. The frontend re-reads the authenticated server day-board before preview and refuses missing, cancelled, no-show, or wrong-patient visits. Staff must verify the recipient privately; printed paper contains only clinic-local date/time and timezone, not the patient's name, file number, phone, medical or financial details. The card is marked fictional; printing and physical handoff are not confirmed. FR/Arabic RTL and mobile/paper-preview verification, physical printer usability and independent review remain open gates. No smartphone, QR or outbound communication is required.
+
+If slip verification fails, no print occurs. Appointment conflicts trigger an authenticated day-board refresh; network/server/unknown failures show an explicit FR/Arabic warning that the board may be stale and must be refreshed before another card is prepared. Never automatically retry printing.
