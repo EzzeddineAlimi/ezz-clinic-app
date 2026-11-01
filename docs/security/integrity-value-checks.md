@@ -1,6 +1,6 @@
 # Owner integrity check — business values vs audit events (B06, CH-027)
 
-**Status: draft (branch `claude/b06-business-value-integrity`, stacked on PR #3). Fictional data only. Not independently reviewed.**
+**Status: implemented on merged `main` (fictional-data development only). Primary Muse independently reviewed the issue #5 integrity code and existing PostgreSQL regressions at `25708be843e0479c27d2d23e95e1594a50f30d6e` (UX_MODEL_REPORTS row 336: PASS for the engineering criteria, not production/V1 acceptance). Issue #5 remains open for founder disposition.**
 
 `POST /api/v1/integrity/check` (OWNER, `audit.verify`) now compares every financial business row with the values captured in its audit event at the time it was written, in addition to the existing presence, receipt-gap and hash-chain checks.
 
@@ -22,13 +22,15 @@
 
 Every finding says: *"This is a data-consistency finding: it does not by itself show who changed it, why, or that money was lost."* It is a record mismatch, not a cash-loss finding and not an accusation (issue #5 acceptance 2).
 
+The owner-facing `/api/v1/owner/exceptions` view carries integrity mismatches as `SYSTEM_CHECK` findings, with neutral wording and an explicit unknown actor/cause. `T-INT-OWNER-1` checks this API contract, owner-only access and cross-clinic isolation after a fictional privileged SQL edit. A finding is **not** evidence of physical cash loss or who altered the record.
+
 ## Limits (tested, not hidden)
 
 - **Consistent rewrite of rows AND chain** (T-INT-LIMIT-1): a database superuser who changes a payment, its allocation, its receipt and rewrites the audit events with valid hashes produces a green check. Only an **owner checkpoint kept outside the database** taken after the original entry detects it (`AUDIT_ANCHOR_HASH_MISMATCH`). Exposure window = time since the last owner checkpoint.
 - **Never-entered activity** (CH-002): money that was never recorded anywhere leaves no row and no event.
 - **Allocation rule** assumes the v0.2 model: one payment fully allocated to its own visit (no deposits/credit). Any future credit or split allocation must change this rule (GPT R55).
 - Only fields captured in the audit payload are compared; others are out of scope, not "tampered" (GPT R65). `expected_millimes` of cash counts is the one uncaptured field handled by recomputation.
-- Clinical tables added by PR #12 (site amendments, alerts, notes, findings, plans) are **not** covered here; they need a follow-up stacked on PR #12.
+- Clinical records have separate value checks in `backend/src/modules/integrity.ts` (`clinicalValueFindings`): signed notes, findings, plan items/events, alerts, history reviews, acknowledgements and site amendments. These are recorded-data consistency checks, **not** a clinician's validation of medical correctness.
 - Cost is O(rows) per clinic per run (one read of the relevant audit events plus one read per table; one recomputation per cash count). Fine for one clinic; would need incremental checking at scale (not measured).
 
 ## R73-H hardening: Muse M-267 objections 1–7 and CH-034 (draft, not yet independently reviewed)
