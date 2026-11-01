@@ -169,6 +169,46 @@ test("C-17: Arabic mobile duplicate cannot be bypassed when candidate verificati
   await expect(checkbox).toBeDisabled();
   await expect(d.getByRole("button", { name: "إنشاء الملف" })).toBeDisabled();
 });
+for (const lang of ["fr", "ar"] as const) {
+  test(`C-17 overflow blocks incomplete duplicate review in ${lang} at 390px`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const session = await login(page);
+    const familyName = lang === "fr" ? "QuatreDoublonsFR" : "QuatreDoublonsAR";
+    const givenName = "Synthetic";
+    for (let i = 0; i < 4; i++) {
+      const created = await page.request.post("/api/v1/patients", {
+        headers: { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() },
+        data: { familyName, givenName, isSynthetic: true, confirmNotDuplicate: true },
+      });
+      expect(created.status()).toBe(201);
+    }
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Patients" : "المرضى", exact: true }).click();
+    await page.getByRole("button", { name: lang === "fr" ? "Nouveau patient" : "مريض جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel(lang === "fr" ? "Nom *" : "اللقب *", { exact: true }).fill(familyName);
+    await dialog.getByLabel(lang === "fr" ? "Prénom *" : "الاسم *", { exact: true }).fill(givenName);
+    const save = dialog.getByRole("button", { name: lang === "fr" ? "Créer le dossier" : "إنشاء الملف" });
+    await save.click();
+    await expect(dialog.getByText(lang === "fr" ? /Plus de trois dossiers similaires/ : /يوجد أكثر من ثلاثة ملفات متشابهة/)).toBeVisible();
+    const checkbox = dialog.getByLabel(lang === "fr"
+      ? "J’ai vérifié tous les dossiers : il s’agit d’un autre patient"
+      : "راجعت جميع الملفات: هذا مريض آخر");
+    await expect(checkbox).toBeDisabled();
+    await expect(save).toBeDisabled();
+    const forced = await page.request.post("/api/v1/patients", {
+      headers: { Authorization: "Bearer " + session.token, "Idempotency-Key": crypto.randomUUID() },
+      data: { familyName, givenName, isSynthetic: true, confirmNotDuplicate: true },
+    });
+    expect(forced.status()).toBe(409);
+    const list = await page.request.get("/api/v1/patients?q=" + familyName, {
+      headers: { Authorization: "Bearer " + session.token },
+    });
+    expect(list.status()).toBe(200);
+    expect((await list.json()).patients).toHaveLength(4);
+  });
+}
+
 test("Lost response after actual database commit: retry same body/key creates only one file", async ({
   page,
 }) => {

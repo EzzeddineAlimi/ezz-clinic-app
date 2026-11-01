@@ -125,6 +125,7 @@ export const copy = {
     paymentCancelled: "Cette intention est annulée. Relisez les paiements avant une nouvelle opération.",
     duplicate:
       "Un dossier similaire existe. Vérifiez avant de créer un autre dossier.",
+    duplicateOverflow: "Plus de trois dossiers similaires : la liste est incomplète. Création bloquée. Recherchez le dossier existant ou demandez une vérification au responsable.",
     confirmDuplicate: "J’ai vérifié tous les dossiers : il s’agit d’un autre patient",
     reviewExistingFile: "Examiner",
     markReviewedFile: "J’ai comparé ce dossier",
@@ -310,6 +311,7 @@ export const copy = {
     paymentStale: "تغيّر سجل الدفع. راجع السجل وحلّ العملية المعلقة قبل أي تسجيل جديد.",
     paymentCancelled: "أُلغيت هذه العملية. راجع الدفعات قبل بدء عملية جديدة.",
     duplicate: "يوجد ملف مشابه. تحققوا قبل إنشاء ملف آخر.",
+    duplicateOverflow: "يوجد أكثر من ثلاثة ملفات متشابهة: القائمة غير مكتملة. تم منع إنشاء ملف جديد. ابحثوا عن الملف الصحيح أو اطلبوا مراجعة المسؤول.",
     confirmDuplicate: "راجعت جميع الملفات: هذا مريض آخر",
     reviewExistingFile: "مراجعة",
     markReviewedFile: "قارنت هذا الملف",

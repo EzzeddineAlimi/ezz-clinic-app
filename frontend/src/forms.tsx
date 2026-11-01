@@ -141,6 +141,7 @@ export function Registration({
     [confirmed, setConfirmed] = useState(false),
     [contact, setContact] = useState("IN_PERSON"),
     [candidates, setCandidates] = useState<DuplicateCandidate[]>([]),
+    [tooManyDuplicates, setTooManyDuplicates] = useState(false),
     [reviewedIds, setReviewedIds] = useState<string[]>([]);
   const {
     selected: verifiedCandidate,
@@ -174,6 +175,7 @@ export function Registration({
         ? err.details.possibleDuplicates
         : null;
       setDuplicate(possible !== null);
+      setTooManyDuplicates(err instanceof ApiError && err.details.tooManyPossibleDuplicates === true);
       setCandidates(possible?.filter((candidate): candidate is DuplicateCandidate =>
         typeof candidate === "object" && candidate !== null &&
         "id" in candidate && typeof candidate.id === "string" &&
@@ -204,6 +206,7 @@ export function Registration({
           <div className="warning">
             <p role="alert">{w.duplicate}</p>
             <p>{w.identityCheck}</p>
+            {tooManyDuplicates && <p role="alert">{w.duplicateOverflow}</p>}
             <ul>
               {candidates.map((candidate) => (
                 <li key={candidate.id}>
@@ -239,7 +242,7 @@ export function Registration({
               <input
                 type="checkbox"
                 checked={confirmed}
-                disabled={verificationPending || candidates.length === 0 || reviewedIds.length !== candidates.length}
+                disabled={verificationPending || tooManyDuplicates || candidates.length === 0 || reviewedIds.length !== candidates.length}
                 onChange={(e) => setConfirmed(e.target.checked)}
               />
               {w.confirmDuplicate}
@@ -252,6 +255,7 @@ export function Registration({
               setDuplicate(false);
               setConfirmed(false);
               setCandidates([]);
+              setTooManyDuplicates(false);
               setReviewedIds([]);
               setVerifiedCandidate(undefined);
               setError(undefined);
@@ -331,7 +335,7 @@ export function Registration({
           </button>
           <button
             className="primary"
-            disabled={pending || verificationPending || (duplicate && (!confirmed || candidates.length === 0 || reviewedIds.length !== candidates.length))}
+            disabled={pending || verificationPending || (duplicate && (tooManyDuplicates || !confirmed || candidates.length === 0 || reviewedIds.length !== candidates.length))}
           >
             {pending ? w.saving : intent.uncertain ? w.retry : w.savePatient}
           </button>
