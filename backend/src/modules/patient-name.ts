@@ -7,7 +7,7 @@
  * This is a search/possible-duplicate hint, never proof of identity.
  */
 export function patientNameKeySql(expression: string): string {
-  return `translate(
+	return `translate(
     regexp_replace(lower(${expression}), '[̀-ًͯ-ٰٟـ]', '', 'g'),
     'àáâãäåçèéêëìíîïñòóôõöùúûüýÿأإآٱةى',
     'aaaaaaceeeeiiiinooooouuuuyyااااهي'
