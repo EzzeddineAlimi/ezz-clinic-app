@@ -30,3 +30,24 @@ Settings are append-only, audited and tenant-isolated (`clinic_setting_changes`,
 
 ## Known residual
 `security_denials.day` (identity) is still the UTC `current_date`. It feeds a 7-day counter in owner exceptions, so it can be off by one day around midnight. This is low impact and left for a later change.
+
+## U014 clinic opening hours and manually confirmed closure dates (fictional draft)
+
+This calendar is a separate booking policy from the OWNER-only general clinic settings above.
+The effective policy is the latest append-only `clinic_setting_changes` row with key `clinic_calendar`,
+paired with a same-transaction `clinic.setting_changed` audit event and the existing integrity verifier.
+
+- `GET /api/v1/clinic/schedule` (visit.read): returns `weeklyHours`, `closedDays`, `revision`, and `timezone`.
+- `POST /api/v1/clinic/schedule` (visit.schedule, fresh password re-entry, idempotent): OWNER, DENTIST and RECEPTIONIST
+  replace the full calendar with `{expectedRevision, weeklyHours, closedDays, reason}`. First revision is `null`;
+  stale revisions fail with 409 instead of overwriting a coworker's change.
+- `weeklyHours` is `null` when not configured (existing booking behavior unchanged), or seven Sunday-first
+  arrays of zero to four sorted, non-overlapping `{start:'HH:mm',end:'HH:mm'}` local windows per weekday.
+  An empty weekday is closed; windows cannot span midnight. `closedDays` is a manually confirmed,
+  unique list of up to 366 real `YYYY-MM-DD` dates. No automatic holidays or dentist-specific leave.
+- New bookings are checked server-side against the clinic timezone, date closures and the full visit duration.
+  `allowOverlap` may still override a dentist overlap warning, **never** a closed day or outside-hours denial.
+  A change that would invalidate an existing future visit is rejected (409, count only); staff must reschedule
+  the visit first. Booking and calendar changes share a transaction advisory lock to prevent concurrent races.
+- This is a fictional-data backend contract, **not** a delivered receptionist UI, measured staff workflow,
+  clinical policy, Tunisian holiday authority, privacy/legal approval or V1 acceptance. Independent reviews remain open.
