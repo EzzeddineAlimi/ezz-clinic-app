@@ -13459,6 +13459,9 @@
                   "amountMillimes": {
                     "type": "integer"
                   },
+                  "confirmDuplicate": {
+                    "type": "boolean"
+                  },
                   "kind": {
                     "type": "string"
                   },
@@ -13481,7 +13484,7 @@
         },
         "responses": {
           "201": {
-            "description": "Owner records a petty expense from the drawer",
+            "description": "Owner records a petty expense from the drawer / Owner adds a fictional float top-up / Owner confirms a distinct matching float top-up",
             "content": {
               "application/json": {
                 "schema": {
