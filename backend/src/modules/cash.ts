@@ -18,11 +18,12 @@
 import type { Tx } from '../platform/db.ts';
 import type { Actor, Route } from '../platform/http.ts';
 import { fail } from '../platform/errors.ts';
-import { asBody, millimes, oneOf, optStr, str, uuid, isUuid } from '../platform/validate.ts';
+import { asBody, bool, millimes, oneOf, optStr, str, uuid, isUuid } from '../platform/validate.ts';
 import { canonicalJson, sha256 } from '../platform/canonical.ts';
 import { appendAudit } from './audit.ts';
 
 const OUTFLOWS = ['OWNER_WITHDRAWAL', 'BANK_DEPOSIT', 'PETTY_EXPENSE'] as const;
+const MOVEMENT_DUPLICATE_WINDOW_SECONDS = 120;
 
 async function drawerId(tx: Tx, clinicId: string): Promise<string> {
   await tx.query("INSERT INTO cash_drawers (clinic_id, name) VALUES ($1, 'MAIN') ON CONFLICT DO NOTHING", [clinicId]);
@@ -111,8 +112,21 @@ export const cashRoutes: Route[] = [
       const amount = millimes(b, 'amountMillimes');
       const reason = str(b, 'reason', { min: 3, max: 200 });
       const voucherRef = optStr(b, 'voucherRef', { max: 40, pattern: /^[A-Za-z0-9/_-]{1,40}$/ });
+      const confirmDuplicate = bool(b, 'confirmDuplicate');
+      // Serialize owner movements on the period before checking for a near-identical fresh-key retry.
+      const period = await getPeriod(tx, params.id!, 'FOR UPDATE');
+      if (period.status !== 'OPEN') fail('CASH_PERIOD_CLOSED', 'Movements can only be recorded in the open period');
       const openId = await openPeriodForCashWrite(tx, actor!);
       if (openId !== params.id) fail('CASH_PERIOD_CLOSED', 'Movements can only be recorded in the open period');
+      if (!confirmDuplicate) {
+        const prior = await tx.maybeOne<{ id: string; recorded_at: string }>(`SELECT id, recorded_at FROM cash_movements
+          WHERE clinic_id = $1 AND period_id = $2 AND kind = $3 AND amount_millimes = $4 AND authorized_by = $5
+            AND recorded_at > clock_timestamp() - make_interval(secs => $6)
+          ORDER BY recorded_at DESC LIMIT 1`,
+        [actor!.clinicId, openId, kind, amount, actor!.staffId, MOVEMENT_DUPLICATE_WINDOW_SECONDS]);
+        if (prior) fail('CONFLICT', 'A matching cash movement was recorded moments ago; confirm this is a second movement',
+          { previousMovementId: prior.id, previousAt: prior.recorded_at, retryWith: { confirmDuplicate: true } });
+      }
       const m = await tx.one<{ id: string; recorded_at: string }>(`INSERT INTO cash_movements (clinic_id, period_id, kind, amount_millimes, reason, voucher_ref, authorized_by, recorded_at)
           VALUES ($1,$2,$3,$4,$5,$6,$7, clock_timestamp()) RETURNING id, recorded_at`, [actor!.clinicId, openId, kind, amount, reason, voucherRef, actor!.staffId]);
       await appendAudit(tx, actor!, 'cash.movement_recorded', 'cash_movement', m.id, { periodId: openId, kind, amountMillimes: amount, voucherRef, outflow: (OUTFLOWS as readonly string[]).includes(kind), recordedAt: m.recorded_at });

@@ -638,6 +638,53 @@
         "status": "CANCELLED",
         "paymentRecorded": false
       }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Owner adds a fictional float top-up",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/cash/periods/:id/movements",
+      "path": "/api/v1/cash/periods/<id-34>/movements",
+      "request": {
+        "kind": "FLOAT_TOP_UP",
+        "amountMillimes": 1000,
+        "reason": "Fictional: change float",
+        "voucherRef": "V-002"
+      },
+      "status": 201,
+      "response": {
+        "movement": {
+          "id": "<id-61>",
+          "kind": "FLOAT_TOP_UP",
+          "amountMillimes": 1000,
+          "recordedAt": "<timestamp>"
+        }
+      }
+    },
+    {
+      "file": "money-and-cash",
+      "title": "Owner confirms a distinct matching float top-up",
+      "role": "OWNER",
+      "method": "POST",
+      "route": "/api/v1/cash/periods/:id/movements",
+      "path": "/api/v1/cash/periods/<id-34>/movements",
+      "request": {
+        "kind": "FLOAT_TOP_UP",
+        "amountMillimes": 1000,
+        "reason": "Fictional: separate change float",
+        "voucherRef": "V-003",
+        "confirmDuplicate": true
+      },
+      "status": 201,
+      "response": {
+        "movement": {
+          "id": "<id-62>",
+          "kind": "FLOAT_TOP_UP",
+          "amountMillimes": 1000,
+          "recordedAt": "<timestamp>"
+        }
+      }
     }
   ]
 }

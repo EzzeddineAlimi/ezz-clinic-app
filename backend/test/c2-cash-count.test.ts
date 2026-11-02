@@ -5,7 +5,7 @@
  */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTestDb, startApi, standardFixture, newVisit, confirmCare, seedClinic, reauth, type TestDb, type Api } from './helpers.ts';
+import { createTestDb, startApi, standardFixture, newVisit, confirmCare, seedClinic, reauth, key, type TestDb, type Api } from './helpers.ts';
 
 let db: TestDb; let api: Api;
 before(async () => { db = await createTestDb(); api = await startApi(db.appUrl); });
@@ -207,4 +207,49 @@ test('T-CASH-SCOPE after-count warning includes only this clinic and the open pe
   assert.equal(after.body.cashRecordedAfterLatestCount.totalMillimes, 9_000);
   const denied = await api.call('GET', `/api/v1/cash/periods/${F.periodId}/review`, { token: G.owner });
   assert.equal(denied.status, 404, 'another clinic cannot inspect this period');
+});
+
+test('T-CASH-MOVE-RETRY-1 same-key replay is safe; fresh-key identical movement needs explicit confirmation', async () => {
+  const F = await clinic(100_000);
+  await reauth(api, F.owner);
+  const path = `/api/v1/cash/periods/${F.periodId}/movements`;
+  const body = { kind: 'BANK_DEPOSIT', amountMillimes: 10_000, reason: 'Fictional bank deposit' };
+  const idem = key();
+  const first = await api.call('POST', path, { token: F.owner, body, idem });
+  assert.equal(first.status, 201, JSON.stringify(first.body));
+  const replay = await api.call('POST', path, { token: F.owner, body, idem });
+  assert.equal(replay.status, 201, JSON.stringify(replay.body));
+  assert.equal(replay.body.replayed, true);
+  assert.equal(replay.body.movement.id, first.body.movement.id);
+
+  const uncertainRetry = await api.call('POST', path, { token: F.owner, body, idem: key() });
+  assert.equal(uncertainRetry.status, 409, 'fresh-key retry must not silently subtract the deposit twice: ' + JSON.stringify(uncertainRetry.body));
+  assert.equal(uncertainRetry.body.error.code, 'CONFLICT');
+  assert.equal(uncertainRetry.body.error.details.previousMovementId, first.body.movement.id);
+
+  const confirmed = await api.call('POST', path, { token: F.owner, body: { ...body, confirmDuplicate: true }, idem: key() });
+  assert.equal(confirmed.status, 201, JSON.stringify(confirmed.body));
+  assert.notEqual(confirmed.body.movement.id, first.body.movement.id);
+  const other = await api.call('POST', path, { token: F.owner, body: { ...body, kind: 'PETTY_EXPENSE' }, idem: key() });
+  assert.equal(other.status, 201, 'different kind is not a duplicate');
+  await count(F, F.dentist, 70_000);
+  const r = await review(F);
+  assert.equal(r.status, 200);
+  assert.equal(r.body.expected.expectedMillimes, 70_000, 'three explicit 10,000 outflows, not four');
+});
+
+test('T-CASH-MOVE-RETRY-2 concurrent fresh-key identical owner movements must not both commit', async () => {
+  const F = await clinic(50_000);
+  await reauth(api, F.owner);
+  const path = `/api/v1/cash/periods/${F.periodId}/movements`;
+  const body = { kind: 'OWNER_WITHDRAWAL', amountMillimes: 7_000, reason: 'Fictional drawer withdrawal' };
+  const rs = await Promise.all([
+    api.call('POST', path, { token: F.owner, body, idem: key() }),
+    api.call('POST', path, { token: F.owner, body, idem: key() }),
+  ]);
+  assert.deepEqual(rs.map(r => r.status).sort(), [201, 409], JSON.stringify(rs.map(r => r.body)));
+  await count(F, F.dentist, 43_000);
+  const r = await review(F);
+  assert.equal(r.status, 200);
+  assert.equal(r.body.expected.expectedMillimes, 43_000, 'one committed movement after concurrent fresh-key retries');
 });

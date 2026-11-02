@@ -263,7 +263,7 @@ export async function runMoreWorkflows(api: Api, db: TestDb): Promise<Array<Omit
   await call('money-and-cash', 'Owner voids a mistaken payment (void receipt)', 'owner', 'POST', '/api/v1/payments/:id/void', `/api/v1/payments/${pay2.body.payment.id}/void`, { reasonCode: 'ENTERED_IN_ERROR' });
   await call('money-and-cash', 'Owner records a petty expense from the drawer', 'owner', 'POST', '/api/v1/cash/periods/:id/movements', `/api/v1/cash/periods/${periodId}/movements`, { kind: 'PETTY_EXPENSE', amountMillimes: 2_000, reason: 'Fictional: cleaning supplies', voucherRef: 'V-001' });
   const cnt = await call('money-and-cash', 'Blind count by the dentist', 'dentist', 'POST', '/api/v1/cash/periods/:id/counts', `/api/v1/cash/periods/${periodId}/counts`, { countedMillimes: 38_000, denominations: { '20000': 1, '10000': 1, '5000': 1, '1000': 3 } });
-  await call('money-and-cash', 'Owner closes the period (handover; the rest carries forward)', 'owner', 'POST', '/api/v1/cash/periods/:id/close', `/api/v1/cash/periods/${periodId}/close`, { acceptedCountId: cnt.body.count.id, handoverMillimes: 18_000, note: 'Fictional: to bank' });
+  const closed = await call('money-and-cash', 'Owner closes the period (handover; the rest carries forward)', 'owner', 'POST', '/api/v1/cash/periods/:id/close', `/api/v1/cash/periods/${periodId}/close`, { acceptedCountId: cnt.body.count.id, handoverMillimes: 18_000, note: 'Fictional: to bank' });
   const ex = (await api.call('GET', '/api/v1/owner/exceptions', { token: tokens.owner })).body;
   const item = (ex.open as Array<{ key: string }>)[0];
   if (item) await call('money-and-cash', 'Resolve one exception (one item, reason code; no bulk clear)', 'owner', 'POST', '/api/v1/owner/exceptions/resolve', '/api/v1/owner/exceptions/resolve', { key: item.key, reasonCode: 'OWNER_REVIEWED', note: 'Fictional: checked' });
@@ -339,6 +339,11 @@ export async function runMoreWorkflows(api: Api, db: TestDb): Promise<Array<Omit
   const ns=await api.call('GET',`/api/v1/visits/${recoveryVisit}/payment-recovery`,{token:tokens.desk});
   const ni=await api.call('POST',`/api/v1/visits/${recoveryVisit}/payment-intents`,{token:tokens.desk,body:{amountMillimes:70000,tender:'CARD',recoveryVersion:ns.body.recoveryVersion,acknowledgedPaymentIds:ns.body.paymentIds}});
   await call('money-and-cash','Cancel unrecorded intention after explicit reconciliation (not a refund)','desk','POST','/api/v1/payment-intents/:id/cancel',`/api/v1/payment-intents/${ni.body.intent.id}/cancel`,{reason:'Fictional money not received'});
+  // Record two genuine fictional successes so OpenAPI includes the explicit duplicate confirmation field.
+  await reauthOwner(api, tokens.owner!);
+  const nextPeriodId = closed.body.nextPeriod.id as string;
+  await call('money-and-cash', 'Owner adds a fictional float top-up', 'owner', 'POST', '/api/v1/cash/periods/:id/movements', `/api/v1/cash/periods/${nextPeriodId}/movements`, { kind: 'FLOAT_TOP_UP', amountMillimes: 1_000, reason: 'Fictional: change float', voucherRef: 'V-002' });
+  await call('money-and-cash', 'Owner confirms a distinct matching float top-up', 'owner', 'POST', '/api/v1/cash/periods/:id/movements', `/api/v1/cash/periods/${nextPeriodId}/movements`, { kind: 'FLOAT_TOP_UP', amountMillimes: 1_000, reason: 'Fictional: separate change float', voucherRef: 'V-003', confirmDuplicate: true });
   return steps;
 }
 
