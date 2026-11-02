@@ -1,29 +1,26 @@
 # EZZ Clinic — Astra clinical integration contract v0.1 (NONVISUAL)
 
-> **Update (B07, branch `claude/b07-clinical-core`):** several contracts in §1 are now implemented in draft form — medical alerts/history review/acknowledgement, signed clinical notes, chart findings, treatment plan items and the clinical timeline. See [`../api/clinical-v1.md`](../api/clinical-v1.md) and [`b07-clinical-core-status.md`](b07-clinical-core-status.md) for the exact routes and what remains proposed. The rest of this document is unchanged.
+> **Source reconciliation (2026-11-02):** B07 clinical endpoints are present on merged main; §1 distinguishes their actual route paths from historical proposals. This is documentation of fictional-data code, **not** clinician validation. The previous branch-only status was historical.
 
 **Status: DRAFT / synthetic data only.** Not a clinical, legal, imaging-device or production approval. For future Astra frontend integration; **do not implement UI visuals here**. Extends existing `docs/clinical-domain/clinical-requirements.md` (see it for source citations, evidence tiers and Tunisian unknowns). New TypeScript helpers in `backend/src/contracts/clinical.ts` enforce only limited syntactic constraints; no clinical decision support.
 
-## 1. Current implementation vs proposed endpoints
+## 1. Current backend contracts vs proposals (source-verified on main `301f8257376259b555481c446c923ce9cbebb12a`)
 
-**Current in v0.2 branch (API behavior requires inspection):** patients, visits, dentist care confirmation, payment, receipt, paper-recovery and owner finance. Do not render hypothetical clinical endpoints as working.
+The earlier v0.2 **PROPOSED ONLY** table was not reconciled after B07 and later clinical work merged. These routes are present in `backend/src/modules/{clinical,medical,documents}.ts` on the cited main commit. They are **implemented fictional-data APIs**, not clinician-approved workflows or production readiness. See [clinical API details](../api/clinical-v1.md) and generated [OpenAPI](../api/openapi.json); never call an old proposed path as though it exists.
 
-**PROPOSED ONLY, not implemented/approved:**
-
-| Contract | Writer / reader | Behavior; failure states |
+| Contract intent | Current implemented route(s) | Remaining boundary |
 |---|---|---|
-| GET /api/v1/patients/:id/clinical-summary | dentist read; receptionist minimum-data check-in only | Must show explicit "never reviewed" medical-history state; 403 to unauthorized role; 404 cross-clinic |
-| POST /api/v1/patients/:id/medical-history-assertions | patient/desk **draft**; dentist verifies | Immutable review version and original source; not an automatic clinical truth |
-| POST /api/v1/visits/:id/medical-history-ack | authenticated dentist | Requires current alert-set version/hash; 409 if alerts changed |
-| GET /api/v1/patients/:id/odontogram-events | dentist; receptionist limited viewing if authorized | Four event categories; never conflate past findings with billable work |
-| POST /api/v1/patients/:id/odontogram-events | dentist; assistant drafts if policy approved | FDI site, author, source, recorded timestamp; corrections append new events |
-| POST /api/v1/visits/:id/clinical-notes | dentist drafts/signs; assistant drafts without signing | Signed notes immutable; late entries/addenda linked with reasons |
-| POST /api/v1/patients/:id/treatment-plan-versions | dentist author only | Draft/present/accept/decline/version; plan ≠ billable care |
-| POST /api/v1/visits/:id/attachment-metadata | authorized dentist only | Attachment only after separately secured upload, malware scanning and permissions |
-| POST /api/v1/visits/:id/prescription-drafts | dentist sign; assistant draft only | No automatic medication dose, no auto-sign or automated treatment |
-| GET /api/v1/visits/:id/clinical-timeline | dentist; patient export requires consent+separate policy | Sort by immutable recorded date; distinguish corrected-in-error events |
+| Dentist encounter and longitudinal clinical read | `GET /api/v1/visits/:id/encounter`; `GET /api/v1/patients/:id/clinical-record` | The old `GET /api/v1/patients/:id/clinical-summary` is **not** a route. Clinical detail requires `clinical.read` (dentist). |
+| Patient-declared medical alerts and dentist review | `GET/POST /api/v1/patients/:id/medical-alerts`; `GET /api/v1/patients/:id/medical-alerts/summary`; `POST /api/v1/medical-alerts/:id/revisions`; `POST /api/v1/patients/:id/medical-history-reviews` | The old `POST /api/v1/patients/:id/medical-history-assertions` is **not** a route. Reception sees only the restricted presence summary; a declaration is not a verified medical fact. |
+| Current medical-alert acknowledgement | `POST /api/v1/visits/:id/alert-acknowledgements` | The old `POST /api/v1/visits/:id/medical-history-ack` is **not** a route. Dentist must acknowledge the current alert-set hash; stale hash is refused. |
+| Findings and anatomical site history | `POST /api/v1/visits/:id/chart-findings`; `POST /api/v1/chart-findings/:id/entered-in-error`; clinical-record read above | The old `GET/POST /api/v1/patients/:id/odontogram-events` is **not** implemented. No complete tooth-state engine or clinically validated odontogram is claimed. |
+| Signed notes and append-only corrections | `POST /api/v1/visits/:id/clinical-notes`; `POST /api/v1/clinical-notes/:id/addenda` | Authenticated dentist authorship and immutable correction history remain mandatory. |
+| Treatment plans and confirmed care | `GET /api/v1/patients/:id/treatment-plan`; `POST /api/v1/patients/:id/treatment-plan-items`; `POST /api/v1/treatment-plan-items/:id/status`; `POST /api/v1/treatment-plan-items/:id/perform` | The old `POST /api/v1/patients/:id/treatment-plan-versions` is **not** implemented; do not infer immutable presented quote-version/consent behavior from plan items. |
+| Document / image attachment lifecycle | `POST /api/v1/patients/:id/documents`; `POST /api/v1/documents/:id/content`; `POST /api/v1/documents/:id/screen`; `GET /api/v1/patients/:id/documents` | The old `POST /api/v1/visits/:id/attachment-metadata` is **not** a route. Existing structural screening is **not** production malware scanning, DICOM validation or diagnostic image approval. |
+| Prescription authoring | **No implemented prescription-draft/signature route.** | The proposed `POST /api/v1/visits/:id/prescription-drafts` requires separately approved clinical/legal scope; never auto-sign or infer doses. |
+| Clinical timeline | The clinical-record read above exposes recorded clinical information. | The proposed `GET /api/v1/visits/:id/clinical-timeline` is **not** a route; do not claim an independent timeline API. |
 
-**Implementation prohibition:** no client-written `clinicId`, actor roles or dentist confirmation; these come from server-authenticated session. New endpoints need a separate permission matrix, migration, audit event catalog, synthetic tests and qualified local clinical/legal validation.
+**Permissions and safety:** Server derives clinic, acting staff and roles from the authenticated session; cross-clinic records must not leak. An OWNER without the DENTIST role is not a clinical author. A same-clinic covering dentist may act on a colleague's visit while the signed author remains the actual dentist; see [founder authorship policy](../decisions/clinical-authorship.md) and [COVER tests](../testing/ISSUE7-DENTIST-COVER.md). The provisional FDI/surface terminology, imaging, prescription, consent, retention and Tunisian clinical/legal requirements still need qualified review. No new endpoint or clinical policy is authorized by this documentation correction.
 
 ## 2. Canonical nonvisual model
 
