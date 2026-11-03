@@ -107,6 +107,22 @@ test('T-INT-CASH-CLOSE-2 a changed accepted count on a closed period must disagr
     'a changed accepted count must disagree with cash.period_closed: ' + JSON.stringify(findings));
 });
 
+test('T-INT-CASH-CLOSE-3 a changed closed-period cutoff must disagree with its close audit', async () => {
+  const f = await clinic();
+  const acceptedCountId = await count(f, 50_000);
+  await reauth(api, f.owner);
+  const close = await api.call('POST', `/api/v1/cash/periods/${f.periodId}/close`, {
+    token: f.owner, body: { acceptedCountId, handoverMillimes: 10_000 },
+  });
+  assert.equal(close.status, 200, JSON.stringify(close.body));
+  assert.deepEqual(await checks(f), [], 'the unmodified close cutoff is consistent');
+
+  await tamper([["UPDATE cash_periods SET cutoff_at = cutoff_at + interval '1 minute' WHERE id = $1", [f.periodId]]]);
+  const findings = await checks(f);
+  assert.ok(findings.some(x => x.check === 'CASH_PERIOD_AUDIT_VALUE_MISMATCH' && x.detail.includes('cutoffAt')),
+    'a changed cutoff must disagree with cash.period_closed: ' + JSON.stringify(findings));
+});
+
 test('T-INT-CASH-A (M-267 1) opening float + stored expected edited together is reported (first period and a carry-forward period)', async () => {
   const f = await clinic();
   await confirmCare(api, f.dentist, f.visitId, 100_000);
