@@ -182,7 +182,7 @@ function validateCalendar(b: Record<string, unknown>): CalendarPolicy {
   return { weeklyHours, closedDays: closedDays.sort() };
 }
 
-type SlotProblem = 'CLINIC_CLOSED' | 'OUTSIDE_OPENING_HOURS';
+type SlotProblem = 'CLINIC_CLOSED' | 'OUTSIDE_OPENING_HOURS' | 'CLOCK_TRANSITION';
 function slotProblem(calendar: CalendarPolicy, timezone: string, scheduledAt: string, durationMin: number): SlotProblem | null {
   const start = new Date(scheduledAt);
   const end = new Date(start.getTime() + durationMin * 60_000);
@@ -195,7 +195,8 @@ function slotProblem(calendar: CalendarPolicy, timezone: string, scheduledAt: st
   const from = localClockMinutes(timezone, start);
   const to = localDate(timezone, end) === day ? localClockMinutes(timezone, end) : 1440;
   // A timezone clock jump can make both endpoints look inside a window while the actual slot crosses DST.
-  if (to <= from || Math.abs(to - from - durationMin) > 1e-6) return 'OUTSIDE_OPENING_HOURS';
+  if (Math.abs(to - from - durationMin) > 1e-6) return 'CLOCK_TRANSITION';
+  if (to <= from) return 'OUTSIDE_OPENING_HOURS';
   return calendar.weeklyHours[weekday]!.some(w => from >= clockMinutes(w.start) && to <= clockMinutes(w.end))
     ? null : 'OUTSIDE_OPENING_HOURS';
 }
@@ -211,8 +212,14 @@ export async function assertClinicOpen(tx: Tx, clinicId: string, scheduledAt: st
   const calendar = await loadCalendar(tx, clinicId);
   const timezone = await clinicTimezone(tx, clinicId);
   const problem = slotProblem(calendar, timezone, scheduledAt, durationMin);
-  if (problem) fail('CONFLICT', problem === 'CLINIC_CLOSED' ? 'The clinic is closed on this date' : 'Appointment is outside configured clinic opening hours',
-    { reason: problem });
+  if (problem) {
+    const message = {
+      CLINIC_CLOSED: 'The clinic is closed on this date',
+      OUTSIDE_OPENING_HOURS: 'Appointment is outside configured clinic opening hours',
+      CLOCK_TRANSITION: 'Appointment crosses a clinic-local clock change; choose another time that does not cross the change',
+    }[problem];
+    fail('CONFLICT', message, { reason: problem });
+  }
 }
 
 export const calendarRoutes: Route[] = [
