@@ -65,3 +65,5 @@ jobs:
             docs/images/sprint3b/dayboard-ar-200pct-css-zoom.png
             docs/images/sprint3b/dayboard-ar-landscape.png
             frontend/test-results/**/*.png
+            frontend/test-results/**/*.pdf
+            docs/testing/u029/*.pdf

@@ -137,6 +137,7 @@ function Workspace({
     RECEPTIONIST: w.roleReceptionist,
     ASSISTANT: w.roleAssistant,
   };
+  const slipError = toast === w.slipStale || toast === w.slipUnavailable;
   return (
     <div className="app-layout">
       <a className="skip-link" href="#main">
@@ -225,8 +226,8 @@ function Workspace({
             )}
           </div>
           {toast && (
-            <div className="toast" role="status">
-              <Icon name="check" />
+            <div className={`toast${slipError ? " toast-error" : ""}`} role={slipError ? "alert" : "status"}>
+              <Icon name={slipError ? "close" : "check"} />
               <span>{toast}</span>
               <button
                 className="icon-button"
