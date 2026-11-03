@@ -2422,6 +2422,199 @@
         "x-ezz-example": true
       }
     },
+    "/api/v1/clinic/schedule": {
+      "get": {
+        "operationId": "getClinicSchedule",
+        "tags": [
+          "clinic"
+        ],
+        "summary": "Read manually configured clinic hours and closures",
+        "responses": {
+          "200": {
+            "description": "Read manually configured clinic hours and closures",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "closedDays": {
+                      "type": "array"
+                    },
+                    "revision": {
+                      "type": "null"
+                    },
+                    "timezone": {
+                      "type": "string"
+                    },
+                    "weeklyHours": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "example": {
+                  "weeklyHours": null,
+                  "closedDays": [],
+                  "revision": null,
+                  "timezone": "Africa/Tunis"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "visit.read",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST",
+          "ASSISTANT"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "none",
+        "x-ezz-example": true
+      },
+      "post": {
+        "operationId": "postClinicSchedule",
+        "tags": [
+          "clinic"
+        ],
+        "summary": "Record a fictional confirmed closure day",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "closedDays": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "date"
+                    }
+                  },
+                  "expectedRevision": {
+                    "type": "null"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "weeklyHours": {
+                    "type": "null"
+                  }
+                }
+              },
+              "example": {
+                "expectedRevision": null,
+                "weeklyHours": null,
+                "closedDays": [
+                  "2027-12-25"
+                ],
+                "reason": "Fictional confirmed closure"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Record a fictional confirmed closure day",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "closedDays": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "date"
+                      }
+                    },
+                    "revision": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "timezone": {
+                      "type": "string"
+                    },
+                    "weeklyHours": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "example": {
+                  "weeklyHours": null,
+                  "closedDays": [
+                    "2027-12-25"
+                  ],
+                  "revision": "<id-61>",
+                  "timezone": "Africa/Tunis"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "visit.schedule",
+        "x-ezz-roles": [
+          "OWNER",
+          "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": true,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
     "/api/v1/patients": {
       "post": {
         "operationId": "postPatients",

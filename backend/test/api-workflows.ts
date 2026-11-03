@@ -339,6 +339,13 @@ export async function runMoreWorkflows(api: Api, db: TestDb): Promise<Array<Omit
   const ns=await api.call('GET',`/api/v1/visits/${recoveryVisit}/payment-recovery`,{token:tokens.desk});
   const ni=await api.call('POST',`/api/v1/visits/${recoveryVisit}/payment-intents`,{token:tokens.desk,body:{amountMillimes:70000,tender:'CARD',recoveryVersion:ns.body.recoveryVersion,acknowledgedPaymentIds:ns.body.paymentIds}});
   await call('money-and-cash','Cancel unrecorded intention after explicit reconciliation (not a refund)','desk','POST','/api/v1/payment-intents/:id/cancel',`/api/v1/payment-intents/${ni.body.intent.id}/cancel`,{reason:'Fictional money not received'});
+  // U014: two real fictional API operations are part of the generated contract, not handwritten-only schemas.
+  await call('desk-extras', 'Read manually configured clinic hours and closures', 'desk',
+    'GET', '/api/v1/clinic/schedule', '/api/v1/clinic/schedule');
+  await api.call('POST', '/api/v1/session/reauth', { token: tokens.desk, body: { password: 'fictional-pass-123' }, idem: false });
+  await call('desk-extras', 'Record a fictional confirmed closure day', 'desk',
+    'POST', '/api/v1/clinic/schedule', '/api/v1/clinic/schedule',
+    { expectedRevision: null, weeklyHours: null, closedDays: ['2027-12-25'], reason: 'Fictional confirmed closure' });
   return steps;
 }
 
