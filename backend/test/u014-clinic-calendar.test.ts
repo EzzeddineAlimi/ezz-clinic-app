@@ -112,3 +112,23 @@ test('U014-6 changing timezone cannot invalidate a future visit; a compatible ch
   assert.equal(compatible.status, 200, JSON.stringify(compatible.body));
   assert.equal((await read(f.desk)).body.timezone, 'Europe/Paris', '10:00 Paris keeps the visit inside opening hours');
 });
+
+
+test('U014-7 configured hours reject slots crossing a clinic-local DST clock change', async () => {
+  const f = await fixture();
+  const a = await adminConn(db.name);
+  try { await a.query("UPDATE clinics SET settings = jsonb_set(settings, '{timezone}', to_jsonb($2::text)) WHERE id = $1", [f.clinic.id, 'America/Toronto'] as never[]); }
+  finally { a.end(); }
+  const hours = Array.from({ length: 7 }, () => [{ start: '00:00', end: '04:00' }]);
+  assert.equal((await save(f.desk, { expectedRevision: null, weeklyHours: hours, closedDays: [], reason: 'Fictional DST regression hours' })).status, 200);
+  // 01:00 EDT -> 01:30 EST is 90 real minutes, not 30: the old endpoint-only wall-clock check admitted it.
+  const fallback = await book(f, '2027-11-07T05:00:00Z', { durationMin: 90 });
+  assert.equal(fallback.status, 409, JSON.stringify(fallback.body));
+  assert.equal(fallback.body.error.details.reason, 'OUTSIDE_OPENING_HOURS');
+  // 01:30 EST -> 04:00 EDT crosses the spring-forward gap despite both endpoints fitting 00:00-04:00.
+  const spring = await book(f, '2027-03-14T06:30:00Z', { durationMin: 90 });
+  assert.equal(spring.status, 409, JSON.stringify(spring.body));
+  assert.equal(spring.body.error.details.reason, 'OUTSIDE_OPENING_HOURS');
+  assert.equal((await book(f, '2027-11-06T05:00:00Z', { durationMin: 90 })).status, 201,
+    'ordinary 01:00-02:30 clinic-local interval must remain bookable');
+});
