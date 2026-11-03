@@ -47,6 +47,8 @@ paired with a same-transaction `clinic.setting_changed` audit event and the exis
   unique list of up to 366 real `YYYY-MM-DD` dates. No automatic holidays or dentist-specific leave.
 - New bookings are checked server-side against the clinic timezone, date closures and the full visit duration.
   `allowOverlap` may still override a dentist overlap warning, **never** a closed day or outside-hours denial.
+  With configured hours, a visit crossing a clinic-local daylight-saving clock jump is rejected rather than
+  inferred from ambiguous wall-clock endpoints; ordinary intervals remain bookable.
   A change that would invalidate an existing future visit is rejected (409, count only); staff must reschedule
   the visit first. Booking and calendar changes share a transaction advisory lock to prevent concurrent races.
 - This is a fictional-data backend contract, **not** a delivered receptionist UI, measured staff workflow,
