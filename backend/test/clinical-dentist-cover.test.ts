@@ -5,6 +5,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createTestDb, startApi, seedClinic, key, type Api, type TestDb } from './helpers.ts';
 import { PgConnection, parseDatabaseUrl } from '../src/platform/postgres.ts';
+import { sha256Hex } from '../src/platform/fileinspect.ts';
 
 let db: TestDb; let api: Api;
 let clinic: Awaited<ReturnType<typeof seedClinic>>;
@@ -143,4 +144,57 @@ test('COVER-3 colleague cover preserves the existing current-alert treatment gat
   const allowed = await api.call('POST', `/api/v1/visits/${v.id}/care`, { token: cover, body: { ...body, alertSetHash: enc.body.medical.alertSetHash } });
   assert.equal(allowed.status, 201, JSON.stringify(allowed.body));
   assert.equal(allowed.body.careItem.confirmedBy, clinic.staff.cover);
+});
+
+test('COVER-4 a covering dentist attaches a fictional document to a colleague visit without impersonation or tenant leakage', async () => {
+  const v = await visit();
+  const pdf = Buffer.from(`%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [] /Count 0 >> endobj
+trailer << /Root 1 0 R >>
+%%EOF
+`, 'latin1');
+  const declared = await api.call('POST', `/api/v1/patients/${v.patientId}/documents`, { token: cover, body: {
+    modality: 'DOCUMENT_SCAN', title: 'Fictional colleague visit paper', source: 'PATIENT_BROUGHT',
+    teeth: [36], visitId: v.id, contentType: 'application/pdf', sizeBytes: pdf.length, sha256: sha256Hex(pdf),
+    createdBy: clinic.staff.assigned,
+  } });
+  assert.equal(declared.status, 201, JSON.stringify(declared.body));
+  const id = declared.body.document.id as string;
+  const uploaded = await fetch(`${api.base}/api/v1/documents/${id}/content`, {
+    method: 'POST', headers: { authorization: `Bearer ${cover}`, 'content-type': 'application/octet-stream' },
+    body: new Uint8Array(pdf),
+  });
+  const uploadedBody = await uploaded.json() as { document: { status: string } };
+  assert.equal(uploaded.status, 201, JSON.stringify(uploadedBody));
+  assert.equal(uploadedBody.document.status, 'ACTIVE');
+
+  const assignedView = await api.call('GET', `/api/v1/documents/${id}`, { token: assigned });
+  assert.equal(assignedView.status, 200);
+  assert.equal(assignedView.body.document.patientId, v.patientId);
+  assert.equal(assignedView.body.document.visitId, v.id);
+  assert.equal(assignedView.body.uploadedBy, 'Fictional cover');
+  const downloaded = await fetch(`${api.base}/api/v1/documents/${id}/content`, {
+    headers: { authorization: `Bearer ${assigned}` },
+  });
+  assert.equal(downloaded.status, 200);
+  assert.equal(downloaded.headers.get('x-content-sha256'), sha256Hex(pdf));
+  assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()), pdf);
+
+  for (const token of [desk, assistant]) {
+    assert.equal((await api.call('GET', `/api/v1/documents/${id}`, { token })).status, 403);
+    assert.equal((await api.call('POST', `/api/v1/patients/${v.patientId}/documents`, { token, body: {} })).status, 403);
+  }
+  assert.equal((await api.call('GET', `/api/v1/documents/${id}`, { token: foreign })).status, 404);
+  assert.equal((await api.call('GET', `/api/v1/patients/${v.patientId}/documents`, { token: foreign })).status, 404);
+  const enc = await api.call('GET', `/api/v1/visits/${v.id}/encounter`, { token: assigned });
+  assert.equal(enc.body.visit.dentistId, clinic.staff.assigned, 'document upload does not reassign the visit');
+  const audit = await sql(async c => (await c.query<{ actor: string; action: string }>(
+    'SELECT actor_staff_id AS actor, action FROM audit_events WHERE entity_id = $1 ORDER BY seq', [id])).rows);
+  assert.deepEqual(audit.map(x => x.action), [
+    'document.created', 'document.content_stored', 'document.screen_passed', 'document.downloaded',
+  ]);
+  assert.deepEqual(audit.map(x => x.actor), [
+    clinic.staff.cover, clinic.staff.cover, clinic.staff.cover, clinic.staff.assigned,
+  ]);
 });

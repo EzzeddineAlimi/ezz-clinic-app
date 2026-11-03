@@ -13,23 +13,44 @@
 - Keep modular TypeScript boundaries and server-side controls: role/clinic isolation, dentist authority, integer millimes, idempotency, append-only/audited facts, receipt sequence, and physical-cash evidence limitations. Do not weaken safeguards to speed delivery.
 - Reuse scripts and CI for repeated deterministic operations. Introduce a new script only when repetition is demonstrated and maintaining it is worthwhile.
 
+## Project stack, layout and coding conventions
+- Keep the existing stack: **React 19, Vite and TypeScript** in `frontend/`; **Node.js 22, TypeScript and PostgreSQL 16** in `backend/`. The root prototype is historical; do not substitute Expo, Supabase or another framework based on an external template.
+- Put frontend views and shared UI in the existing `frontend/src/` structure; backend HTTP/DB infrastructure belongs in `backend/src/platform/`, business capabilities in `backend/src/modules/`, SQL changes in `backend/migrations/`, and respective tests in `frontend/test/`, `frontend/e2e/` or `backend/test/`. Follow neighboring file organization; do not create an extra folder hierarchy for its own sake.
+- Use **PascalCase** for React components and TypeScript types/interfaces, **camelCase** for functions, variables and hooks (`useSomething`), and existing descriptive file-name conventions. Do not rename established public symbols, routes, schema columns or files for style alone.
+- **Ask for founder approval before adding or upgrading dependencies.** First show why the current stack cannot cover the requirement; assess maintenance, license, security and bundle/runtime impact. Pin approved versions, keep lockfiles synchronized, and do not bypass dependency/security CI.
+- Reuse existing shared components and CSS design tokens from `frontend/src/tokens.css`. For new visual styling, reference tokens rather than introducing ad hoc colors or a competing theme; add or adjust tokens only for an evidenced design/accessibility need, with French/Arabic RTL and contrast checks.
+
 ## Use AI context deliberately
 - Start at `docs/INDEX.md` to locate current domain authorities; read only the relevant source documents and current code. Treat accepted product scope, implemented behavior, and release readiness as different claims. Draft PRs and historical handoffs are not merged functionality.
 - When a change affects an accepted workflow, API, permission, schema, UX state, environment, security control or release gate, update the corresponding authoritative document in the same PR; regenerate generated contracts rather than hand-editing them. Record unresolved conflicts, not speculative decisions.
 - Reuse stable repository instructions, precise file paths, current API contracts, diff ranges, and evidence links instead of repeatedly pasting the same project history.
+- **When changing agent instructions or existing scheduled-task prompts**, replace the superseded rule in the authoritative text, remove contradictory older directions, and read back the saved result. Keep a short conditional pointer in always-loaded instructions; load detailed playbooks only for matching tasks. This does **not** authorize editing append-only audit logs or historical review entries.
 - Keep one focused task per session; start a new session for an unrelated task and compact long sessions around the active task. Do not keep stale context just to chase cache hits.
 - Use expensive reasoning for difficult architecture/security questions, and cheaper models for bounded routine work **when selected by the operator**. This file cannot switch models or guarantee vendor cache hits.
 - Keep independent adversarial review for payment, authorization, privacy, clinical, and release-critical changes. A model must not self-certify its own high-risk work.
 
+## Repository-local engineering skills
+
+Use the smallest relevant repo-local playbook when the task fits. These are **adapted guides**, not new workers, automatic background executions or permission to install an external plugin. Open the linked `SKILL.md` before work; existing repo standards and clinical/financial/privacy/release gates take priority. **If a failure's cause is unproven, start with diagnosis; once the cause and expected contract are established, use vertical TDD.**
+
+| Trigger | Read this playbook |
+| --- | --- |
+| Bug, flaky test, performance regression or a failure without a proven cause | [Evidence-first diagnosis](.agents/skills/ezz-bug-diagnosis/SKILL.md) |
+| Implementing or fixing a behavior with testable contracts | [One vertical red/green slice](.agents/skills/ezz-vertical-tdd/SKILL.md) |
+| Reviewing a PR or changed code | [Two-axis standards + requirement review](.agents/skills/ezz-two-axis-review/SKILL.md) |
+| Authoring a PR description or merge handoff | [Concise PR evidence](.agents/skills/ezz-pr-evidence/SKILL.md) |
+
+Use [`GLOSSARY.md`](GLOSSARY.md) for the shared meaning of clinical/financial evidence terms. If code, a current authoritative decision, and the glossary disagree, **do not silently rename data or change a business rule**: identify the conflict, report it and update the glossary only when the approved meaning is established. The [upstream skills fit audit](docs/engineering/matt-pocock-skills-fit-2026-11-01.md) records adopted and rejected ideas; it is not a live task queue.
+
 ## UI/UX quality contract (all future visual work)
 - Read `docs/design/ui-ux-pro-max-ezz-fit-2026-10-30.md` and the relevant current role-workspace spec before changing frontend UI. External UI/UX Pro Max suggestions are advisory; verify them against React/Vite implementation, clinic workflows, current accepted design direction, accessibility and domain safety.
 - Resolve verified best-practice conflicts, even when existing draft UI PRs need reconciliation. Fix shared primitives at their source, one focused PR at a time; preserve active ownership, ancestry, actual test evidence and independent review. Do not broadly re-theme, install unreviewed upstream scripts or invent unsupported interactions.
-- For each changed journey, record real fictional-API screenshots and tests for the affected French/Arabic RTL, mobile/desktop, keyboard/zoom, error/pending/empty states, permissions and clinical/financial safeguards; use existing Playwright/axe CI. A screenshot or automated scanner alone is not UX sign-off. Never claim tests were run when they were not.
+- For each changed journey, record real fictional-API screenshots and tests for the affected French/Arabic RTL, mobile/desktop, keyboard/zoom, error/pending/empty states, permissions and clinical/financial safeguards; use existing Playwright/axe CI. For affected interactions, explicitly check required/empty inputs, failed or malformed requests, disconnected/offline and recovered connections, and ambiguous write outcomes; keep retries idempotent and never duplicate a payment or patient record. Test only reachable, relevant cases, not an exhaustive hypothetical checklist. A screenshot or automated scanner alone is not UX sign-off. Never claim tests were run when they were not.
 
 ## Verify and hand off
 - For applicable backend changes run `npm --prefix backend run typecheck`, `npm --prefix backend test`, and `npm --prefix backend run test:dist` with PostgreSQL 16 and the required test environment.
-- Run `npm --prefix backend run lint` and `npm --prefix backend run lint:verify` for the configured authored-backend quality gate; its scope and baseline are in `docs/engineering/backend-quality.md`.
+- Run `npm --prefix backend run lint` and `npm --prefix backend run lint:verify` for the configured authored-backend quality gate; its scope and baseline are in `docs/engineering/backend-quality.md`. For frontend changes, run `npm --prefix frontend run lint` and `npm --prefix frontend run lint:verify`.
 - For applicable frontend changes run `npm --prefix frontend test` and `npm --prefix frontend run build`; run `npm --prefix frontend run test:e2e` against the configured fictional real-API environment when affected. Leave GitHub Actions as the authoritative CI check on the exact PR head.
 - Report exact commit/PR SHA, goal and acceptance checks, scope, commands **actually run**, pass/fail/skip, remaining risks, and reviewer action. For intentional refactors, compare pre-change and post-change tests. Never claim unrun tests passed.
-- Backend lint is configured with an explicit initial correctness rule set; frontend lint and repository formatting checks remain **NOT CONFIGURED**, not PASS. See `docs/engineering/backend-quality.md` for the measured formatter baseline and remaining issue #74 scope. Avoid mass reformatting unrelated files.
+- Backend and frontend authored-source lint checks are configured and required in CI; both have read-only `format:check` scripts. Those formatter checks remain **diagnostic-only and may report errors**: issue #74 is OPEN until current-main formatter diagnostics are genuinely fixed and verified. A passing lint or CI check does **not** prove formatting is clean. For relevant formatting work, run `npm --prefix backend run format:check` and/or `npm --prefix frontend run format:check`, preserve the raw findings, and avoid unrelated mass formatting.
 - Persist durable outcomes and handoffs in GitHub PRs/docs and the approved Mission Control lane—not solely in a local agent workspace. Avoid duplicating old evidence; link it by immutable SHA.

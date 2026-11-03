@@ -144,6 +144,7 @@ export const patientRoutes: Route[] = [
       const before = await getPatient(tx, params.id!);
       const phone = optStr(b, 'phone', { max: 20, pattern: PHONE });
       const pref = oneOf(b, 'contactPreference', ['IN_PERSON', 'BASIC_PHONE_CALL', 'SMS', 'NONE'] as const)!;
+      if ((pref === 'SMS' || pref === 'BASIC_PHONE_CALL') && !phone) fail('VALIDATION_FAILED', 'phone required for the chosen contact preference', { field: 'phone' });
       const reason = str(b, 'reason', { min: 3, max: 200 });
       await tx.query('UPDATE patients SET phone = $2, contact_preference = $3 WHERE id = $1', [params.id!, phone, pref]);
       await appendAudit(tx, actor!, 'patient.contact_changed', 'patient', params.id!, {
