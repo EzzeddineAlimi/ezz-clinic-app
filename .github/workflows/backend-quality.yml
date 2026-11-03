@@ -38,10 +38,12 @@ jobs:
         shell: bash
         run: |
           set +e
-          npm run format:check > "$RUNNER_TEMP/biome-format.log" 2>&1
+          npm run format:check -- --max-diagnostics=200 > "$RUNNER_TEMP/biome-format.log" 2>&1
           format_status=$?
           set -e
           echo "Formatter exit status: $format_status"
+          echo "Formatter-affected backend paths (read-only, exact checked commit):"
+          awk '/ format / && $1 ~ /^(src|test|scripts)\// { print $1 }' "$RUNNER_TEMP/biome-format.log" | sort -u
           tail -n 30 "$RUNNER_TEMP/biome-format.log"
           echo "Biome formatter baseline exit status: $format_status (diagnostic only; not an enforced gate)" >> "$GITHUB_STEP_SUMMARY"
           test -z "$(git status --porcelain -- .)"
