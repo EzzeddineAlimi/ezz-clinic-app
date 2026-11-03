@@ -28,6 +28,7 @@ The window is inclusive, at most 92 days, and defaults to the last 7 days. Dates
 
 - **No free text leaves this endpoint.** Discount, refund and correction notes appear only as `hasNote` / `hasReason`. Whether the owner may read staff free text is a pending founder decision. The workbench (CH-028) keeps its current rule.
 - **Neutral wording.** The view shows amounts, reason codes, who and when. It never uses "suspicious" or any judgement. Integrity findings are described as data-consistency signals, not conclusions about a person.
+- **Closed-period boundary integrity.** `/integrity/check` compares a closed cash period’s stored cutoff with its audited `nextOpenedAt` boundary (or the accepted count timestamp for legacy close events). A mismatch is a recorded-data inconsistency, not evidence of a physical cash loss. Regression: `T-INT-CASH-CLOSE-3`.
 - **Scope line.** Money that was never recorded cannot appear here (CH-002). The view accuses no one.
 
 ## How this differs from `/owner/exceptions`
