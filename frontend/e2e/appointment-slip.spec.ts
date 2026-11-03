@@ -61,9 +61,9 @@ for (const lang of ["fr", "ar"] as const) {
     const card = page.locator("#appointment-slip-print");
     const firstReference = await card.locator(".slip-reference bdi").innerText();
     await expect(first.locator(".visit-reference bdi")).toHaveText(firstReference);
-    await expect(card.locator(".slip-reference")).toContainText(
-      lang === "fr" ? "Référence du rendez-vous" : "مرجع الموعد",
-    );
+    await expect(card.locator("dt").filter({
+      hasText: lang === "fr" ? "Référence du rendez-vous" : "مرجع الموعد",
+    })).toHaveCount(1);
     await page.emulateMedia({ media: "print" });
     await expect(card.locator(".slip-reference")).toHaveCSS("visibility", "visible");
     await page.emulateMedia({ media: "screen" });
