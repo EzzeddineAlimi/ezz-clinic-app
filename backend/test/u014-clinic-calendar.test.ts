@@ -124,11 +124,16 @@ test('U014-7 configured hours reject slots crossing a clinic-local DST clock cha
   // 01:00 EDT -> 01:30 EST is 90 real minutes, not 30: the old endpoint-only wall-clock check admitted it.
   const fallback = await book(f, '2027-11-07T05:00:00Z', { durationMin: 90 });
   assert.equal(fallback.status, 409, JSON.stringify(fallback.body));
-  assert.equal(fallback.body.error.details.reason, 'OUTSIDE_OPENING_HOURS');
+  assert.equal(fallback.body.error.details.reason, 'CLOCK_TRANSITION');
+  assert.match(fallback.body.error.message, /clock change/i, 'give staff the actual cause and a safe next action');
   // 01:30 EST -> 04:00 EDT crosses the spring-forward gap despite both endpoints fitting 00:00-04:00.
   const spring = await book(f, '2027-03-14T06:30:00Z', { durationMin: 90 });
   assert.equal(spring.status, 409, JSON.stringify(spring.body));
-  assert.equal(spring.body.error.details.reason, 'OUTSIDE_OPENING_HOURS');
+  assert.equal(spring.body.error.details.reason, 'CLOCK_TRANSITION');
+  assert.match(spring.body.error.message, /clock change/i);
   assert.equal((await book(f, '2027-11-06T05:00:00Z', { durationMin: 90 })).status, 201,
     'ordinary 01:00-02:30 clinic-local interval must remain bookable');
+  const outside = await book(f, '2027-11-06T09:00:00Z', { durationMin: 30 });
+  assert.equal(outside.status, 409);
+  assert.equal(outside.body.error.details.reason, 'OUTSIDE_OPENING_HOURS', 'ordinary closed-hours rejection stays distinct');
 });
