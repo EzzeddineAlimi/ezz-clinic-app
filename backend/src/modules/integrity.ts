@@ -280,9 +280,16 @@ export async function businessValueFindings(tx: Tx, clinicId: string, withCash =
       }
       if (p.status === 'CLOSED') {
         const close = one('cash_period', p.id, ['cash.period_closed']);
-        if (close.length) compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id,
-          [['handoverMillimes', p.handover_millimes, close[0]!.payload.handoverMillimes],
-            ['acceptedCountId', p.accepted_count_id, close[0]!.payload.acceptedCountId]]);
+        if (close.length) {
+          const event = close[0]!;
+          compare('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id,
+            [['handoverMillimes', p.handover_millimes, event.payload.handoverMillimes],
+              ['acceptedCountId', p.accepted_count_id, event.payload.acceptedCountId]]);
+          const cutoff = typeof event.payload.nextOpenedAt === 'string'
+            ? event.payload.nextOpenedAt : acceptedCutoff.get(String(event.payload.acceptedCountId));
+          if (cutoff !== undefined && (p.cutoff_at === null || Date.parse(p.cutoff_at) !== Date.parse(cutoff)))
+            mismatch('CASH_PERIOD_AUDIT_VALUE_MISMATCH', 'cash_periods', p.id, 'cutoffAt', p.cutoff_at, cutoff);
+        }
       }
     }
     for (const c of counts) {
