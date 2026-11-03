@@ -1348,6 +1348,8 @@ dialog::backdrop {
 .appointment-slip-preview .slip-date { font-size: clamp(1.4rem, 5vw, 1.8rem); }
 .appointment-slip-preview .slip-time { font-size: clamp(2rem, 8vw, 3rem); font-variant-numeric: tabular-nums; }
 .appointment-slip-preview .slip-fictional { margin-block: 24px 0; font-size: 0.75rem; }
+.visit-reference { display: block; margin-block-start: 6px; color: var(--muted); overflow-wrap: anywhere; font-size: 0.75rem; }
+.slip-reference { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; font-size: 1rem; }
 @media print {
  body * {visibility:hidden}
  /* Do not paginate the invisible dayboard behind the appointment card. */
@@ -1358,6 +1360,7 @@ dialog::backdrop {
  #appointment-slip-print {border:0;padding:16mm;max-width:none}
  #appointment-slip-print .slip-date {font-size:24pt}
  #appointment-slip-print .slip-time {font-size:34pt}
+ #appointment-slip-print .slip-reference {font-size:12pt}
  .app-layout:has(#appointment-slip-print),.workspace:has(#appointment-slip-print){min-height:0;height:0;overflow:visible}
  dialog:has(#appointment-slip-print){inset:0 auto auto 0;margin:0;padding:0;width:100%;max-width:none;border-radius:0;box-shadow:none;background:white}
  #appointment-slip-print{position:relative;inset:auto;margin:0}

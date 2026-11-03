@@ -33,6 +33,50 @@ test("U029 appointment slip is bilingual and contains minimum patient data", asy
   await test.info().attach("u029-ar-mobile", { body: await page.screenshot(), contentType: "image/png" });
 });
 
+for (const lang of ["fr", "ar"] as const) {
+  test(`U029 two fictional patients at the same time have different paper references (${lang})`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/v1/day-board*", async route => {
+      const response = await route.fetch();
+      const board = await response.json();
+      const first = board.visits.find((v: { patient: { familyName: string } }) => v.patient.familyName === "Trabelsi");
+      if (!first) throw new Error("Expected fictional Trabelsi appointment missing");
+      const twin = { ...first, id: "fictional-second-visit-unique",
+        patient: { ...first.patient, id: "fictional-second-patient", givenName: "Autre", familyName: "FictionalTwin", fileNo: 999 } };
+      await route.fulfill({ response, json: {
+        ...board, visits: [...board.visits, twin],
+        summary: { ...board.summary, total: board.summary.total + 1 },
+      } });
+    });
+    await page.goto("/");
+    await page.getByLabel("Code du cabinet").fill("web-fictional");
+    await page.getByLabel("Identifiant personnel").fill("desk");
+    await page.getByLabel("Mot de passe").fill("fictional-pass-123");
+    await page.getByRole("button", { name: "Ouvrir ma session" }).click();
+    if (lang === "ar") await page.getByRole("button", { name: "العربية" }).click();
+    const first = page.locator(".visit-row").filter({ hasText: "Trabelsi" });
+    const second = page.locator(".visit-row").filter({ hasText: "FictionalTwin" });
+    const prepare = lang === "fr" ? "Préparer la carte" : "تحضير بطاقة الموعد";
+    await first.getByRole("button", { name: prepare }).click();
+    const card = page.locator("#appointment-slip-print");
+    const firstReference = await card.locator(".slip-reference bdi").innerText();
+    await expect(first.locator(".visit-reference bdi")).toHaveText(firstReference);
+    await expect(card.locator(".slip-reference")).toContainText(
+      lang === "fr" ? "Référence du rendez-vous" : "مرجع الموعد",
+    );
+    await page.emulateMedia({ media: "print" });
+    await expect(card.locator(".slip-reference")).toHaveCSS("visibility", "visible");
+    await page.emulateMedia({ media: "screen" });
+    await page.getByRole("button", { name: lang === "fr" ? "Fermer le formulaire" : "إغلاق النموذج" }).click();
+    await second.getByRole("button", { name: prepare }).click();
+    const secondReference = await card.locator(".slip-reference bdi").innerText();
+    expect(secondReference).not.toBe(firstReference);
+    await expect(second.locator(".visit-reference bdi")).toHaveText(secondReference);
+    await expect(card).not.toContainText("Trabelsi");
+    await expect(card).not.toContainText("FictionalTwin");
+  });
+}
+
 
 test("U029 rejects cancellation after card preview before opening print", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

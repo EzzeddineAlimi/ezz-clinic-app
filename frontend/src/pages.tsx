@@ -226,6 +226,9 @@ function VisitRow({
                 </>
               )}
             </span>
+            {v.status === "SCHEDULED" && (
+              <small className="visit-reference">{w.slipReference}: <bdi>{v.id}</bdi></small>
+            )}
           </div>
         </div>
         <div className="visit-meta">
@@ -262,6 +265,7 @@ function VisitRow({
             <dl>
               <div><dt>{w.day}</dt><dd className="slip-date"><bdi>{dateLabel(slip.day, lang)}</bdi></dd></div>
               <div><dt>{w.time}</dt><dd className="slip-time"><bdi>{slip.visit.localTime}</bdi></dd></div>
+              <div><dt>{w.slipReference}</dt><dd className="slip-reference"><bdi>{slip.visit.id}</bdi></dd></div>
             </dl>
             <small>{slip.timezone === "Africa/Tunis" ? w.slipTunisTime : <>{w.clinicTime} · <bdi>{slip.timezone}</bdi></>}</small>
             <p className="slip-fictional">{w.fictional}</p>
