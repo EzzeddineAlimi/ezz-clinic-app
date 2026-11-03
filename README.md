@@ -79,7 +79,7 @@ The distinction below matters: **present in merged source** does not mean **full
 
 **In-progress work is separate from merged functionality.** At the **November 1, 2026** repository snapshot, these were *open draft PRs*, not shipped features:
 
-- [#44 — private fictional-data phone preview](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/44): authenticated mobile/browser acceptance still required.
+- [#44 — private fictional-data phone preview](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/44): authenticated mobile/browser acceptance still required. See the [private Codespaces guide](docs/operations/CODESPACES-FICTIONAL-PREVIEW.md); the port must remain **Private** and all data fictional.
 - [#107 — large-print French/Arabic appointment card](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/107): independent current-head UX/print and physical handoff gates remain.
 - [#108 — receptionist enquiry API](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/108) and dependent [#109 — enquiry UI](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/109): founder privacy, retention and review decisions remain open.
 - [#110 — clinic hours and manual closure days](https://github.com/EzzeddineAlimi/ezz-clinic-app/pull/110): independent backend/security review remains.

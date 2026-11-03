@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { clinicInstant, shiftDay } from "../src/time.ts";
 import {
   ApiError,
+  credentialsForOrigin,
   WriteIntent,
   boardSchema,
   patientSchema,
@@ -147,4 +148,18 @@ test("Non-401 malformed POST retains uncertain-write semantics without expiring 
     (e: unknown) => e instanceof ApiError && e.code === "NETWORK",
   );
   assert.equal(expired, 0);
+});
+
+test("GitHub private forwarded-port cookies are sent only to a valid HTTPS Codespaces UI origin", () => {
+  assert.equal(
+    credentialsForOrigin("https://fictional-demo-5173.app.github.dev"),
+    "same-origin",
+  );
+  for (const origin of [
+    "http://fictional-demo-5173.app.github.dev",
+    "https://fictional-demo-4180.app.github.dev",
+    "https://fictional-demo-5173.app.github.dev.attacker.example",
+    "https://attacker.example",
+    "http://127.0.0.1:5173",
+  ]) assert.equal(credentialsForOrigin(origin), "omit", origin);
 });

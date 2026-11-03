@@ -1,0 +1,31 @@
+# Isolated Codespaces-only fictional database. No database ports published.
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/javascript-node:22-bookworm
+    working_dir: /workspaces/ezz-clinic-app
+    command: sleep infinity
+    init: true
+    volumes:
+      - ..:/workspaces/ezz-clinic-app:cached
+      - postgres-socket:/var/run/postgresql
+    environment:
+      EZZ_TEST_ADMIN_URL: "postgres://postgres:fictional-preview-only@localhost:5432/postgres?host=/var/run/postgresql"
+    depends_on:
+      database:
+        condition: service_healthy
+  database:
+    image: postgres:16
+    command: ["postgres", "-c", "listen_addresses="]
+    environment:
+      POSTGRES_PASSWORD: fictional-preview-only
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-socket:/var/run/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h /var/run/postgresql -U postgres -d postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+    # No ports; database is reachable only via the mounted Unix socket.
+volumes:
+  postgres-socket:

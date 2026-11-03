@@ -1,0 +1,48 @@
+name: Private Codespaces fictional preview smoke
+on:
+  pull_request:
+    paths:
+      - '.devcontainer/**'
+      - 'backend/scripts/dev-web.ts'
+      - 'frontend/src/api.ts'
+      - 'frontend/vite.config.ts'
+      - 'frontend/test/contracts.test.ts'
+      - 'docs/operations/CODESPACES-FICTIONAL-PREVIEW.md'
+      - '.github/workflows/codespaces-preview-ci.yml'
+permissions:
+  contents: read
+
+jobs:
+  private-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Static config and shell validation
+        run: |
+          node -e "const d=require('./.devcontainer/devcontainer.json'); if(JSON.stringify(d.forwardPorts)!=='[5173]' || d.portsAttributes['4180']?.onAutoForward!=='ignore' || d.portsAttributes['5432']?.onAutoForward!=='ignore')process.exit(1)"
+          bash -n .devcontainer/start-preview.sh
+          docker compose -f .devcontainer/docker-compose.yml config --quiet
+      - name: Start isolated database and application container
+        run: docker compose -f .devcontainer/docker-compose.yml up -d --wait --wait-timeout 120
+      - name: Install locked projects
+        run: |
+          docker compose -f .devcontainer/docker-compose.yml exec -T app bash -lc '
+            set -euo pipefail
+            node --version
+            npm --prefix backend ci --ignore-scripts --no-audit --no-fund
+            npm --prefix frontend ci --ignore-scripts --no-audit --no-fund
+            npm --prefix frontend test
+          '
+      - name: Start built web preview with simulated Codespaces hostname
+        run: |
+          docker compose -f .devcontainer/docker-compose.yml exec -T -d \
+            -e CODESPACES=true -e CODESPACE_NAME=ezz-preview-ci \
+            app bash -lc 'bash .devcontainer/start-preview.sh >/tmp/ezz-preview-smoke.log 2>&1'
+      - name: Verify built UI, same-origin proxy, authenticated fictional API, and host allowlist
+        run: docker compose -f .devcontainer/docker-compose.yml exec -T app node .devcontainer/smoke-preview.mjs
+      - name: Teardown isolated preview
+        if: always()
+        run: docker compose -f .devcontainer/docker-compose.yml down --volumes --remove-orphans
