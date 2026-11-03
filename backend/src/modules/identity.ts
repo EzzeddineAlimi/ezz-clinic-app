@@ -35,6 +35,7 @@ export const ROLES: readonly Role[] = ['OWNER', 'DENTIST', 'RECEPTIONIST', 'ASSI
  * test asserts they agree). Server-side and per request. Absent permission = denied.
  */
 export const PERMISSIONS: Record<string, readonly Role[]> = {
+  'enquiry.manage':          ['RECEPTIONIST'],
   'session.self':            ['OWNER', 'DENTIST', 'RECEPTIONIST', 'ASSISTANT'],
   'staff.manage':            ['OWNER'],
   'staff.read':              ['OWNER'],

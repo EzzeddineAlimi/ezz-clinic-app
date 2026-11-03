@@ -1,0 +1,89 @@
+TAP version 13
+# Subtest: U001 create, recover retry, manual follow-up and stale edit never create a patient
+not ok 1 - U001 create, recover retry, manual follow-up and stale edit never create a patient
+  ---
+  duration_ms: 556.760529
+  type: 'test'
+  location: '/workspace/ezz-u001/backend/test/u001-enquiries.test.ts:14:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    {"error":{"code":"NOT_FOUND","message":"Not found"}}
+    
+    404 !== 201
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 201
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-u001/backend/test/u001-enquiries.test.ts:17:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: U001 concurrent duplicate create and concurrent revisions fail closed
+not ok 2 - U001 concurrent duplicate create and concurrent revisions fail closed
+  ---
+  duration_ms: 12.03502
+  type: 'test'
+  location: '/workspace/ezz-u001/backend/test/u001-enquiries.test.ts:38:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      [
+    +   404,
+    +   404
+    -   201,
+    -   409
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 201
+    1: 409
+  actual:
+    0: 404
+    1: 404
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-u001/backend/test/u001-enquiries.test.ts:41:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: U001 receptionist-only, tenant isolation, synthetic and field allow-list boundaries
+not ok 3 - U001 receptionist-only, tenant isolation, synthetic and field allow-list boundaries
+  ---
+  duration_ms: 4.415205
+  type: 'test'
+  location: '/workspace/ezz-u001/backend/test/u001-enquiries.test.ts:50:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    404 !== 201
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 201
+  actual: 404
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///workspace/ezz-u001/backend/test/u001-enquiries.test.ts:52:94)
+    process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 823.425979

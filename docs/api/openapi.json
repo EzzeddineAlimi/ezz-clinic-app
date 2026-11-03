@@ -46,6 +46,9 @@
       "name": "documents"
     },
     {
+      "name": "enquiries"
+    },
+    {
       "name": "health"
     },
     {
@@ -21774,6 +21777,546 @@
         "x-ezz-roles": [
           "OWNER",
           "DENTIST",
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/enquiries": {
+      "post": {
+        "operationId": "postEnquiries",
+        "tags": [
+          "enquiries"
+        ],
+        "summary": "/api/v1/enquiries",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "isSynthetic": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "name": "Fictional Léa خيالي",
+                "reason": "Rappel pour rendez-vous fictif",
+                "isSynthetic": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "/api/v1/enquiries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enquiry": {
+                      "type": "object",
+                      "properties": {
+                        "callback": {
+                          "type": "null"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "enquiry": {
+                    "id": "<id-1>",
+                    "name": "Fictional Léa خيالي",
+                    "reason": "Rappel pour rendez-vous fictif",
+                    "callback": null,
+                    "status": "OPEN",
+                    "version": 1,
+                    "createdBy": "<id-2>",
+                    "updatedBy": "<id-2>",
+                    "createdAt": "<timestamp>",
+                    "updatedAt": "<timestamp>"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "enquiry.manage",
+        "x-ezz-roles": [
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "required",
+        "x-ezz-example": true
+      },
+      "get": {
+        "operationId": "getEnquiries",
+        "tags": [
+          "enquiries"
+        ],
+        "summary": "/api/v1/enquiries",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "x-ezz-observed-in-examples": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "/api/v1/enquiries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enquiries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "callback": {
+                            "type": "null"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "createdBy": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedBy": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "version": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "nextBefore": {
+                      "type": "null"
+                    }
+                  }
+                },
+                "example": {
+                  "enquiries": [
+                    {
+                      "id": "<id-1>",
+                      "name": "Fictional Léa خيالي",
+                      "reason": "Rappel pour rendez-vous fictif",
+                      "callback": null,
+                      "status": "OPEN",
+                      "version": 1,
+                      "createdBy": "<id-2>",
+                      "updatedBy": "<id-2>",
+                      "createdAt": "<timestamp>",
+                      "updatedAt": "<timestamp>"
+                    }
+                  ],
+                  "nextBefore": null
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "enquiry.manage",
+        "x-ezz-roles": [
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "none",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/enquiries/{id}": {
+      "get": {
+        "operationId": "getEnquiriesById",
+        "tags": [
+          "enquiries"
+        ],
+        "summary": "/api/v1/enquiries/:id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "/api/v1/enquiries/:id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enquiry": {
+                      "type": "object",
+                      "properties": {
+                        "callback": {
+                          "type": "null"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "enquiry": {
+                    "id": "<id-1>",
+                    "name": "Fictional Léa خيالي",
+                    "reason": "Rappel pour rendez-vous fictif",
+                    "callback": null,
+                    "status": "OPEN",
+                    "version": 1,
+                    "createdBy": "<id-2>",
+                    "updatedBy": "<id-2>",
+                    "createdAt": "<timestamp>",
+                    "updatedAt": "<timestamp>"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "enquiry.manage",
+        "x-ezz-roles": [
+          "RECEPTIONIST"
+        ],
+        "x-ezz-reauth": false,
+        "x-ezz-idempotency-key": "none",
+        "x-ezz-example": true
+      }
+    },
+    "/api/v1/enquiries/{id}/update": {
+      "post": {
+        "operationId": "postEnquiriesByIdUpdate",
+        "tags": [
+          "enquiries"
+        ],
+        "summary": "/api/v1/enquiries/:id/update",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "callback": {
+                    "type": "null"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "isSynthetic": {
+                    "type": "boolean"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "name": "Fictional Léa خيالي",
+                "reason": "Rappel pour rendez-vous fictif",
+                "isSynthetic": true,
+                "callback": null,
+                "expectedVersion": 1,
+                "status": "CLOSED"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "/api/v1/enquiries/:id/update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "enquiry": {
+                      "type": "object",
+                      "properties": {
+                        "callback": {
+                          "type": "null"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedBy": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "version": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "enquiry": {
+                    "id": "<id-1>",
+                    "name": "Fictional Léa خيالي",
+                    "reason": "Rappel pour rendez-vous fictif",
+                    "callback": null,
+                    "status": "CLOSED",
+                    "version": 2,
+                    "createdBy": "<id-2>",
+                    "updatedBy": "<id-2>",
+                    "createdAt": "<timestamp>",
+                    "updatedAt": "<timestamp>"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error"
+          },
+          "413": {
+            "$ref": "#/components/responses/Error"
+          },
+          "415": {
+            "$ref": "#/components/responses/Error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "x-ezz-permission": "enquiry.manage",
+        "x-ezz-roles": [
           "RECEPTIONIST"
         ],
         "x-ezz-reauth": false,

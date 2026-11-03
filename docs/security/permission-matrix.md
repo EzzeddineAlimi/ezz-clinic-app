@@ -5,6 +5,7 @@ Enforced server-side on every request; identity comes only from the session. Rou
 
 | Permission | OWNER | DENTIST | RECEPTIONIST | ASSISTANT |
 |---|:-:|:-:|:-:|:-:|
+| `enquiry.manage` | — | — | yes | — |
 | `session.self` | yes | yes | yes | yes |
 | `staff.manage` | yes | — | — | — |
 | `staff.read` | yes | — | — | — |

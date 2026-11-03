@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: U001 create, recover retry, manual follow-up and stale edit never create a patient
+ok 1 - U001 create, recover retry, manual follow-up and stale edit never create a patient
+  ---
+  duration_ms: 606.298384
+  type: 'test'
+  ...
+# Subtest: U001 concurrent duplicate create and concurrent revisions fail closed
+ok 2 - U001 concurrent duplicate create and concurrent revisions fail closed
+  ---
+  duration_ms: 48.90248
+  type: 'test'
+  ...
+# Subtest: U001 receptionist-only, tenant isolation, synthetic and field allow-list boundaries
+ok 3 - U001 receptionist-only, tenant isolation, synthetic and field allow-list boundaries
+  ---
+  duration_ms: 251.437243
+  type: 'test'
+  ...
+# Subtest: U001 PostgreSQL RLS and schema reject foreign-clinic and non-fictional writes
+ok 4 - U001 PostgreSQL RLS and schema reject foreign-clinic and non-fictional writes
+  ---
+  duration_ms: 30.428234
+  type: 'test'
+  ...
+# Subtest: U001 bounded keyset queue, invalid cursor and closed duplicate handling
+ok 5 - U001 bounded keyset queue, invalid cursor and closed duplicate handling
+  ---
+  duration_ms: 464.400258
+  type: 'test'
+  ...
+# Subtest: U001 generated examples are real-API recorded and retain their response contract
+ok 6 - U001 generated examples are real-API recorded and retain their response contract
+  ---
+  duration_ms: 108.428148
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1749.688726

@@ -12,6 +12,7 @@ import { SOURCE_DIR } from '../src/platform/paths.ts';
 const SRC = SOURCE_DIR; // TypeScript sources, also when this test runs compiled
 const ALLOWED: Record<string, string[]> = {
   audit: [],
+  enquiries: ['audit'],
   identity: ['audit', 'settings'],
   patients: ['audit', 'settings', 'patient-name'],
   'patient-name': [],
