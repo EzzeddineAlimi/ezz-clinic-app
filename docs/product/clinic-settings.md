@@ -49,6 +49,10 @@ paired with a same-transaction `clinic.setting_changed` audit event and the exis
   `allowOverlap` may still override a dentist overlap warning, **never** a closed day or outside-hours denial.
   With configured hours, a visit crossing a clinic-local daylight-saving clock jump is rejected rather than
   inferred from ambiguous wall-clock endpoints; ordinary intervals remain bookable.
+  The 409 booking response distinguishes `details.reason: CLOCK_TRANSITION` from `OUTSIDE_OPENING_HOURS`
+  and `CLINIC_CLOSED`, and tells staff to choose another time that avoids the clock change.
+  This is an English server contract; receptionist FR/AR error rendering and real-browser proof are still pending
+  with the frontend owner and independent Muse Ons reviewers.
   A change that would invalidate an existing future visit is rejected (409, count only); staff must reschedule
   the visit first. Booking and calendar changes share a transaction advisory lock to prevent concurrent races.
 - This is a fictional-data backend contract, **not** a delivered receptionist UI, measured staff workflow,
