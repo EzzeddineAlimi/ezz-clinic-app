@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { enquirySchema, enquiryListSchema } from "./enquiry-contracts.ts";
 import { ownerCashPeriodSchema, openCashPeriodSchema, submittedCashCountSchema, cashReviewSchema, closedCashPeriodSchema } from "./cash-contracts.ts";
 import { encounterSchema, noteCreatedSchema, findingCreatedSchema, planItemCreatedSchema } from "./clinical-contracts.ts";
 import { recoverySchema, preparedIntentSchema, recordedIntentSchema, cancelledIntentSchema } from "./recovery.ts";
@@ -227,6 +228,19 @@ export class Api {
       boardSchema,
       { signal },
     );
+  }
+  enquiries(status: "OPEN" | "CLOSED", before?: string, signal?: AbortSignal) {
+    const query = new URLSearchParams({ status });
+    if (before) query.set("before", before);
+    return this.call(`/enquiries?${query}`, enquiryListSchema, { signal });
+  }
+  createEnquiry(body: { name: string; reason: string; callback: string | null; isSynthetic: true }, key: string) {
+    return this.call("/enquiries", z.object({ enquiry: enquirySchema }), { body, key });
+  }
+  updateEnquiry(id: string, body: { name: string; reason: string; callback: string | null;
+    status: "OPEN" | "CLOSED"; expectedVersion: number; isSynthetic: true }, key: string) {
+    return this.call(`/enquiries/${encodeURIComponent(id)}/update`,
+      z.object({ enquiry: enquirySchema }), { body, key });
   }
   patients(q: string, signal?: AbortSignal) {
     return this.call(

@@ -1,5 +1,6 @@
 import { Login } from "./Login.tsx";
 import { DayBoard, PatientDirectory } from "./pages.tsx";
+import { Enquiries, enquiryText } from "./enquiries.tsx";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Api, canWrite } from "./api.ts";
 import type { Patient, Session, Visit } from "./api.ts";
@@ -104,7 +105,7 @@ function Workspace({
   setLang: (lang: Lang) => void;
   logout: () => void;
 }) {
-  const [tab, setTab] = useState<"agenda" | "patients" | "cash">("agenda"),
+  const [tab, setTab] = useState<"agenda" | "patients" | "enquiries" | "cash">("agenda"),
     [day, setDay] = useState(""),
     [modal, setModal] = useState<"register" | "schedule" | "care" | null>(null),
     [selected, setSelected] = useState<Patient>(),
@@ -161,6 +162,13 @@ function Workspace({
             <Icon name="people" />
             {w.patients}
           </button>
+          {auth.session.staff.roles.includes("RECEPTIONIST") && (
+            <button aria-current={tab === "enquiries" ? "page" : undefined}
+              onClick={() => setTab("enquiries")}>
+              <Icon name="people" />
+              {enquiryText[lang].title}
+            </button>
+          )}
           {auth.session.staff.roles.includes("OWNER") && (
             <button aria-current={tab === "cash" ? "page" : undefined}
               onClick={() => setTab("cash")}>
@@ -193,7 +201,7 @@ function Workspace({
         <header className="topbar">
           <div>
             <span className="breadcrumb">
-              EZZ Clinic <span>/</span> {tab === "cash" ? cashText[lang].tab : w[tab]}
+              EZZ Clinic <span>/</span> {tab === "cash" ? cashText[lang].tab : tab === "enquiries" ? enquiryText[lang].title : w[tab]}
             </span>
             <small>
               <bdi>{auth.clinicCode}</bdi>
@@ -205,12 +213,12 @@ function Workspace({
           <div className="page-heading">
             <div>
               <p className="eyebrow">{w.reception}</p>
-              <h1>{tab === "agenda" ? w.welcome : tab === "cash" ? cashText[lang].title : w.patientTitle}</h1>
+              <h1>{tab === "agenda" ? w.welcome : tab === "cash" ? cashText[lang].title : tab === "enquiries" ? enquiryText[lang].title : w.patientTitle}</h1>
               <p className="muted">
-                {tab === "agenda" ? w.subtitle : tab === "cash" ? cashText[lang].subtitle : w.patientSub}
+                {tab === "agenda" ? w.subtitle : tab === "cash" ? cashText[lang].subtitle : tab === "enquiries" ? enquiryText[lang].subtitle : w.patientSub}
               </p>
             </div>
-            {writable && tab !== "cash" && (
+            {writable && tab !== "cash" && tab !== "enquiries" && (
               <button
                 className="primary"
                 disabled={tab === "agenda" && !current}
@@ -369,6 +377,8 @@ function Workspace({
                 )}
               </section>
             </>
+          ) : tab === "enquiries" && auth.session.staff.roles.includes("RECEPTIONIST") ? (
+            <Enquiries api={auth.api} lang={lang} timezone={current?.timezone ?? "UTC"} />
           ) : tab === "cash" && auth.session.staff.roles.includes("OWNER") ? (
             <OwnerCashControl api={auth.api} lang={lang} w={w} />
           ) : (
