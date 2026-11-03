@@ -195,7 +195,7 @@ function slotProblem(calendar: CalendarPolicy, timezone: string, scheduledAt: st
   const from = localClockMinutes(timezone, start);
   const to = localDate(timezone, end) === day ? localClockMinutes(timezone, end) : 1440;
   // A timezone clock jump can make both endpoints look inside a window while the actual slot crosses DST.
-  if (to <= from || Math.round((to - from) * 60_000) !== durationMin * 60_000) return 'OUTSIDE_OPENING_HOURS';
+  if (to <= from || Math.abs(to - from - durationMin) > 1e-6) return 'OUTSIDE_OPENING_HOURS';
   return calendar.weeklyHours[weekday]!.some(w => from >= clockMinutes(w.start) && to <= clockMinutes(w.end))
     ? null : 'OUTSIDE_OPENING_HOURS';
 }
