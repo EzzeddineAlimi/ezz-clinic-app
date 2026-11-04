@@ -27,7 +27,7 @@ export function runProcess(command, args, { cwd } = {}) {
     child.on('close', (code, signal) => {
       clearTimeout(timer);
       if (code === 0 && !signal) resolve(stdout);
-      else reject(new Error(command + ' exited ' + String(code ?? signal) + ': ' + stderr.slice(-6000)));
+      else reject(new Error(command + ' exited ' + String(code ?? signal) + ': ' + [stderr, stdout].filter(Boolean).join('\n').slice(-6000)));
     });
   });
 }
