@@ -13,7 +13,7 @@ const task = {
   allowedPaths: ['docs/harness'],
 };
 
-function fakeCommands({ branch = task.branch, changed = ' M docs/harness/README.md\n', fail = '' } = {}) {
+function fakeCommands({ branch = task.branch, changed = ' M docs/harness/README.md\n', fail = '', remote = 'https://github.com/EzzeddineAlimi/ezz-clinic-app.git' } = {}) {
   const calls = [];
   let committed = false;
   const run = async (command, args) => {
@@ -23,7 +23,7 @@ function fakeCommands({ branch = task.branch, changed = ' M docs/harness/README.
     if (command === 'git' && args[0] === 'branch') return branch + '\n';
     if (command === 'git' && args[0] === 'status') return calls.filter((x) => x.startsWith('codex exec --sandbox workspace-write')).length ? changed : '';
     if (command === 'git' && args[0] === 'rev-parse') return committed ? 'newcommit\n' : 'basecommit\n';
-    if (command === 'git' && args[0] === 'remote') return 'https://github.com/EzzeddineAlimi/ezz-clinic-app.git\n';
+    if (command === 'git' && args[0] === 'remote') return remote + '\n';
     if (command === 'gh' && args[0] === 'issue') return JSON.stringify({ number: 134, state: 'OPEN' });
     if (command === 'gh' && args[0] === 'pr' && args[1] === 'list') return '[]';
     if (command === 'codex') return args[2] === 'read-only' ? 'evidence-first plan' : 'modified a fictional document';
@@ -81,4 +81,13 @@ test('rejects invalid task and unsupported changes', () => {
     'docs/harness/README.md', 'docs/harness/new.md',
   ]);
   assert.throws(() => assertScopedPaths(['docs/other/file.md'], ['docs/harness']), /Out-of-scope/);
+});
+
+test('lookalike GitHub remote is refused before coding', async () => {
+  const fake = fakeCommands({ remote: 'https://evilgithub.com/EzzeddineAlimi/ezz-clinic-app.git' });
+  await assert.rejects(
+    () => createEngineeringGraph({ run: fake.run, repoRoot: '/fictional-checkout' }).invoke({ task }),
+    /Unexpected GitHub remote/,
+  );
+  assert.ok(!fake.calls.some((c) => c.startsWith('codex ')));
 });

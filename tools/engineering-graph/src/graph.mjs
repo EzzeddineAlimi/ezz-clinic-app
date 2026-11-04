@@ -32,7 +32,12 @@ export function createEngineeringGraph({ run, repoRoot }) {
     ]);
     if (branch.trim() !== task.branch) throw new Error('Wrong checkout branch');
     if (status.trim()) throw new Error('Checkout must start clean');
-    if (!/(github\.com[:/]EzzeddineAlimi\/ezz-clinic-app)(\.git)?$/.test(remote.trim())) {
+    const allowedRemotes = new Set([
+      'https://github.com/EzzeddineAlimi/ezz-clinic-app',
+      'https://github.com/EzzeddineAlimi/ezz-clinic-app.git',
+      'git@github.com:EzzeddineAlimi/ezz-clinic-app.git',
+    ]);
+    if (!allowedRemotes.has(remote.trim())) {
       throw new Error('Unexpected GitHub remote');
     }
     const issue = JSON.parse(await exec('gh', [
