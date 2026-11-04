@@ -1,0 +1,35 @@
+name: EZZ isolated LangGraph engineering runner tests
+on:
+  pull_request:
+    paths:
+      - 'tools/engineering-graph/**'
+      - '.github/workflows/engineering-langgraph.yml'
+permissions:
+  contents: read
+jobs:
+  engineering-graph:
+    name: engineering-graph
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tools/engineering-graph
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Resolve pinned dependencies for draft lockfile
+        run: npm install --ignore-scripts --no-audit --no-fund --package-lock-only
+      - name: Install generated lockfile
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Test graph routing and fail-closed development gates
+        run: npm test
+      - name: Publish generated lockfile for review (temporary draft step)
+        uses: actions/upload-artifact@043fb46e2bb5ebc05a9f870fdc28a90774b6d5aa # v7.0.1
+        with:
+          name: ezz-engineering-graph-lockfile
+          path: tools/engineering-graph/package-lock.json
+          retention-days: 3
